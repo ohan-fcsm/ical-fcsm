@@ -57,15 +57,15 @@ const lastEvents    = lastData?.results || lastData?.events || [];
 const allNextEvents = nextData?.events || [];
 const tableRows     = tableData?.table || tableData?.teams || [];
 
-// Essai Ligue 2 en priorité
+// Ligue 2 en priorité
 const ligue2Events = allNextEvents.filter(ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2')
 );
 
-// Fallback : si pas de Ligue 2 encore dispo, on prend tous les matchs
-const ligue2Ready  = ligue2Events.length > 0;
-const nextEvents   = ligue2Ready ? ligue2Events : allNextEvents;
+// Fallback : si Ligue 2 pas encore dispo, on affiche tous les matchs
+const ligue2Ready = ligue2Events.length > 0;
+const nextEvents  = ligue2Ready ? ligue2Events : allNextEvents;
 
 const nextMatch = nextEvents[0] || null;
 const oppName   = nextMatch
@@ -90,6 +90,11 @@ const formOpp  = calcForm(oppLastEvents, oppName);
 const fill = (template, vars) =>
   Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 
+// Bandeau HTML uniquement si Ligue 2 pas encore dispo
+const ligue2Banner = ligue2Ready
+  ? ''
+  : '<div class="banner-warning">⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible sur TheSportsDB — prochain match affiché : match amical.</div>';
+
 const vars = {
   NEXT_MATCH_DATE:        nextMatch?.dateEvent || '—',
   NEXT_MATCH_TIME:        nextMatch?.strTime || '—',
@@ -98,7 +103,7 @@ const vars = {
   NEXT_MATCH_STATUS:      nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:       nextMatch?.strVenue || '—',
   NEXT_MATCH_LEAGUE:      nextMatch?.strLeague || '—',
-  LIGUE2_STATUS:          ligue2Ready ? '' : '⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible — prochain match affiché : match amical',
+  LIGUE2_STATUS_BANNER:   ligue2Banner,
   TEAM_RANK_FCSM:         teamRow?.intRank || teamRow?.rank || '—',
   TEAM_POINTS_FCSM:       teamRow?.intPoints || '—',
   TEAM_RANK_OPPONENT:     oppRow?.intRank || oppRow?.rank || '—',
@@ -123,7 +128,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify(
   { teamName, oppName, teamRow, oppRow, nextMatch, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp }, null, 2
 ), 'utf8');
 
-// ICS : Ligue 2 si dispo, sinon tous les matchs
+// ICS : Ligue 2 si dispo, sinon tous les matchs (avec label compétition)
 const icsLines = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
