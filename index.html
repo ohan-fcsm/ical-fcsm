@@ -3,186 +3,275 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FCSM — Calendrier intelligent</title>
-  <meta name="description" content="Calendrier FCSM avec classement des équipes avant chaque match, infos utiles, et mise à jour automatique toutes les 12 heures." />
+  <title>Calendrier FCSM</title>
+  <meta name="description" content="Le calendrier FCSM à garder dans sa poche. Abonne-toi une seule fois, les matchs et infos s'actualisent automatiquement." />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --jaune:   #FFCF21;
-      --jaune-dk:#D4A800;
-      --bleu:    #034A97;
-      --bleu-dk: #022F60;
-      --bleu-lt: #0A5DBF;
-      --blanc:   #FFFFFF;
-      --bg:      #021E47;
-      --bg2:     #032660;
-      --panel:   rgba(255,255,255,.06);
-      --text:    #F4F8FF;
-      --muted:   #9BB3D4;
-      --line:    rgba(255,207,33,.18);
-      --shadow:  0 18px 48px rgba(2,18,44,.55);
-      --radius:  24px;
+      --jaune:     #F5E96A;
+      --jaune-btn: #FFCF21;
+      --bleu:      #0D2B5E;
+      --bleu-btn:  #1A3A7A;
+      --blanc:     #FFFFFF;
+      --bg-hero:   #F7F0BC;
+      --bg-page:   #F4F7FB;
+      --text:      #0D2B5E;
+      --muted:     #6B7A99;
+      --card-bg:   #FFFFFF;
+      --card-border: rgba(13,43,94,.10);
+      --radius:    20px;
+      --shadow:    0 8px 32px rgba(13,43,94,.10);
     }
     * { box-sizing:border-box; }
-    html, body {
-      margin:0; padding:0;
-      background:
-        radial-gradient(ellipse at 10% 0%, rgba(255,207,33,.13) 0%, transparent 40%),
-        radial-gradient(ellipse at 90% 100%, rgba(3,74,151,.5) 0%, transparent 50%),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
-      color:var(--text);
-      font-family:Inter, system-ui, -apple-system, sans-serif;
-      line-height:1.55;
-    }
+    html, body { margin:0; padding:0; font-family:Inter, system-ui, -apple-system, sans-serif; background:var(--bg-page); color:var(--text); line-height:1.5; }
     a { color:inherit; text-decoration:none; }
-    .page { max-width:1180px; margin:0 auto; padding:28px 20px 64px; }
-    .topbar {
-      display:flex; align-items:center; gap:12px;
-      padding:10px 20px;
-      background:var(--bleu);
-      border-bottom:3px solid var(--jaune);
-      font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-      color:var(--blanc);
+
+    /* ── NAVBAR ── */
+    .nav {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 32px;
+      background:var(--blanc);
+      box-shadow:0 1px 0 rgba(13,43,94,.08);
       position:sticky; top:0; z-index:99;
     }
-    .topbar-logo {
-      width:28px; height:28px;
-      background:var(--jaune);
-      border-radius:50%;
+    .nav-logo {
+      width:40px; height:40px; border-radius:10px;
+      background:var(--bleu);
       display:flex; align-items:center; justify-content:center;
-      font-size:10px; font-weight:900; color:var(--bleu);
-      flex-shrink:0;
+      overflow:hidden; flex-shrink:0;
     }
-    .topbar-right { margin-left:auto; color:rgba(255,255,255,.6); font-weight:400; text-transform:none; letter-spacing:0; }
+    .nav-logo img { width:28px; height:28px; object-fit:contain; }
+    .nav-logo-fallback { color:#fff; font-size:11px; font-weight:900; letter-spacing:-.5px; text-align:center; line-height:1.1; }
+    .nav-title { font-size:17px; font-weight:800; color:var(--bleu); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+    .btn-subscribe {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 22px; border-radius:999px;
+      background:var(--bleu); color:#fff;
+      font-size:14px; font-weight:700;
+      border:none; cursor:pointer;
+      transition:background .15s;
+    }
+    .btn-subscribe:hover { background:var(--bleu-btn); }
+    .btn-theme {
+      width:38px; height:38px; border-radius:50%;
+      border:1.5px solid rgba(13,43,94,.15);
+      background:transparent; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      font-size:17px;
+    }
+
+    /* ── HERO ── */
     .hero {
-      display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:center;
-      margin-top:24px; padding:32px;
-      background:linear-gradient(135deg, rgba(3,74,151,.55) 0%, rgba(2,18,44,.7) 100%);
-      border:1px solid rgba(255,207,33,.25);
-      border-top:4px solid var(--jaune);
+      background:var(--bg-hero);
+      padding:64px 32px 72px;
+    }
+    .hero-inner {
+      max-width:1120px; margin:0 auto;
+      display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
+    }
+    .hero-left {}
+    .hero-h1 {
+      margin:0 0 20px;
+      font-size:clamp(40px,5.5vw,68px);
+      font-weight:900; line-height:1.03;
+      letter-spacing:-0.035em;
+      color:var(--bleu);
+    }
+    .hero-lead {
+      margin:0 0 28px;
+      font-size:16px; color:#3D4F6E;
+      max-width:44ch; line-height:1.65;
+    }
+    .btn-ics {
+      display:inline-flex; align-items:center; gap:10px;
+      padding:14px 28px; border-radius:999px;
+      background:var(--bleu); color:#fff;
+      font-size:15px; font-weight:700;
+      transition:background .15s;
+    }
+    .btn-ics:hover { background:var(--bleu-btn); }
+
+    /* ── NEXT MATCH CARD ── */
+    .match-card {
+      background:var(--blanc);
       border-radius:var(--radius);
+      padding:28px 28px 24px;
       box-shadow:var(--shadow);
-      position:relative; overflow:hidden;
+      border:1px solid var(--card-border);
     }
-    .hero::before {
-      content:"";
-      position:absolute; right:-60px; top:-60px;
-      width:320px; height:320px;
-      background:radial-gradient(circle, rgba(255,207,33,.12) 0%, transparent 70%);
-      pointer-events:none;
+    .match-card-top {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:16px;
     }
-    .eyebrow {
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 14px;
-      background:rgba(255,207,33,.12);
-      border:1px solid rgba(255,207,33,.30);
-      border-radius:999px;
-      color:var(--jaune); font-size:12px; font-weight:700;
-      text-transform:uppercase; letter-spacing:.08em;
-      width:fit-content;
+    .badge-prochain {
+      display:inline-flex; align-items:center;
+      padding:6px 14px; border-radius:999px;
+      background:var(--jaune-btn);
+      color:var(--bleu); font-size:12px; font-weight:800;
+      text-transform:uppercase; letter-spacing:.07em;
     }
-    .dot { width:7px; height:7px; border-radius:50%; background:var(--jaune); box-shadow:0 0 0 4px rgba(255,207,33,.2); }
-    h1 { margin:14px 0 12px; font-size:clamp(32px,4.5vw,54px); line-height:1.02; letter-spacing:-0.04em; color:var(--blanc); }
-    h1 span { color:var(--jaune); }
-    .lead { font-size:17px; color:var(--muted); max-width:60ch; margin:0 0 22px; }
-    .cta-row { display:flex; flex-wrap:wrap; gap:12px; }
-    .btn {
-      display:inline-flex; align-items:center; gap:8px;
-      padding:12px 20px; border-radius:12px;
-      font-weight:700; font-size:14px;
-      border:2px solid transparent; white-space:nowrap;
-      transition:filter .15s;
+    .match-card-round {
+      font-size:13px; color:var(--muted); font-weight:500;
     }
-    .btn:hover { filter:brightness(1.08); }
-    .btn.primary { background:var(--jaune); color:var(--bleu-dk); border-color:var(--jaune); }
-    .btn.secondary { background:transparent; color:var(--blanc); border-color:rgba(255,255,255,.3); }
-    .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
-    .stat { padding:18px 16px; border-radius:18px; background:rgba(3,74,151,.4); border:1px solid rgba(255,207,33,.2); min-height:110px; }
-    .stat-value { display:block; font-size:28px; font-weight:800; letter-spacing:-0.03em; color:var(--jaune); margin-bottom:4px; }
-    .stat-label { color:var(--muted); font-size:13px; }
-    .section { margin-top:24px; padding:24px; background:rgba(3,74,151,.18); border:1px solid rgba(255,207,33,.15); border-left:4px solid var(--jaune); border-radius:var(--radius); box-shadow:var(--shadow); }
-    .section h2 { margin:0 0 14px; font-size:22px; letter-spacing:-0.02em; color:var(--blanc); display:flex; align-items:center; gap:10px; }
-    .section h2::before { content:""; display:inline-block; width:10px; height:10px; background:var(--jaune); border-radius:2px; flex-shrink:0; }
-    .section p { margin:0 0 12px; color:var(--muted); max-width:80ch; }
-    .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-    .card { padding:18px; border-radius:18px; background:rgba(2,18,44,.55); border:1px solid rgba(255,207,33,.15); }
-    .card h3 { margin:0 0 10px; font-size:17px; color:var(--jaune); }
-    .card ul { margin:0; padding-left:16px; color:var(--muted); }
-    .card li { margin:8px 0; font-size:14px; }
-    .match-list { display:grid; gap:12px; margin-top:14px; }
-    .match { padding:16px 18px; border-radius:16px; background:rgba(2,18,44,.6); border:1px solid rgba(255,207,33,.18); }
-    .match-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px; }
-    .match-date { font-size:12px; color:var(--jaune); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
-    .match-clubs { display:flex; align-items:center; gap:12px; font-size:18px; font-weight:800; color:var(--blanc); }
-    .vs { color:var(--jaune); font-size:14px; font-weight:700; }
-    .match-meta { color:var(--muted); font-size:13px; }
-    .match-badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .match-league { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.10); border:1px solid rgba(255,207,33,.25); color:var(--jaune); font-size:12px; font-weight:600; }
-    .match-round  { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(3,74,151,.4); border:1px solid rgba(255,255,255,.15); color:var(--blanc); font-size:12px; font-weight:600; }
-    .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,180,0,.12); border:1px solid rgba(255,180,0,.35); color:#FFCF21; font-size:13px; font-weight:500; }
-    /* Countdown */
+    .match-card-teams {
+      font-size:clamp(22px,2.8vw,30px); font-weight:900;
+      color:var(--bleu); margin-bottom:6px;
+      letter-spacing:-0.02em;
+    }
+    .match-card-datetime {
+      font-size:14px; color:var(--muted); margin-bottom:20px;
+    }
+    .match-card-datetime strong { color:var(--bleu); font-weight:600; }
+
+    /* Countdown inside card */
     .countdown-wrap {
-      margin-top:18px;
-      display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+      display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
     }
     .countdown-box {
-      flex:1; min-width:80px; max-width:110px;
-      padding:18px 10px 14px;
-      border-radius:18px;
-      background:rgba(2,18,44,.7);
-      border:1px solid rgba(255,207,33,.25);
+      padding:14px 8px 12px;
+      border-radius:14px;
+      background:#F5F0D8;
       text-align:center;
     }
     .countdown-value {
-      display:block; font-size:38px; font-weight:800;
-      letter-spacing:-0.03em; color:var(--jaune);
-      line-height:1;
+      display:block; font-size:28px; font-weight:800;
+      letter-spacing:-0.03em; color:var(--bleu); line-height:1;
     }
     .countdown-unit {
-      display:block; font-size:11px; font-weight:600;
+      display:block; font-size:10px; font-weight:700;
       text-transform:uppercase; letter-spacing:.08em;
-      color:var(--muted); margin-top:6px;
+      color:var(--muted); margin-top:5px;
     }
     .countdown-done {
-      text-align:center; font-size:16px; font-weight:700;
-      color:var(--jaune); padding:14px 0;
+      text-align:center; font-size:15px; font-weight:700;
+      color:var(--bleu); padding:10px 0;
     }
-    .footer { margin-top:32px; padding:16px 0; border-top:1px solid rgba(255,207,33,.15); color:var(--muted); font-size:12px; text-align:center; }
-    .footer strong { color:var(--jaune); }
-    code { padding:2px 7px; border-radius:6px; background:rgba(255,207,33,.12); border:1px solid rgba(255,207,33,.2); color:var(--jaune); font-size:13px; }
-    @media (max-width:900px) { .hero, .grid-2 { grid-template-columns:1fr; } }
-    @media (max-width:640px) { .page { padding:14px 12px 48px; } .hero { padding:20px; border-radius:18px; margin-top:14px; } .section { padding:18px; } h1 { font-size:30px; } .stats { grid-template-columns:1fr 1fr; } }
+
+    /* ── PAGE CONTENT ── */
+    .page { max-width:1120px; margin:0 auto; padding:40px 32px 64px; }
+    .section {
+      margin-top:28px; padding:24px;
+      background:#fff; border-radius:var(--radius);
+      box-shadow:0 2px 12px rgba(13,43,94,.06);
+      border:1px solid rgba(13,43,94,.07);
+    }
+    .section h2 {
+      margin:0 0 16px; font-size:20px; font-weight:800;
+      color:var(--bleu); display:flex; align-items:center; gap:10px;
+    }
+    .section h2::before {
+      content:""; display:inline-block;
+      width:4px; height:20px;
+      background:var(--jaune-btn); border-radius:2px; flex-shrink:0;
+    }
+    .section p { margin:0 0 12px; color:var(--muted); max-width:80ch; font-size:15px; }
+    .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .card {
+      padding:18px; border-radius:14px;
+      background:#F8FAFF;
+      border:1px solid rgba(13,43,94,.08);
+    }
+    .card h3 { margin:0 0 10px; font-size:16px; color:var(--bleu); font-weight:700; }
+    .card ul { margin:0; padding-left:16px; color:var(--muted); }
+    .card li { margin:7px 0; font-size:14px; }
+    code {
+      padding:2px 7px; border-radius:6px;
+      background:rgba(13,43,94,.07);
+      color:var(--bleu); font-size:13px;
+    }
+    .match-list { display:grid; gap:12px; margin-top:4px; }
+    .match {
+      padding:16px 18px; border-radius:14px;
+      background:#F8FAFF; border:1px solid rgba(13,43,94,.08);
+    }
+    .match-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
+    .match-date { font-size:12px; color:var(--jaune-btn); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .match-clubs { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; color:var(--bleu); }
+    .vs { color:var(--muted); font-size:13px; font-weight:600; }
+    .match-meta { color:var(--muted); font-size:13px; }
+    .match-badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .match-league {
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border-radius:999px; background:rgba(255,207,33,.15);
+      border:1px solid rgba(255,207,33,.4); color:#7A5800; font-size:12px; font-weight:600;
+    }
+    .match-round {
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border-radius:999px; background:rgba(13,43,94,.07);
+      border:1px solid rgba(13,43,94,.12); color:var(--bleu); font-size:12px; font-weight:600;
+    }
+    .banner-warning {
+      margin-bottom:16px; padding:12px 16px; border-radius:10px;
+      background:rgba(255,180,0,.10); border:1px solid rgba(255,180,0,.35);
+      color:#7A5800; font-size:13px; font-weight:500;
+    }
+    .footer {
+      margin-top:32px; padding:16px 0;
+      border-top:1px solid rgba(13,43,94,.08);
+      color:var(--muted); font-size:12px; text-align:center;
+    }
+    .footer strong { color:var(--bleu); }
+
+    @media (max-width:860px) {
+      .hero-inner { grid-template-columns:1fr; gap:32px; }
+      .hero { padding:40px 20px 48px; }
+      .grid-2 { grid-template-columns:1fr; }
+    }
+    @media (max-width:540px) {
+      .nav { padding:12px 16px; }
+      .page { padding:24px 16px 48px; }
+      .hero-h1 { font-size:36px; }
+      .match-card { padding:20px 18px; }
+      .countdown-wrap { gap:8px; }
+      .countdown-value { font-size:24px; }
+    }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="topbar-logo">FC</div>
-    FC Sochaux-Montbéliard
-    <span class="topbar-right">Calendrier intelligent · Ligue 2 2026-2027</span>
-  </div>
-  <main class="page">
-    <section class="hero">
-      <div>
-        <div class="eyebrow"><span class="dot"></span>Mise à jour toutes les 12 heures</div>
-        <h1>Le calendrier <span>FCSM</span><br>qui s'actualise tout seul</h1>
-        <p class="lead">Avant chaque match, le titre affiche le classement des deux équipes entre parenthèses et la description ajoute les infos utiles. Une seule URL à abonner dans ton agenda.</p>
-        <div class="cta-row">
-          <a class="btn primary" href="./fcsm.ics">📅 S'abonner au flux ICS</a>
-          <a class="btn secondary" href="https://github.com/ohan-fcsm/ical-fcsm">Voir sur GitHub</a>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <img src="./favicon.svg" alt="FCSM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="nav-logo-fallback" style="display:none">FC<br>SM</div>
+    </div>
+    <span class="nav-title">Calendrier FCSM</span>
+    <div class="nav-right">
+      <a class="btn-subscribe" href="./fcsm.ics">S'abonner</a>
+      <button class="btn-theme" aria-label="Thème" onclick="document.body.classList.toggle('dark')">🌙</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <h1 class="hero-h1">Le calendrier<br>FCSM à garder<br>dans sa poche.</h1>
+        <p class="hero-lead">Abonne-toi une seule fois au calendrier. Les horaires, les détails de match et les informations d'événement s'enrichiront progressivement au fil de la saison.</p>
+        <a class="btn-ics" href="./fcsm.ics">S'abonner au calendrier</a>
+      </div>
+      <div class="hero-right">
+        <div class="match-card">
+          <div class="match-card-top">
+            <span class="badge-prochain">Prochain match</span>
+            <span class="match-card-round">{{NEXT_MATCH_ROUND}}</span>
+          </div>
+          <div class="match-card-teams">{{NEXT_MATCH_HOME_TEAM}} vs {{NEXT_MATCH_AWAY_TEAM}}</div>
+          <div class="match-card-datetime">{{NEXT_MATCH_DATE}} &middot; {{NEXT_MATCH_TIME}}</div>
+          <div class="countdown-wrap" id="countdown"></div>
         </div>
       </div>
-      <div class="stats">
-        <div class="stat"><span class="stat-value">12 h</span><div class="stat-label">fréquence de mise à jour</div></div>
-        <div class="stat"><span class="stat-value">1 URL</span><div class="stat-label">à abonner dans ton agenda</div></div>
-        <div class="stat"><span class="stat-value">Ligue 2</span><div class="stat-label">saison 2026-2027</div></div>
-        <div class="stat"><span class="stat-value">Auto</span><div class="stat-label">génération .ics et HTML</div></div>
-      </div>
-    </section>
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <main class="page">
     <section class="section">
       <h2>Prochain match</h2>
       {{LIGUE2_STATUS_BANNER}}
@@ -197,10 +286,6 @@
           <span class="match-round">🗓 Journée {{NEXT_MATCH_ROUND}}</span>
         </div>
       </div></div>
-      <!-- Countdown -->
-      <div id="countdown-section">
-        <div class="countdown-wrap" id="countdown"></div>
-      </div>
     </section>
     <section class="section">
       <h2>Classement Ligue 2</h2>
@@ -224,37 +309,30 @@
       var isoStr = "{{NEXT_MATCH_ISO}}";
       var wrap = document.getElementById("countdown");
       if (!wrap || !isoStr || isoStr.indexOf("{{") !== -1) return;
-
       var target = new Date(isoStr);
       if (isNaN(target.getTime())) return;
-
-      function pad(n) { return n < 10 ? "0" + n : n; }
-
+      function pad(n) { return n < 10 ? "0" + n : String(n); }
       function tick() {
-        var now = new Date();
-        var diff = target - now;
+        var diff = target - new Date();
         if (diff <= 0) {
           wrap.innerHTML = '<div class="countdown-done">⚽ Match en cours ou terminé</div>';
           return;
         }
-        var totalSec = Math.floor(diff / 1000);
-        var days     = Math.floor(totalSec / 86400);
-        var hours    = Math.floor((totalSec % 86400) / 3600);
-        var minutes  = Math.floor((totalSec % 3600) / 60);
-        var seconds  = totalSec % 60;
-
+        var s = Math.floor(diff / 1000);
+        var days = Math.floor(s / 86400);
+        var hours = Math.floor((s % 86400) / 3600);
+        var mins = Math.floor((s % 3600) / 60);
+        var secs = s % 60;
         wrap.innerHTML =
-          box(days,    "Jour" + (days !== 1 ? "s" : "")) +
-          box(hours,   "Heure" + (hours !== 1 ? "s" : "")) +
-          box(pad(minutes), "Min") +
-          box(pad(seconds), "Sec");
+          box(pad(days),  "JOURS") +
+          box(pad(hours), "HEURES") +
+          box(pad(mins),  "MINUTES") +
+          box(pad(secs),  "SECONDES");
       }
-
-      function box(val, label) {
-        return '<div class="countdown-box"><span class="countdown-value">' + val +
-               '</span><span class="countdown-unit">' + label + '</span></div>';
+      function box(v, l) {
+        return '<div class="countdown-box"><span class="countdown-value">' + v +
+               '</span><span class="countdown-unit">' + l + '</span></div>';
       }
-
       tick();
       setInterval(tick, 1000);
     })();
