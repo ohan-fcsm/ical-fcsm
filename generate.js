@@ -27,7 +27,6 @@ async function getJson(url) {
   } catch (e) { console.error(`Erreur fetch ${url}: ${e.message}`); return null; }
 }
 
-/* Retourne un tableau de résultats { letter, score, opponent, date } */
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
@@ -42,12 +41,10 @@ function parseForm(events, teamName) {
   });
 }
 
-/* Forme texte simple pour l'ICS */
 function calcFormStr(events, teamName) {
   return parseForm(events, teamName).map(r => r.letter).join(' ') || '—';
 }
 
-/* Ligne HTML pour le bloc "5 derniers matchs" — date seulement, badge coloré */
 function eventLineHtml(ev, teamName) {
   if (!ev || !ev.strHomeTeam) return '<li>—</li>';
   const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
@@ -90,11 +87,12 @@ function fmtDate(dateEvent, strTime) {
   } catch { return dateEvent; }
 }
 
-const [teamData, lastData, nextTeamData, nextLeagueData, tableData] = await Promise.all([
+/* ── Fetch principal ─────────────────────────────────────────────── */
+const [teamData, lastData, seasonData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
-  getJson(ep(`eventsnext.php?id=${TEAM_ID_FCSM}`)),
-  getJson(ep(`eventsnextleague.php?id=${LEAGUE_ID}`)),
+  // eventsseason = TOUS les matchs de la saison (passés + futurs, toutes compétitions)
+  getJson(ep(`eventsseason.php?id=${TEAM_ID_FCSM}&s=${SEASON}`)),
   getJson(ep(`lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`)),
 ]);
 
@@ -102,11 +100,26 @@ const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || 'FC Sochaux-Montbéliard';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
-const leagueEvents = (nextLeagueData?.events || []).filter(ev => ev.strHomeTeam === teamName || ev.strAwayTeam === teamName);
-const teamAllNext = nextTeamData?.events || [];
-const teamLigue2Events = teamAllNext.filter(ev => String(ev.idLeague) === String(LEAGUE_ID) || (ev.strLeague || '').toLowerCase().includes('ligue 2'));
-const ligue2Ready = leagueEvents.length > 0 || teamLigue2Events.length > 0;
-const nextEvents = leagueEvents.length > 0 ? leagueEvents : teamLigue2Events.length > 0 ? teamLigue2Events : teamAllNext;
+
+const seasonEvents = seasonData?.events || [];
+const today = new Date().toISOString().slice(0, 10);
+
+// Matchs futurs (toutes compétitions), triés par date
+const teamAllNext = seasonEvents
+  .filter(ev => ev.dateEvent && ev.dateEvent >= today)
+  .sort((a, b) => a.dateEvent.localeCompare(b.dateEvent));
+
+// Matchs passés de la saison (pour ICS)
+const seasonPast = seasonEvents
+  .filter(ev => ev.dateEvent && ev.dateEvent < today)
+  .sort((a, b) => a.dateEvent.localeCompare(b.dateEvent));
+
+// Prochain match Ligue 2
+const teamLigue2Events = teamAllNext.filter(ev =>
+  String(ev.idLeague) === String(LEAGUE_ID) || (ev.strLeague || '').toLowerCase().includes('ligue 2')
+);
+const ligue2Ready = teamLigue2Events.length > 0;
+const nextEvents = teamLigue2Events.length > 0 ? teamLigue2Events : teamAllNext;
 const nextMatch = nextEvents[0] || null;
 const oppName = nextMatch ? (nextMatch.strHomeTeam === teamName ? nextMatch.strAwayTeam : nextMatch.strHomeTeam) : 'Adversaire';
 const teamRow = tableRows.find(r => r.strTeam === teamName || r.nameTeam === teamName) || {};
@@ -124,7 +137,6 @@ const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
 
-/* HTML du badge form résumé (pour le titre de la card) */
 function formBadgesSummary(events, tName) {
   const items = parseForm(events, tName);
   if (!items.length) return '—';
@@ -133,12 +145,6 @@ function formBadgesSummary(events, tName) {
     return `<span class="form-badge form-badge--${cls}">${r.letter}</span>`;
   }).join(' ');
 }
-
-/* ICS : inclure TOUS les matchs connus : passés (lastEvents) + futurs (teamAllNext) */
-const allEventsForIcs = [
-  ...lastEvents,
-  ...teamAllNext,
-];
 
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
@@ -167,7 +173,7 @@ function buildUpcomingRows(events) {
   }).join('\n');
 }
 
-const upcomingHtml = buildUpcomingRows(teamAllNext.length > 0 ? teamAllNext : nextEvents);
+const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 const vars = {
   NEXT_MATCH_DATE:      nextMatch?.dateEvent   || '—',
@@ -202,11 +208,20 @@ const vars = {
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
-fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({ teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp, totalUpcoming: teamAllNext.length }, null, 2), 'utf8');
+fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
+  teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso, nextEvents,
+  ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp,
+  totalUpcoming: teamAllNext.length, totalSeason: seasonEvents.length,
+}, null, 2), 'utf8');
 
-/* ICS : tous les matchs connus (passés + futurs) */
-const icsLines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',
-  'X-WR-CALNAME:FCSM — Tous les matchs','X-WR-CALDESC:Matchs FC Sochaux-Montbéliard toutes compétitions'];
+/* ICS : tous les matchs de la saison (passés + futurs) */
+const allEventsForIcs = [...seasonPast, ...teamAllNext];
+const icsLines = [
+  'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
+  'CALSCALE:GREGORIAN','METHOD:PUBLISH',
+  'X-WR-CALNAME:FCSM — Tous les matchs',
+  'X-WR-CALDESC:Matchs FC Sochaux-Montbéliard toutes compétitions',
+];
 const seenUids = new Set();
 for (const ev of allEventsForIcs) {
   if (!ev?.dateEvent) continue;
@@ -242,7 +257,7 @@ fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
 console.log('✅ dist/ generated', {
   teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso,
-  leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length,
-  totalUpcoming: teamAllNext.length, totalIcsEvents: allEventsForIcs.length,
+  totalUpcoming: teamAllNext.length, totalSeason: seasonEvents.length,
+  totalIcsEvents: allEventsForIcs.length,
   apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)',
 });
