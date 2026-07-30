@@ -90,11 +90,13 @@ const TEAM_IDS = {
 };
 
 /* ── Badges forcés (URLs r2.thesportsdb.com confirmées manuellement) ───
-   Prioritaires sur l'URL retournée par l'API lookupteam.                */
+   Prioritaires sur l'URL retournée par l'API lookupteam.
+   Toutes les 17 équipes ont un ID + badge vérifiés. ✅              */
 const BADGE_OVERRIDES = {
   'fc nantes':              'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
   'dijon fco':              'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
   'montpellier herault sc': 'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
+  'stade de reims':         'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
 };
 
 function parseForm(events, teamName) {
