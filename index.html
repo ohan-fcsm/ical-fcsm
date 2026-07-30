@@ -121,7 +121,9 @@
     .match-clubs { display:flex; align-items:center; gap:12px; font-size:18px; font-weight:800; color:var(--blanc); }
     .vs { color:var(--jaune); font-size:14px; font-weight:700; }
     .match-meta { color:var(--muted); font-size:13px; }
-    .match-league { display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.10); border:1px solid rgba(255,207,33,.25); color:var(--jaune); font-size:12px; font-weight:600; }
+    .match-badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .match-league { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.10); border:1px solid rgba(255,207,33,.25); color:var(--jaune); font-size:12px; font-weight:600; }
+    .match-round  { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(3,74,151,.4); border:1px solid rgba(255,255,255,.15); color:var(--blanc); font-size:12px; font-weight:600; }
     .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,180,0,.12); border:1px solid rgba(255,180,0,.35); color:#FFCF21; font-size:13px; font-weight:500; }
     .footer { margin-top:32px; padding:16px 0; border-top:1px solid rgba(255,207,33,.15); color:var(--muted); font-size:12px; text-align:center; }
     .footer strong { color:var(--jaune); }
@@ -163,7 +165,10 @@
           <div class="match-clubs"><span>{{NEXT_MATCH_HOME_TEAM}}</span><span class="vs">vs</span><span>{{NEXT_MATCH_AWAY_TEAM}}</span></div>
         </div>
         <div class="match-meta">Statut : <code>{{NEXT_MATCH_STATUS}}</code> &nbsp;·&nbsp; Stade : <code>{{NEXT_MATCH_VENUE}}</code></div>
-        <div class="match-league">🏆 {{NEXT_MATCH_LEAGUE}}</div>
+        <div class="match-badges">
+          <span class="match-league">🏆 {{NEXT_MATCH_LEAGUE}}</span>
+          <span class="match-round">🗓 Journée {{NEXT_MATCH_ROUND}}</span>
+        </div>
       </div></div>
     </section>
     <section class="section">
