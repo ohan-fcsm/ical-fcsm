@@ -2,38 +2,47 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: "15 2 * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "24"
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - run: node generate.js
+      - name: Generate site and ICS
         env:
           THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-          TEAM_ID_FCSM: '133708'
-          LEAGUE_ID: '4401'
-          SEASON: '2026-2027'
+          TEAM_ID_FCSM: "133708"
+          LEAGUE_ID: "4401"
+          SEASON: "2026-2027"
+        run: node generate.js
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: dist
 
   deploy:
     needs: build
@@ -42,5 +51,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
