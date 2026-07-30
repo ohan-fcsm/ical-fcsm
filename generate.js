@@ -68,26 +68,32 @@ async function ensureBadge(remoteUrl, slug) {
 }
 
 /* ── IDs TheSportsDB — toutes les équipes Ligue 2 2026-2027 ───────────
-   Sources : URLs thesportsdb.com/team/<ID>-<slug> vérifiées
-   ⚠️  = ID à confirmer (pas de page TheSportsDB trouvée)              */
+   Sources : URLs thesportsdb.com/team/<ID>-<slug> vérifiées               */
 const TEAM_IDS = {
   'AS Saint-Étienne':        '133717',  // thesportsdb.com/team/133717
-  'Red Star FC':             '135467',  // thesportsdb.com/season/4401.../t=135467-red-star
+  'Red Star FC':             '135467',  // thesportsdb.com/season/.../t=135467-red-star
   'EN Avant Guingamp':       '134244',  // thesportsdb.com/team/134244-guingamp
-  'Clermont Foot 63':        '134713',  // thesportsdb.com/season/4401.../t=134713-clermont-foot
-  'FC Nantes':               '133704',  // ⚠️ à vérifier (133704 = Brest dans TheSportsDB ?)
+  'Clermont Foot 63':        '134713',  // thesportsdb.com/season/.../t=134713-clermont-foot
+  'FC Nantes':               '133861',  // thesportsdb.com/team/133861-nantes ✅
   'FC Annecy':               '139928',  // thesportsdb.com/team/139928-annecy
-  'Dijon FCO':               '133696',  // ⚠️ à vérifier
+  'Dijon FCO':               '133696',  // ⚠️ ID incertain — badge forcé via BADGE_OVERRIDES
   'Grenoble Foot 38':        '133847',  // thesportsdb.com/team/133847-grenoble
   'Stade Lavallois MFC':     '134708',  // thesportsdb.com/team/134708-laval
   'AS Nancy Lorraine':       '133710',  // thesportsdb.com/team/133710-nancy-lorraine
   'FC Metz':                 '133883',  // thesportsdb.com/team/133883-metz
   'US Boulogne CO':          '133849',  // thesportsdb.com/team/133849-boulogne
-  'Montpellier Hérault SC':  '133706',  // ⚠️ à vérifier
+  'Montpellier Hérault SC':  '133709',  // thesportsdb.com/team/133709-montpellier ✅
   'USL Dunkerque':           '138821',  // thesportsdb.com/team/138821-usl-dunkerque
   'Rodez Aveyron Football':  '137652',  // thesportsdb.com/team/137652-rodez
   'Pau FC':                  '138309',  // thesportsdb.com/team/138309-pau
-  'Stade de Reims':          '133714',  // ⚠️ à vérifier (133714 = PSG dans TheSportsDB ?)
+  'Stade de Reims':          '133714',  // ⚠️ à vérifier
+};
+
+/* ── Badges forcés (URLs r2.thesportsdb.com confirmées manuellement) ───
+   Utiliser quand l'API lookupteam retourne un mauvais badge ou rien.     */
+const BADGE_OVERRIDES = {
+  'fc nantes':  'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
+  'dijon fco':  'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
 };
 
 function parseForm(events, teamName) {
@@ -170,9 +176,15 @@ const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Fetch badges de tous les adversaires via lookupteam ─────────────── */
+/* ── Fetch badges adversaires ────────────────────────────────────────
+   BADGE_OVERRIDES est prioritaire sur l'URL retournée par l'API.         */
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
+    const overrideUrl = BADGE_OVERRIDES[normTeam(name)];
+    if (overrideUrl) {
+      console.log(`🏠 Badge override: ${name}`);
+      return { name, id, badgeUrl: overrideUrl };
+    }
     const d = await getJson(ep(`lookupteam.php?id=${id}`));
     const badgeUrl = d?.teams?.[0]?.strTeamBadge || d?.teams?.[0]?.strBadge || '';
     return { name, id, badgeUrl };
@@ -180,12 +192,7 @@ const calendarTeamsBadges = await Promise.all(
 );
 console.log('🔍 Badges API:', calendarTeamsBadges.map(t => `${t.name}=${t.badgeUrl?'✓':'✗'}`).join(', '));
 
-/* ── Calendrier complet FCSM 2026-2027 (34 journées LFP) ─────────────
-   Source : calendrier officiel FCSM / LFP BKT 2026-2027
-   _hardcoded: true  → date/heure issues du calendrier LFP officiel,
-                        pas encore confirmées par TheSportsDB.
-   Dès que l'API retourne l'événement (idEvent présent), le flag disparaît
-   automatiquement via le merge ci-dessous.                               */
+/* ── Calendrier complet FCSM 2026-2027 (34 journées LFP) ───────────── */
 const FCSM = teamName;
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
@@ -290,6 +297,9 @@ if (nextMatch && API_KEY) {
   const oppId = oppIdFromEvent || oppIdFromMap;
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
+  /* BADGE_OVERRIDES prioritaire aussi pour l'adversaire du prochain match */
+  const overrideBadge = BADGE_OVERRIDES[normTeam(oppName)];
+  if (overrideBadge) oppBadgeRemote = overrideBadge;
   if (oppId) {
     const od = await getJson(ep(`eventslast.php?id=${oppId}`));
     oppLastEvents = od?.results || od?.events || [];
