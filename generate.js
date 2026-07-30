@@ -27,25 +27,56 @@ async function getJson(url) {
   } catch (e) { console.error(`Erreur fetch ${url}: ${e.message}`); return null; }
 }
 
-function calcForm(events, teamName) {
-  if (!events || !events.length) return '—';
+/* Retourne un tableau de résultats { letter, score, opponent, date } */
+function parseForm(events, teamName) {
+  if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
     const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
-    if (!Number.isFinite(hs) || !Number.isFinite(as)) return 'A';
     const isHome = ev.strHomeTeam === teamName;
-    return isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
-  }).join(' ');
+    const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+    if (!Number.isFinite(hs) || !Number.isFinite(as)) {
+      return { letter: '?', score: '?-?', opponent: opp, date: ev.dateEvent || '' };
+    }
+    const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
+    return { letter, score: `${hs}-${as}`, opponent: opp, date: ev.dateEvent || '' };
+  });
 }
 
-function eventLine(ev) {
-  if (!ev || !ev.strHomeTeam) return '—';
-  return `${ev.dateEvent || ''} ${ev.strTime || ''} — ${ev.strHomeTeam} ${ev.intHomeScore ?? ''}-${ev.intAwayScore ?? ''} ${ev.strAwayTeam} (${ev.strStatus || ev.strProgress || ''})`;
+/* Forme texte simple pour l'ICS */
+function calcFormStr(events, teamName) {
+  return parseForm(events, teamName).map(r => r.letter).join(' ') || '—';
+}
+
+/* Ligne HTML pour le bloc "5 derniers matchs" — date seulement, badge coloré */
+function eventLineHtml(ev, teamName) {
+  if (!ev || !ev.strHomeTeam) return '<li>—</li>';
+  const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
+  const isHome = ev.strHomeTeam === teamName;
+  const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+  const dateOnly = ev.dateEvent ? fmtDateOnly(ev.dateEvent) : '—';
+  if (!Number.isFinite(hs) || !Number.isFinite(as)) {
+    return `<li><span class="form-badge form-badge--unknown">?</span> ${dateOnly} — ${ev.strHomeTeam} vs ${ev.strAwayTeam}</li>`;
+  }
+  const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
+  const cls = letter === 'V' ? 'win' : letter === 'N' ? 'draw' : 'loss';
+  const label = letter === 'V' ? 'Victoire' : letter === 'N' ? 'Nul' : 'Défaite';
+  return `<li><span class="form-badge form-badge--${cls}" title="${label}">${letter}</span> ${dateOnly} — ${isHome ? `FCSM ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} FCSM`}</li>`;
 }
 
 function buildIso(dateEvent, strTime) {
   if (!dateEvent) return '';
   const time = strTime ? strTime.slice(0, 5) : '12:00';
   return `${dateEvent}T${time}:00Z`;
+}
+
+function fmtDateOnly(dateEvent) {
+  if (!dateEvent) return '—';
+  try {
+    const d = new Date(dateEvent + 'T12:00:00Z');
+    const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  } catch { return dateEvent; }
 }
 
 function fmtDate(dateEvent, strTime) {
@@ -87,11 +118,27 @@ if (nextMatch && API_KEY) {
   if (oppId) { const od = await getJson(ep(`eventslast.php?id=${oppId}`)); oppLastEvents = od?.results || od?.events || []; }
 }
 
-const formFCSM = calcForm(lastEvents, teamName);
-const formOpp = calcForm(oppLastEvents, oppName);
+const formFCSM = calcFormStr(lastEvents, teamName);
+const formOpp  = calcFormStr(oppLastEvents, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 Août - les prochains matchs sont des Amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
+
+/* HTML du badge form résumé (pour le titre de la card) */
+function formBadgesSummary(events, tName) {
+  const items = parseForm(events, tName);
+  if (!items.length) return '—';
+  return items.map(r => {
+    const cls = r.letter === 'V' ? 'win' : r.letter === 'N' ? 'draw' : 'loss';
+    return `<span class="form-badge form-badge--${cls}">${r.letter}</span>`;
+  }).join(' ');
+}
+
+/* ICS : inclure TOUS les matchs connus : passés (lastEvents) + futurs (teamAllNext) */
+const allEventsForIcs = [
+  ...lastEvents,
+  ...teamAllNext,
+];
 
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
@@ -137,18 +184,18 @@ const vars = {
   TEAM_POINTS_FCSM:     String(teamRow?.intPoints || '—'),
   TEAM_RANK_OPPONENT:   String(oppRow?.intRank   || oppRow?.rank   || '—'),
   TEAM_POINTS_OPPONENT: String(oppRow?.intPoints  || '—'),
-  LAST_5_FCSM_FORM:     formFCSM,
-  LAST_5_FCSM_1:        eventLine(lastEvents[0]),
-  LAST_5_FCSM_2:        eventLine(lastEvents[1]),
-  LAST_5_FCSM_3:        eventLine(lastEvents[2]),
-  LAST_5_FCSM_4:        eventLine(lastEvents[3]),
-  LAST_5_FCSM_5:        eventLine(lastEvents[4]),
-  LAST_5_OPPONENT_FORM: formOpp,
-  LAST_5_OPPONENT_1:    eventLine(oppLastEvents[0]),
-  LAST_5_OPPONENT_2:    eventLine(oppLastEvents[1]),
-  LAST_5_OPPONENT_3:    eventLine(oppLastEvents[2]),
-  LAST_5_OPPONENT_4:    eventLine(oppLastEvents[3]),
-  LAST_5_OPPONENT_5:    eventLine(oppLastEvents[4]),
+  LAST_5_FCSM_FORM:     formBadgesSummary(lastEvents, teamName),
+  LAST_5_FCSM_1:        eventLineHtml(lastEvents[0], teamName),
+  LAST_5_FCSM_2:        eventLineHtml(lastEvents[1], teamName),
+  LAST_5_FCSM_3:        eventLineHtml(lastEvents[2], teamName),
+  LAST_5_FCSM_4:        eventLineHtml(lastEvents[3], teamName),
+  LAST_5_FCSM_5:        eventLineHtml(lastEvents[4], teamName),
+  LAST_5_OPPONENT_FORM: formBadgesSummary(oppLastEvents, oppName),
+  LAST_5_OPPONENT_1:    eventLineHtml(oppLastEvents[0], oppName),
+  LAST_5_OPPONENT_2:    eventLineHtml(oppLastEvents[1], oppName),
+  LAST_5_OPPONENT_3:    eventLineHtml(oppLastEvents[2], oppName),
+  LAST_5_OPPONENT_4:    eventLineHtml(oppLastEvents[3], oppName),
+  LAST_5_OPPONENT_5:    eventLineHtml(oppLastEvents[4], oppName),
   UPCOMING_MATCHES:     upcomingHtml,
 };
 
@@ -157,26 +204,45 @@ const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({ teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp, totalUpcoming: teamAllNext.length }, null, 2), 'utf8');
 
-const icsLines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
-for (const ev of (teamAllNext.length > 0 ? teamAllNext : nextEvents)) {
-  const dateStr = (ev.dateEvent || '').replace(/-/g, '');
+/* ICS : tous les matchs connus (passés + futurs) */
+const icsLines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+  'X-WR-CALNAME:FCSM — Tous les matchs','X-WR-CALDESC:Matchs FC Sochaux-Montbéliard toutes compétitions'];
+const seenUids = new Set();
+for (const ev of allEventsForIcs) {
+  if (!ev?.dateEvent) continue;
+  const dateStr = ev.dateEvent.replace(/-/g, '');
   const timeStr = (ev.strTime || '120000').replace(/:/g, '').slice(0, 6);
   const dt = `${dateStr}T${timeStr}Z`;
+  const uid = `fcsm-${ev.idEvent || dt}-${ev.strHomeTeam || ''}`;
+  if (seenUids.has(uid)) continue;
+  seenUids.add(uid);
   const opp = ev.strHomeTeam === teamName ? ev.strAwayTeam : ev.strHomeTeam;
   const evOppRow = tableRows.find(r => r.strTeam === opp || r.nameTeam === opp) || {};
   const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
   const rankOpp = evOppRow?.intRank ? `(${evOppRow.intRank})` : '';
-  const evForm = calcForm(oppLastEvents, opp);
   const roundLabel = ev.intRound ? ` J${ev.intRound}` : '';
+  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
+  const isHome = ev.strHomeTeam === teamName;
+  const summary = isHome
+    ? `FCSM ${rankFCSM} - ${opp} ${rankOpp}${roundLabel}${leagueLabel}`
+    : `${opp} ${rankOpp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}`;
   icsLines.push('BEGIN:VEVENT');
-  icsLines.push(`UID:fcsm-${ev.idEvent || dt}@ical-fcsm`);
+  icsLines.push(`UID:${uid}@ical-fcsm`);
   icsLines.push(`DTSTART:${dt}`);
-  icsLines.push(`SUMMARY:FCSM ${rankFCSM} - ${opp} ${rankOpp}${roundLabel}`);
-  icsLines.push(`DESCRIPTION:Forme FCSM : ${formFCSM} | Forme ${opp} : ${evForm}`);
+  icsLines.push(`SUMMARY:${summary}`);
+  icsLines.push(`DESCRIPTION:Forme FCSM : ${formFCSM} | Forme ${opp} : ${calcFormStr(oppLastEvents, opp)}`);
   icsLines.push(`LOCATION:${ev.strVenue || ''}`);
+  if (ev.intHomeScore !== null && ev.intHomeScore !== undefined && ev.intHomeScore !== '') {
+    icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
+  }
   icsLines.push('END:VEVENT');
 }
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ dist/ generated', { teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso, leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length, totalUpcoming: teamAllNext.length, apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)' });
+console.log('✅ dist/ generated', {
+  teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso,
+  leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length,
+  totalUpcoming: teamAllNext.length, totalIcsEvents: allEventsForIcs.length,
+  apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)',
+});

@@ -49,11 +49,7 @@
     .nav-logo-fallback { color:#fff; font-size:11px; font-weight:900; letter-spacing:-.5px; text-align:center; line-height:1.1; }
     .nav-title { font-size:17px; font-weight:800; color:var(--text); }
     .nav-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-    .btn-subscribe, .btn-ics, .btn-share {
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff;
-      font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s, transform .15s;
-    }
+    .btn-subscribe, .btn-ics, .btn-share { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s, transform .15s; }
     .btn-ics { padding:14px 28px; font-size:15px; }
     .btn-subscribe:hover, .btn-ics:hover, .btn-share:hover { background:var(--bleu-btn); transform:translateY(-1px); }
     .btn-theme { width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(13,43,94,.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--text); }
@@ -82,21 +78,33 @@
     .section { margin-top:28px; padding:24px; background:var(--card-bg); border-radius:var(--radius); box-shadow:0 2px 12px rgba(13,43,94,.06); border:1px solid var(--card-border); }
     .section h2 { margin:0 0 16px; font-size:20px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:10px; }
     .section h2::before { content:""; display:inline-block; width:4px; height:20px; background:var(--jaune-btn); border-radius:2px; flex-shrink:0; }
-    .section p { margin:0 0 12px; color:var(--muted); max-width:80ch; font-size:15px; }
     .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-    .card, .match, .upcoming-row { background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); }
-    .card { padding:18px; border-radius:14px; border:1px solid var(--card-border); }
-    .card h3 { margin:0 0 10px; font-size:16px; color:var(--text); font-weight:700; }
-    .card ul { margin:0; padding-left:16px; color:var(--muted); }
-    .card li { margin:7px 0; font-size:14px; }
+    .card { padding:18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); }
+    .card h3 { margin:0 0 12px; font-size:15px; color:var(--text); font-weight:700; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .card ul { margin:0; padding-left:0; list-style:none; color:var(--muted); }
+    .card li { margin:6px 0; font-size:14px; display:flex; align-items:center; gap:8px; }
     code { padding:2px 7px; border-radius:6px; background:rgba(13,43,94,.09); color:var(--text); font-size:13px; }
     body.dark code { background:rgba(255,255,255,.08); }
+
+    /* ── FORM BADGES ── */
+    .form-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:22px; height:22px; border-radius:6px;
+      font-size:11px; font-weight:800; flex-shrink:0;
+      letter-spacing:0;
+    }
+    .form-badge--win  { background:#16A34A; color:#fff; }
+    .form-badge--draw { background:#9CA3AF; color:#fff; }
+    .form-badge--loss { background:#DC2626; color:#fff; }
+    .form-badge--unknown { background:#6B7A99; color:#fff; }
+
     .match-list { display:grid; gap:12px; margin-top:4px; }
-    .match { padding:16px 18px; border-radius:14px; border:1px solid var(--card-border); }
+    .match { padding:16px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); }
     .match-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
     .match-date { font-size:12px; color:#B98900; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
     .match-clubs { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; color:var(--text); }
     .vs, .match-meta, .upcoming-venue, .no-matches { color:var(--muted); }
+    .match-meta { font-size:13px; }
     .match-badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .match-league { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.15); border:1px solid rgba(255,207,33,.4); color:#7A5800; font-size:12px; font-weight:600; }
     .match-round { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(13,43,94,.07); border:1px solid rgba(13,43,94,.12); color:var(--text); font-size:12px; font-weight:600; }
@@ -104,7 +112,7 @@
     .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,207,33,.14); border:1px solid rgba(255,207,33,.45); color:var(--text); font-size:13px; font-weight:600; }
 
     .upcoming-list { display:grid; gap:10px; margin-top:4px; }
-    .upcoming-row { display:grid; grid-template-columns:160px 1fr auto; align-items:center; gap:16px; padding:14px 18px; border-radius:14px; border:1px solid var(--card-border); transition:background .12s; }
+    .upcoming-row { display:grid; grid-template-columns:160px 1fr auto; align-items:center; gap:16px; padding:14px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); transition:background .12s; }
     .upcoming-row:hover { background:color-mix(in srgb, var(--card-bg) 65%, #dfe9ff 35%); }
     .upcoming-row--next { background:rgba(255,207,33,.08); border-color:rgba(255,207,33,.45); }
     .upcoming-row--next:hover { background:rgba(255,207,33,.13); }
@@ -116,33 +124,18 @@
     .upcoming-teams strong { font-weight:800; }
     .upcoming-meta { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 
-    .modal {
-      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background:var(--overlay); z-index:120;
-      padding:20px;
-    }
+    /* ── MODAL ── */
+    .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:var(--overlay); z-index:120; padding:20px; }
     .modal.is-open { display:flex; }
-    .modal-card {
-      width:min(420px, 100%); background:var(--card-bg); color:var(--text);
-      border-radius:24px; padding:24px; border:1px solid var(--card-border); box-shadow:var(--shadow);
-      text-align:center; position:relative;
-    }
-    .modal-close {
-      position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%;
-      border:1px solid var(--card-border); background:transparent; color:var(--text); cursor:pointer; font-size:18px;
-    }
+    .modal-card { width:min(420px, 100%); background:var(--card-bg); color:var(--text); border-radius:24px; padding:24px; border:1px solid var(--card-border); box-shadow:var(--shadow); text-align:center; position:relative; }
+    .modal-close { position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%; border:1px solid var(--card-border); background:transparent; color:var(--text); cursor:pointer; font-size:18px; }
     .modal-title { margin:0 0 8px; font-size:24px; font-weight:800; }
     .modal-text { margin:0 0 18px; color:var(--muted); font-size:14px; }
-    .qr-wrap {
-      display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
-      width:220px; height:220px; border-radius:20px; background:#fff; padding:14px;
-    }
+    .qr-wrap { display:flex; align-items:center; justify-content:center; margin:0 auto 18px; width:220px; height:220px; border-radius:20px; background:#fff; padding:14px; }
     .qr-wrap img { width:100%; height:100%; object-fit:contain; }
-    .share-link {
-      display:block; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);
-      background:transparent; color:var(--text); font-size:13px; text-align:center; margin-bottom:12px;
-    }
+    .share-link { display:block; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); background:transparent; color:var(--text); font-size:13px; text-align:center; margin-bottom:12px; }
     .share-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
     .footer { margin-top:32px; padding:16px 0; border-top:1px solid rgba(13,43,94,.08); color:var(--muted); font-size:12px; text-align:center; }
     .footer strong { color:var(--text); }
 
@@ -229,8 +222,26 @@
     <section class="section">
       <h2>5 derniers matchs</h2>
       <div class="grid-2">
-        <div class="card"><h3>FCSM — Série : <code>{{LAST_5_FCSM_FORM}}</code></h3><ul><li>{{LAST_5_FCSM_1}}</li><li>{{LAST_5_FCSM_2}}</li><li>{{LAST_5_FCSM_3}}</li><li>{{LAST_5_FCSM_4}}</li><li>{{LAST_5_FCSM_5}}</li></ul></div>
-        <div class="card"><h3>Adversaire — Série : <code>{{LAST_5_OPPONENT_FORM}}</code></h3><ul><li>{{LAST_5_OPPONENT_1}}</li><li>{{LAST_5_OPPONENT_2}}</li><li>{{LAST_5_OPPONENT_3}}</li><li>{{LAST_5_OPPONENT_4}}</li><li>{{LAST_5_OPPONENT_5}}</li></ul></div>
+        <div class="card">
+          <h3>FCSM &mdash; <span class="form-row">{{LAST_5_FCSM_FORM}}</span></h3>
+          <ul>
+            {{LAST_5_FCSM_1}}
+            {{LAST_5_FCSM_2}}
+            {{LAST_5_FCSM_3}}
+            {{LAST_5_FCSM_4}}
+            {{LAST_5_FCSM_5}}
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Adversaire &mdash; <span class="form-row">{{LAST_5_OPPONENT_FORM}}</span></h3>
+          <ul>
+            {{LAST_5_OPPONENT_1}}
+            {{LAST_5_OPPONENT_2}}
+            {{LAST_5_OPPONENT_3}}
+            {{LAST_5_OPPONENT_4}}
+            {{LAST_5_OPPONENT_5}}
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -249,9 +260,7 @@
       <button class="modal-close" id="closeShareModal" aria-label="Fermer">✕</button>
       <h3 class="modal-title" id="shareTitle">Partager le calendrier</h3>
       <p class="modal-text">Scanne ce flash code ou copie le lien pour partager la page.</p>
-      <div class="qr-wrap">
-        <img id="qrImage" alt="QR code de partage">
-      </div>
+      <div class="qr-wrap"><img id="qrImage" alt="QR code de partage"></div>
       <input class="share-link" id="shareLink" type="text" readonly>
       <div class="share-actions">
         <button class="btn-share" id="copyShareLink" type="button">Copier le lien</button>
@@ -273,35 +282,28 @@
         }
       }
       var saved = localStorage.getItem(storageKey);
-      if (saved === 'dark' || saved === 'light') applyTheme(saved);
-      else applyTheme('light');
-      if (toggle) {
-        toggle.addEventListener('click', function () {
-          var next = body.classList.contains('dark') ? 'light' : 'dark';
-          localStorage.setItem(storageKey, next);
-          applyTheme(next);
-        });
-      }
+      applyTheme(saved === 'dark' ? 'dark' : 'light');
+      if (toggle) toggle.addEventListener('click', function () {
+        var next = body.classList.contains('dark') ? 'light' : 'dark';
+        localStorage.setItem(storageKey, next);
+        applyTheme(next);
+      });
     })();
 
     (function () {
       var isoStr = "{{NEXT_MATCH_ISO}}";
-      var wrap = document.getElementById("countdown");
-      if (!wrap || !isoStr || isoStr.indexOf("{{") !== -1) return;
+      var wrap = document.getElementById('countdown');
+      if (!wrap || !isoStr || isoStr.indexOf('{{') !== -1) return;
       var target = new Date(isoStr);
       if (isNaN(target.getTime())) return;
-      function pad(n) { return n < 10 ? "0" + n : String(n); }
+      function pad(n) { return n < 10 ? '0' + n : String(n); }
       function tick() {
         var diff = target - new Date();
         if (diff <= 0) { wrap.innerHTML = '<div class="countdown-done">⚽ Match en cours ou terminé</div>'; return; }
         var s = Math.floor(diff / 1000);
-        var days = Math.floor(s / 86400);
-        var hours = Math.floor((s % 86400) / 3600);
-        var mins = Math.floor((s % 3600) / 60);
-        var secs = s % 60;
-        wrap.innerHTML = box(pad(days),"JOURS") + box(pad(hours),"HEURES") + box(pad(mins),"MINUTES") + box(pad(secs),"SECONDES");
+        wrap.innerHTML = box(pad(Math.floor(s/86400)),'JOURS') + box(pad(Math.floor(s%86400/3600)),'HEURES') + box(pad(Math.floor(s%3600/60)),'MINUTES') + box(pad(s%60),'SECONDES');
       }
-      function box(v, l) { return '<div class="countdown-box"><span class="countdown-value">' + v + '</span><span class="countdown-unit">' + l + '</span></div>'; }
+      function box(v,l) { return '<div class="countdown-box"><span class="countdown-value">'+v+'</span><span class="countdown-unit">'+l+'</span></div>'; }
       tick(); setInterval(tick, 1000);
     })();
 
@@ -313,31 +315,22 @@
       var qrImage = document.getElementById('qrImage');
       var shareLink = document.getElementById('shareLink');
       var url = window.location.href;
-      var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(url);
-      if (qrImage) qrImage.src = qrUrl;
+      if (qrImage) qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(url);
       if (shareLink) shareLink.value = url;
-      function openModal() { modal.classList.add('is-open'); modal.setAttribute('aria-hidden', 'false'); }
-      function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+      function openModal() { modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); }
+      function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); }
       if (openBtn) openBtn.addEventListener('click', openModal);
       if (closeBtn) closeBtn.addEventListener('click', closeModal);
       if (modal) {
-        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
       }
-      if (copyBtn && shareLink) {
-        copyBtn.addEventListener('click', async function () {
-          try {
-            await navigator.clipboard.writeText(shareLink.value);
-            copyBtn.textContent = 'Lien copié';
-            setTimeout(function () { copyBtn.textContent = 'Copier le lien'; }, 1600);
-          } catch (e) {
-            shareLink.select();
-            document.execCommand('copy');
-            copyBtn.textContent = 'Lien copié';
-            setTimeout(function () { copyBtn.textContent = 'Copier le lien'; }, 1600);
-          }
-        });
-      }
+      if (copyBtn && shareLink) copyBtn.addEventListener('click', async function () {
+        try { await navigator.clipboard.writeText(shareLink.value); }
+        catch(e) { shareLink.select(); document.execCommand('copy'); }
+        copyBtn.textContent = 'Lien copié ✓';
+        setTimeout(function(){ copyBtn.textContent = 'Copier le lien'; }, 1600);
+      });
     })();
   </script>
 </body>
