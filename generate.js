@@ -38,6 +38,9 @@ const TEAM_IDS = {
   'AJ Auxerre':       '134102',
 };
 
+/* Normalise un nom d'équipe pour la déduplication (retire accents, casse, espaces) */
+function normTeam(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
@@ -91,7 +94,7 @@ function fmtDate(dateEvent, strTime) {
   } catch { return dateEvent; }
 }
 
-/* ── Fetch API ────────────────────────────────────────────────────────── */
+/* ── Fetch API ─────────────────────────────────────────────────────────── */
 const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
@@ -106,14 +109,14 @@ const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Calendrier hardcodé — construit APRES avoir récupéré teamName depuis l'API ─ */
+/* ── Calendrier hardcodé — construit APRÈS fetch de teamName ───────────── */
 const LIGUE2_SCHEDULE = [
-  { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: teamName,              strAwayTeam: 'AJ Auxerre',        idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AJ Auxerre'],        strLeague: 'Amical',         intRound: null, strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: teamName,              strAwayTeam: 'AS Saint-Étienne',  idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AS Saint-Étienne'], strLeague: 'French Ligue 2', intRound: '1',  strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-14', strTime: '20:45:00', strHomeTeam: 'Red Star FC',         strAwayTeam: teamName,            idHomeTeam: TEAM_IDS['Red Star FC'], idAwayTeam: TEAM_ID_FCSM,            strLeague: 'French Ligue 2', intRound: '2',  strVenue: '' },
-  { dateEvent: '2026-08-21', strTime: '20:00:00', strHomeTeam: teamName,              strAwayTeam: 'EA Guingamp',       idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['EA Guingamp'],      strLeague: 'French Ligue 2', intRound: '3',  strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-28', strTime: '20:00:00', strHomeTeam: 'Clermont Foot',       strAwayTeam: teamName,            idHomeTeam: TEAM_IDS['Clermont Foot'], idAwayTeam: TEAM_ID_FCSM,            strLeague: 'French Ligue 2', intRound: '4',  strVenue: '' },
-  { dateEvent: '2026-09-11', strTime: '20:00:00', strHomeTeam: teamName,              strAwayTeam: 'FC Nantes',         idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['FC Nantes'],        strLeague: 'French Ligue 2', intRound: '6',  strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: teamName,        strAwayTeam: 'AJ Auxerre',       idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AJ Auxerre'],        strLeague: 'Amical',         intRound: null, strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: teamName,        strAwayTeam: 'AS Saint-Étienne', idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AS Saint-Étienne'], strLeague: 'French Ligue 2', intRound: '1',  strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-14', strTime: '20:45:00', strHomeTeam: 'Red Star FC',   strAwayTeam: teamName,           idHomeTeam: TEAM_IDS['Red Star FC'], idAwayTeam: TEAM_ID_FCSM,  strLeague: 'French Ligue 2', intRound: '2',  strVenue: '' },
+  { dateEvent: '2026-08-21', strTime: '20:00:00', strHomeTeam: teamName,        strAwayTeam: 'EA Guingamp',      idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['EA Guingamp'],      strLeague: 'French Ligue 2', intRound: '3',  strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-28', strTime: '20:00:00', strHomeTeam: 'Clermont Foot', strAwayTeam: teamName,           idHomeTeam: TEAM_IDS['Clermont Foot'], idAwayTeam: TEAM_ID_FCSM, strLeague: 'French Ligue 2', intRound: '4',  strVenue: '' },
+  { dateEvent: '2026-09-11', strTime: '20:00:00', strHomeTeam: teamName,        strAwayTeam: 'FC Nantes',        idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['FC Nantes'],        strLeague: 'French Ligue 2', intRound: '6',  strVenue: 'Stade Auguste Bonal' },
 ];
 
 /* ── Construction de teamAllNext ─────────────────────────────────────────── */
@@ -136,11 +139,12 @@ if (seasonEvents.length > 0) {
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* Merger les matchs hardcodés manquants dans tous les cas */
+/* Merger les matchs hardcodés manquants :
+   déduplication par date + noms normalisés pour éviter le doublon Auxerre/AJ Auxerre */
 {
-  const existingKeys = new Set(teamAllNext.map(e => `${e.dateEvent}|${e.strHomeTeam}|${e.strAwayTeam}`));
+  const existingKeys = new Set(teamAllNext.map(e => `${e.dateEvent}|${normTeam(e.strHomeTeam)}|${normTeam(e.strAwayTeam)}`));
   for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
-    const key = `${hev.dateEvent}|${hev.strHomeTeam}|${hev.strAwayTeam}`;
+    const key = `${hev.dateEvent}|${normTeam(hev.strHomeTeam)}|${normTeam(hev.strAwayTeam)}`;
     if (!existingKeys.has(key)) { teamAllNext.push(hev); existingKeys.add(key); }
   }
   teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
@@ -149,12 +153,14 @@ if (seasonEvents.length > 0) {
 
 console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length}`);
 
-/* ── Prochain match ──────────────────────────────────────────────────────── */
-const teamLigue2Events = teamAllNext.filter(ev =>
+/* ── Prochain match : Ligue 2 en priorité, jamais les amicaux ───────────── */
+const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
-  (ev.strLeague || '').toLowerCase().includes('ligue 2')
-);
+  (ev.strLeague || '').toLowerCase().includes('ligue 2');
+
+const teamLigue2Events = teamAllNext.filter(isLigue2);
 const ligue2Ready = teamLigue2Events.length > 0;
+/* nextMatch = 1er match Ligue 2 si dispo, sinon 1er match toutes compétitions */
 const nextMatch = (ligue2Ready ? teamLigue2Events : teamAllNext)[0] || null;
 const oppName = nextMatch ? (nextMatch.strHomeTeam === teamName ? nextMatch.strAwayTeam : nextMatch.strHomeTeam) : 'Adversaire';
 const teamRow = tableRows.find(r => r.strTeam === teamName || r.nameTeam === teamName) || {};
@@ -253,7 +259,7 @@ for (const ev of allEventsForIcs) {
   const dateStr = ev.dateEvent.replace(/-/g, '');
   const timeStr = (ev.strTime || '120000').replace(/:/g, '').slice(0, 6);
   const dt = `${dateStr}T${timeStr}Z`;
-  const uid = `fcsm-${ev.idEvent || (dateStr + ev.strHomeTeam)}@ical-fcsm`;
+  const uid = `fcsm-${ev.idEvent || (dateStr + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
   if (seenUids.has(uid)) continue;
   seenUids.add(uid);
   const opp = ev.strHomeTeam === teamName ? ev.strAwayTeam : ev.strHomeTeam;
