@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FCSM — Calendrier intelligent</title>
+  <meta name="description" content="Calendrier FCSM avec classement des équipes avant chaque match, infos utiles, et mise à jour automatique toutes les 12 heures." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b1020; --panel:rgba(255,255,255,.06); --text:#f4f7fb; --muted:#aab3c5; --line:rgba(255,255,255,.12); --accent:#f3c623; --good:#4ade80; --shadow:0 18px 40px rgba(0,0,0,.28); --radius:24px; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; padding:0; background:radial-gradient(circle at top, rgba(93,214,255,.14), transparent 26%), radial-gradient(circle at bottom right, rgba(243,198,35,.10), transparent 24%), linear-gradient(180deg, #0b1020 0%, #0f1730 100%); color:var(--text); font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.55; }
+    a { color:inherit; text-decoration:none; }
+    .page { max-width:1180px; margin:0 auto; padding:28px 20px 60px; }
+    .hero { display:grid; grid-template-columns:1.15fr .85fr; gap:24px; align-items:center; margin-top:10px; padding:26px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border:1px solid var(--line); border-radius:calc(var(--radius) + 6px); box-shadow:var(--shadow); overflow:hidden; position:relative; }
+    .hero::after { content:""; position:absolute; inset:0; background:linear-gradient(135deg, transparent 0%, rgba(255,255,255,.04) 35%, transparent 70%); pointer-events:none; }
+    .eyebrow { display:inline-flex; align-items:center; gap:10px; padding:8px 14px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:13px; background:rgba(255,255,255,.03); width:fit-content; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--good); box-shadow:0 0 0 5px rgba(74,222,128,.12); }
+    h1 { margin:16px 0 14px; font-size:clamp(34px, 5vw, 58px); line-height:1.02; letter-spacing:-0.04em; }
+    .lead { font-size:18px; color:var(--muted); max-width:62ch; margin:0 0 22px; }
+    .cta-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:13px 18px; border-radius:14px; font-weight:700; border:1px solid transparent; white-space:nowrap; }
+    .btn.primary { background:var(--accent); color:#1a1a1a; }
+    .btn.secondary { background:rgba(255,255,255,.06); border-color:var(--line); color:var(--text); }
+    .stats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+    .stat { padding:18px; border-radius:18px; background:rgba(255,255,255,.06); border:1px solid var(--line); min-height:122px; }
+    .stat-value { display:block; font-size:30px; font-weight:800; letter-spacing:-0.03em; margin-bottom:6px; }
+    .stat-label { color:var(--muted); font-size:14px; }
+    .section { margin-top:26px; padding:24px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .section h2 { margin:0 0 12px; font-size:24px; letter-spacing:-0.02em; }
+    .section p { margin:0 0 12px; color:var(--muted); max-width:80ch; }
+    .grid-2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
+    .card { padding:18px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.04); }
+    .card h3 { margin:0 0 10px; font-size:18px; }
+    .card ul { margin:0; padding-left:18px; color:var(--muted); }
+    .card li { margin:8px 0; }
+    .match-list { display:grid; gap:14px; margin-top:16px; }
+    .match { padding:16px 18px; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid var(--line); }
+    .match-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .match-date { font-size:13px; color:var(--muted); }
+    .match-clubs { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:18px; font-weight:700; }
+    .vs { color:var(--muted); font-weight:600; }
+    .match-meta { color:var(--muted); font-size:14px; }
+    .footer { margin-top:28px; color:var(--muted); font-size:13px; text-align:center; }
+    .small { color:var(--muted); font-size:13px; }
+    code { padding:2px 6px; border-radius:6px; background:rgba(255,255,255,.08); border:1px solid var(--line); color:#fff; }
+    @media (max-width:920px) { .hero, .grid-2 { grid-template-columns:1fr; } }
+    @media (max-width:640px) { .page { padding:16px 14px 48px; } .hero, .section { padding:18px; border-radius:18px; } h1 { font-size:34px; } .lead { font-size:16px; } .stats { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <div class="eyebrow"><span class="dot"></span>Mise à jour automatique toutes les 12 heures</div>
+        <h1>Le calendrier FCSM qui s'actualise tout seul</h1>
+        <p class="lead">Avant chaque match, le titre affiche le classement des deux équipes entre parenthèses, et la description ajoute des infos utiles. Une seule URL à abonner dans ton agenda.</p>
+        <div class="cta-row"><a class="btn primary" href="./fcsm.ics">S'abonner au flux ICS</a><a class="btn secondary" href="https://github.com/ohan-fcsm/ical-fcsm">Voir le projet sur GitHub</a></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="stat-value">12 h</span><div class="stat-label">fréquence de mise à jour</div></div>
+        <div class="stat"><span class="stat-value">1 URL</span><div class="stat-label">à abonner dans ton agenda</div></div>
+        <div class="stat"><span class="stat-value">Ligue 2</span><div class="stat-label">saison 2026-2027</div></div>
+        <div class="stat"><span class="stat-value">Auto</span><div class="stat-label">génération .ics et HTML</div></div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Identifiants API</h2>
+      <div class="grid-2">
+        <div class="card"><h3>Paramètres principaux</h3><ul><li>ID équipe FCSM : <code>133708</code></li><li>ID ligue : <code>4401</code></li><li>Saison : <code>2026-2027</code></li></ul></div>
+        <div class="card"><h3>Équipe adverse</h3><ul><li>Calculé dynamiquement depuis le prochain match</li><li>Sert à récupérer les 5 derniers matchs adversaires</li></ul></div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Prochain match</h2>
+      <div class="match-list"><div class="match"><div class="match-top"><div class="match-date">{{NEXT_MATCH_DATE}} • {{NEXT_MATCH_TIME}}</div><div class="match-clubs"><span>{{NEXT_MATCH_HOME_TEAM}}</span><span class="vs">-</span><span>{{NEXT_MATCH_AWAY_TEAM}}</span></div></div><div class="match-meta">Statut : <code>{{NEXT_MATCH_STATUS}}</code> • Stade : <code>{{NEXT_MATCH_VENUE}}</code></div></div></div>
+    </section>
+    <section class="section">
+      <h2>Classement</h2>
+      <div class="grid-2"><div class="card"><h3>FCSM</h3><ul><li>Position : <code>{{TEAM_RANK_FCSM}}</code></li><li>Points : <code>{{TEAM_POINTS_FCSM}}</code></li></ul></div><div class="card"><h3>Adversaire</h3><ul><li>Position : <code>{{TEAM_RANK_OPPONENT}}</code></li><li>Points : <code>{{TEAM_POINTS_OPPONENT}}</code></li></ul></div></div>
+    </section>
+    <section class="section">
+      <h2>5 derniers matchs</h2>
+      <div class="grid-2"><div class="card"><h3>FCSM — Série : <code>{{LAST_5_FCSM_FORM}}</code></h3><ul><li>{{LAST_5_FCSM_1}}</li><li>{{LAST_5_FCSM_2}}</li><li>{{LAST_5_FCSM_3}}</li><li>{{LAST_5_FCSM_4}}</li><li>{{LAST_5_FCSM_5}}</li></ul></div><div class="card"><h3>Adversaire — Série : <code>{{LAST_5_OPPONENT_FORM}}</code></h3><ul><li>{{LAST_5_OPPONENT_1}}</li><li>{{LAST_5_OPPONENT_2}}</li><li>{{LAST_5_OPPONENT_3}}</li><li>{{LAST_5_OPPONENT_4}}</li><li>{{LAST_5_OPPONENT_5}}</li></ul></div></div>
+    </section>
+    <div class="footer">Généré automatiquement via GitHub Actions • TheSportsDB</div>
+  </main>
+</body>
+</html>

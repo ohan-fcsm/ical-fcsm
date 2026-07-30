@@ -1,0 +1,11 @@
+{
+  "name": "fcsm-calendrier",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node generate.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
