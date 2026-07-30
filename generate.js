@@ -17,32 +17,20 @@ if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join
 const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
 async function getJson(url) {
-  if (!API_KEY) {
-    console.warn('⚠️  THESPORTSDB_API_KEY absent — mode dégradé');
-    return null;
-  }
+  if (!API_KEY) { console.warn('⚠️  THESPORTSDB_API_KEY absent — mode dégradé'); return null; }
   try {
     const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!r.ok) { console.error(`HTTP ${r.status} for ${url}`); return null; }
     const text = await r.text();
     if (!text || text.trim() === '') { console.warn(`Réponse vide pour ${url}`); return null; }
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.warn(`JSON invalide pour ${url}: ${text.slice(0, 100)}`);
-      return null;
-    }
-  } catch (e) {
-    console.error(`Erreur fetch ${url}: ${e.message}`);
-    return null;
-  }
+    try { return JSON.parse(text); } catch (e) { console.warn(`JSON invalide pour ${url}: ${text.slice(0,100)}`); return null; }
+  } catch (e) { console.error(`Erreur fetch ${url}: ${e.message}`); return null; }
 }
 
 function calcForm(events, teamName) {
   if (!events || !events.length) return '—';
   return events.slice(0, 5).map(ev => {
-    const hs = Number(ev.intHomeScore);
-    const as = Number(ev.intAwayScore);
+    const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
     if (!Number.isFinite(hs) || !Number.isFinite(as)) return 'A';
     const isHome = ev.strHomeTeam === teamName;
     return isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
@@ -60,7 +48,17 @@ function buildIso(dateEvent, strTime) {
   return `${dateEvent}T${time}:00Z`;
 }
 
-// Fetch all data
+function fmtDate(dateEvent, strTime) {
+  if (!dateEvent) return '—';
+  try {
+    const iso = buildIso(dateEvent, strTime);
+    const d = new Date(iso);
+    const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  } catch { return dateEvent; }
+}
+
 const [teamData, lastData, nextTeamData, nextLeagueData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
@@ -74,9 +72,10 @@ const teamName = team.strTeam || 'FC Sochaux-Montbéliard';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const leagueEvents = (nextLeagueData?.events || []).filter(ev => ev.strHomeTeam === teamName || ev.strAwayTeam === teamName);
-const teamLigue2Events = (nextTeamData?.events || []).filter(ev => String(ev.idLeague) === String(LEAGUE_ID) || (ev.strLeague || '').toLowerCase().includes('ligue 2'));
+const teamAllNext = nextTeamData?.events || [];
+const teamLigue2Events = teamAllNext.filter(ev => String(ev.idLeague) === String(LEAGUE_ID) || (ev.strLeague || '').toLowerCase().includes('ligue 2'));
 const ligue2Ready = leagueEvents.length > 0 || teamLigue2Events.length > 0;
-const nextEvents = leagueEvents.length > 0 ? leagueEvents : teamLigue2Events.length > 0 ? teamLigue2Events : (nextTeamData?.events || []);
+const nextEvents = leagueEvents.length > 0 ? leagueEvents : teamLigue2Events.length > 0 ? teamLigue2Events : teamAllNext;
 const nextMatch = nextEvents[0] || null;
 const oppName = nextMatch ? (nextMatch.strHomeTeam === teamName ? nextMatch.strAwayTeam : nextMatch.strHomeTeam) : 'Adversaire';
 const teamRow = tableRows.find(r => r.strTeam === teamName || r.nameTeam === teamName) || {};
@@ -85,10 +84,7 @@ const oppRow = tableRows.find(r => r.strTeam === oppName || r.nameTeam === oppNa
 let oppLastEvents = [];
 if (nextMatch && API_KEY) {
   const oppId = nextMatch.strAwayTeam === oppName ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
-  if (oppId) {
-    const od = await getJson(ep(`eventslast.php?id=${oppId}`));
-    oppLastEvents = od?.results || od?.events || [];
-  }
+  if (oppId) { const od = await getJson(ep(`eventslast.php?id=${oppId}`)); oppLastEvents = od?.results || od?.events || []; }
 }
 
 const formFCSM = calcForm(lastEvents, teamName);
@@ -96,6 +92,36 @@ const formOpp = calcForm(oppLastEvents, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible — match amical affiché.</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
+
+// Build upcoming matches HTML block
+function buildUpcomingRows(events) {
+  if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
+  return events.map((ev, i) => {
+    const opp = ev.strHomeTeam === teamName ? ev.strAwayTeam : ev.strHomeTeam;
+    const isHome = ev.strHomeTeam === teamName;
+    const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
+    const time = ev.strTime ? ev.strTime.slice(0,5) : '—';
+    const league = ev.strLeague || '—';
+    const roundLabel = ev.intRound ? `J${ev.intRound}` : '';
+    const isFirst = i === 0;
+    return `<div class="upcoming-row${isFirst ? ' upcoming-row--next' : ''}">
+  <div class="upcoming-date">
+    <span class="upcoming-date-main">${dateLabel}</span>
+    <span class="upcoming-date-time">${time}</span>
+  </div>
+  <div class="upcoming-match">
+    <span class="upcoming-teams">${isHome ? `<strong>FCSM</strong> vs ${opp}` : `${opp} vs <strong>FCSM</strong>`}</span>
+    <span class="upcoming-venue">${ev.strVenue || ''}</span>
+  </div>
+  <div class="upcoming-meta">
+    <span class="match-league">🏆 ${league}</span>
+    ${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}
+  </div>
+</div>`;
+  }).join('\n');
+}
+
+const upcomingHtml = buildUpcomingRows(teamAllNext.length > 0 ? teamAllNext : nextEvents);
 
 const vars = {
   NEXT_MATCH_DATE:      nextMatch?.dateEvent   || '—',
@@ -124,6 +150,7 @@ const vars = {
   LAST_5_OPPONENT_3:    eventLine(oppLastEvents[2]),
   LAST_5_OPPONENT_4:    eventLine(oppLastEvents[3]),
   LAST_5_OPPONENT_5:    eventLine(oppLastEvents[4]),
+  UPCOMING_MATCHES:     upcomingHtml,
 };
 
 const fill = (template, vs) =>
@@ -133,16 +160,13 @@ const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso,
-  nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp
+  nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp,
+  totalUpcoming: teamAllNext.length
 }, null, 2), 'utf8');
 
 // ICS
-const icsLines = [
-  'BEGIN:VCALENDAR', 'VERSION:2.0',
-  'PRODID:-//FCSM//Calendar//FR',
-  'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'
-];
-for (const ev of nextEvents) {
+const icsLines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+for (const ev of (teamAllNext.length > 0 ? teamAllNext : nextEvents)) {
   const dateStr = (ev.dateEvent || '').replace(/-/g, '');
   const timeStr = (ev.strTime || '120000').replace(/:/g, '').slice(0, 6);
   const dt = `${dateStr}T${timeStr}Z`;
@@ -164,10 +188,8 @@ icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
 console.log('✅ dist/ generated', {
-  teamName, oppName, formFCSM, formOpp,
-  ligue2Ready, nextMatchIso,
-  leagueEvents: leagueEvents.length,
-  teamLigue2Events: teamLigue2Events.length,
-  totalNextEvents: nextEvents.length,
+  teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso,
+  leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length,
+  totalUpcoming: teamAllNext.length,
   apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)',
 });
