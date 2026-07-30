@@ -11,8 +11,8 @@ const SEASON = process.env.SEASON || '2026-2027';
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
 
 const out = 'dist';
-const SRC_BADGES = 'badges';          /* dossier versionné dans le repo */
-const DST_BADGES = path.join(out, 'badges'); /* copié dans dist/ au build  */
+const SRC_BADGES = 'badges';
+const DST_BADGES = path.join(out, 'badges');
 fs.mkdirSync(out,        { recursive: true });
 fs.mkdirSync(SRC_BADGES, { recursive: true });
 fs.mkdirSync(DST_BADGES, { recursive: true });
@@ -45,8 +45,6 @@ function normTeam(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
-/* Télécharge remoteUrl, sauve dans badges/{slug}.png ET dist/badges/{slug}.png.
-   Si le fichier existe déjà en local, le copie simplement sans re-télécharger. */
 async function ensureBadge(remoteUrl, slug) {
   if (!remoteUrl || !slug) return '';
   const srcFile = path.join(SRC_BADGES, `${slug}.png`);
@@ -69,14 +67,25 @@ async function ensureBadge(remoteUrl, slug) {
   }
 }
 
-/* ── IDs TheSportsDB — toutes les équipes du calendrier ────────────────── */
+/* ── IDs TheSportsDB — toutes les équipes Ligue 2 2026-2027 ─────────── */
 const TEAM_IDS = {
-  'AS Saint-Étienne': '133717',
-  'Red Star FC':      '134795',
-  'EA Guingamp':      '133716',
-  'Clermont Foot':    '134030',
-  'FC Nantes':        '133704',
-  'AJ Auxerre':       '134102',
+  'AS Saint-Étienne':        '133717',
+  'Red Star FC':             '134795',
+  'EN Avant Guingamp':       '133716',
+  'Clermont Foot 63':        '134030',
+  'FC Nantes':               '133704',
+  'FC Annecy':               '135505',
+  'Dijon FCO':               '133696',
+  'Grenoble Foot 38':        '134029',
+  'Stade Lavallois MFC':     '134101',
+  'AS Nancy Lorraine':       '133711',
+  'FC Metz':                 '133707',
+  'US Boulogne CO':          '134796',
+  'Montpellier Hérault SC':  '133706',
+  'USL Dunkerque':           '135506',
+  'Rodez Aveyron Football':  '134797',
+  'Pau FC':                  '135507',
+  'Stade de Reims':          '133714',
 };
 
 function parseForm(events, teamName) {
@@ -159,7 +168,11 @@ const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Fetch badges de tous les adversaires du calendrier via lookupteam ──── */
+/* ── Set des dates+équipes déjà confirmées par l'API ─────────────────── */
+/* Un event API possède un idEvent — on s'en sert pour savoir si un match
+   hardcodé a déjà été confirmé (et enrichi) par TheSportsDB.            */
+
+/* ── Fetch badges de tous les adversaires via lookupteam ─────────────── */
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
     const d = await getJson(ep(`lookupteam.php?id=${id}`));
@@ -169,14 +182,47 @@ const calendarTeamsBadges = await Promise.all(
 );
 console.log('🔍 Badges API:', calendarTeamsBadges.map(t => `${t.name}=${t.badgeUrl?'✓':'✗'}`).join(', '));
 
-/* ── Calendrier hardcodé ──────────────────────────────────────────────── */
+/* ── Calendrier complet FCSM 2026-2027 (34 journées LFP) ─────────────
+   _hardcoded: true  → date/heure issues du calendrier LFP officiel,
+                        pas encore confirmées par TheSportsDB.
+   Dès que l'API retourne l'événement (idEvent présent), le flag disparaît
+   automatiquement via le merge ci-dessous.                               */
+const FCSM = teamName;
 const LIGUE2_SCHEDULE = [
-  { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: teamName,        strAwayTeam: 'AJ Auxerre',       idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AJ Auxerre'],        strLeague: 'Amical',         intRound: null, strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: teamName,        strAwayTeam: 'AS Saint-Étienne', idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AS Saint-Étienne'], strLeague: 'French Ligue 2', intRound: '1',  strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-14', strTime: '20:45:00', strHomeTeam: 'Red Star FC',   strAwayTeam: teamName,           idHomeTeam: TEAM_IDS['Red Star FC'], idAwayTeam: TEAM_ID_FCSM,  strLeague: 'French Ligue 2', intRound: '2',  strVenue: '' },
-  { dateEvent: '2026-08-21', strTime: '20:00:00', strHomeTeam: teamName,        strAwayTeam: 'EA Guingamp',      idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['EA Guingamp'],      strLeague: 'French Ligue 2', intRound: '3',  strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-28', strTime: '20:00:00', strHomeTeam: 'Clermont Foot', strAwayTeam: teamName,           idHomeTeam: TEAM_IDS['Clermont Foot'], idAwayTeam: TEAM_ID_FCSM, strLeague: 'French Ligue 2', intRound: '4',  strVenue: '' },
-  { dateEvent: '2026-09-11', strTime: '20:00:00', strHomeTeam: teamName,        strAwayTeam: 'FC Nantes',        idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['FC Nantes'],        strLeague: 'French Ligue 2', intRound: '6',  strVenue: 'Stade Auguste Bonal' },
+  /* J1  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Bauer',                _hardcoded:true },
+  /* J2  */ { dateEvent:'2026-08-21', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'EN Avant Guingamp',        idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J3  */ { dateEvent:'2026-08-28', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'3',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J4  */ { dateEvent:'2026-09-04', strTime:'20:45:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'4',  strVenue:'Nouste Camp',                _hardcoded:true },
+  /* J5  */ { dateEvent:'2026-09-11', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Nantes',                idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J6  */ { dateEvent:'2026-09-18', strTime:'20:45:00', strHomeTeam:'Clermont Foot 63',         strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'6',  strVenue:'Stade Gabriel Montpied',     _hardcoded:true },
+  /* J7  */ { dateEvent:'2026-10-09', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'US Boulogne CO',           idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'7',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J8  */ { dateEvent:'2026-10-16', strTime:'20:45:00', strHomeTeam:'FC Metz',                  strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'8',  strVenue:'Stade Saint-Symphorien',     _hardcoded:true },
+  /* J9  */ { dateEvent:'2026-10-23', strTime:'20:45:00', strHomeTeam:'Stade Lavallois MFC',      strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'9',  strVenue:'Stade Francis Le Basser',    _hardcoded:true },
+  /* J10 */ { dateEvent:'2026-10-30', strTime:'20:45:00', strHomeTeam:'Stade de Reims',           strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'10', strVenue:'Stade Auguste Delaune',      _hardcoded:true },
+  /* J11 */ { dateEvent:'2026-11-06', strTime:'20:45:00', strHomeTeam:'AS Nancy Lorraine',        strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'11', strVenue:'Stade Marcel Picot',         _hardcoded:true },
+  /* J12 */ { dateEvent:'2026-11-20', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Annecy',                idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'12', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J13 */ { dateEvent:'2026-12-04', strTime:'20:45:00', strHomeTeam:'Dijon FCO',                strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'13', strVenue:'Stade Gaston Gérard',        _hardcoded:true },
+  /* J14 */ { dateEvent:'2026-12-11', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Montpellier Hérault SC',   idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'14', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J15 */ { dateEvent:'2027-01-02', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'USL Dunkerque',            idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'15', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J16 */ { dateEvent:'2027-01-15', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Rodez Aveyron Football',   idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'16', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J17 */ { dateEvent:'2027-01-16', strTime:'20:45:00', strHomeTeam:'Grenoble Foot 38',         strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'17', strVenue:'Stade des Alpes',            _hardcoded:true },
+  /* J18 */ { dateEvent:'2027-01-22', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Stade de Reims',           idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'18', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J19 */ { dateEvent:'2027-01-29', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Pau FC',                   idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'19', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J20 */ { dateEvent:'2027-02-05', strTime:'20:45:00', strHomeTeam:'US Boulogne CO',           strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'20', strVenue:'Stade de la Libération',     _hardcoded:true },
+  /* J21 */ { dateEvent:'2027-02-12', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Dijon FCO',                idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'21', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J22 */ { dateEvent:'2027-02-19', strTime:'20:45:00', strHomeTeam:'AS Saint-Étienne',         strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'22', strVenue:'Stade Geoffroy-Guichard',    _hardcoded:true },
+  /* J23 */ { dateEvent:'2027-02-26', strTime:'20:45:00', strHomeTeam:'FC Annecy',                strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'23', strVenue:'Parc des Sports',            _hardcoded:true },
+  /* J24 */ { dateEvent:'2027-03-05', strTime:'20:45:00', strHomeTeam:'Rodez Aveyron Football',   strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'24', strVenue:'Stade Paul Lignon',          _hardcoded:true },
+  /* J25 */ { dateEvent:'2027-03-12', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Nancy Lorraine',        idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'25', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J26 */ { dateEvent:'2027-03-19', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Metz',                  idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'26', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J27 */ { dateEvent:'2027-04-02', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Red Star FC',              idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'27', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J28 */ { dateEvent:'2027-04-09', strTime:'20:45:00', strHomeTeam:'Montpellier Hérault SC',   strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'28', strVenue:'Stade de la Mosson',         _hardcoded:true },
+  /* J29 */ { dateEvent:'2027-04-16', strTime:'20:45:00', strHomeTeam:'FC Nantes',                strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'29', strVenue:'Stade de la Beaujoire',      _hardcoded:true },
+  /* J30 */ { dateEvent:'2027-04-23', strTime:'20:45:00', strHomeTeam:'USL Dunkerque',            strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'30', strVenue:'Stade Marcel Tribut',        _hardcoded:true },
+  /* J31 */ { dateEvent:'2027-04-30', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Clermont Foot 63',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'31', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J32 */ { dateEvent:'2027-05-07', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Stade Lavallois MFC',      idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'32', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
+  /* J33 */ { dateEvent:'2027-05-14', strTime:'20:45:00', strHomeTeam:'EN Avant Guingamp',        strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'33', strVenue:'Stade du Roudourou',         _hardcoded:true },
+  /* J34 */ { dateEvent:'2027-05-22', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'Grenoble Foot 38',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'34', strVenue:'Stade Auguste Bonal',        _hardcoded:true },
 ];
 
 /* ── Construction de teamAllNext ───────────────────────────────────────── */
@@ -198,35 +244,34 @@ if (seasonEvents.length > 0) {
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* Déduplication robuste :
-   - clé = date + les deux équipes normées triées (insensible à l'ordre)
-   - un match hardcodé est considéré doublon si, même date, l'API retourne
-     un match dont les deux équipes se "contiennent" mutuellement (ex: "Auxerre" ⊆ "AJ Auxerre") */
-function dedupKey(homeTeam, awayTeam, date) {
-  return `${date}|${[normTeam(homeTeam), normTeam(awayTeam)].sort().join('|')}`;
-}
 function isSameMatch(a, b) {
   if (a.dateEvent !== b.dateEvent) return false;
   const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
   const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
-  /* correspondance stricte */
   if (ah === bh && aa === ba) return true;
-  /* correspondance souple : l'un contient l'autre (gère "Auxerre" vs "AJ Auxerre") */
-  const containsTeam = (x, y) => x.includes(y) || y.includes(x);
-  return containsTeam(ah, bh) && containsTeam(aa, ba);
+  const contains = (x, y) => x.includes(y) || y.includes(x);
+  return contains(ah, bh) && contains(aa, ba);
 }
 
-/* Merger les matchs hardcodés manquants */
+/* Merger les matchs hardcodés manquants.
+   Si l'API a déjà le match (idEvent présent) → on garde la version API (confirmée).
+   Sinon → on ajoute la version hardcodée avec _hardcoded:true.              */
 for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
-  const alreadyPresent = teamAllNext.some(ev => isSameMatch(ev, hev));
-  if (!alreadyPresent) teamAllNext.push(hev);
+  const apiMatch = teamAllNext.find(ev => isSameMatch(ev, hev));
+  if (!apiMatch) {
+    teamAllNext.push({ ...hev, _hardcoded: true });
+  }
+  /* Si l'API a le match mais sans heure précise, on enrichit strTime depuis hardcoded */
+  else if (apiMatch && (!apiMatch.strTime || apiMatch.strTime === '00:00:00') && hev.strTime) {
+    apiMatch.strTime = hev.strTime;
+  }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 
-console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length}`);
+console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length} (dont hardcoded: ${teamAllNext.filter(e=>e._hardcoded).length})`);
 
-/* ── Prochain match Ligue 2 ────────────────────────────────────────── */
+/* ── Prochain match Ligue 2 ─────────────────────────────────────────── */
 const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2');
@@ -249,7 +294,6 @@ if (nextMatch && API_KEY) {
   const oppIdFromEvent = isOppAway ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
   const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => normTeam(k) === normTeam(oppName))?.[1];
   const oppId = oppIdFromEvent || oppIdFromMap;
-  /* Badge déjà fetché dans calendarTeamsBadges si c'est un adversaire connu */
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
   if (oppId) {
@@ -264,12 +308,11 @@ if (nextMatch && API_KEY) {
   }
 }
 
-/* ── Téléchargement / copie de tous les badges ───────────────────────── */
+/* ── Badges ───────────────────────────────────────────────────────────── */
 const allBadgesToEnsure = [
   { name: teamName, remoteUrl: teamBadgeRemote },
   ...calendarTeamsBadges.map(t => ({ name: t.name, remoteUrl: t.badgeUrl })),
 ];
-/* Ajouter l'adversaire si pas déjà dans la liste */
 if (oppBadgeRemote && !allBadgesToEnsure.find(t => normTeam(t.name) === normTeam(oppName))) {
   allBadgesToEnsure.push({ name: oppName, remoteUrl: oppBadgeRemote });
 }
@@ -287,9 +330,15 @@ console.log(`🎨 Logos dispos: ${Object.keys(logos).length}/${allBadgesToEnsure
 /* ── Rendu HTML ─────────────────────────────────────────────────────── */
 const formFCSM = calcFormStr(lastEvents, teamName);
 const formOpp  = calcFormStr(oppLastEvents, oppName);
-const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 Août - les prochains matchs sont des Amicaux</div>';
+const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 14 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
+
+/* Picto à confirmer pour le hero card (prochain match hardcodé) */
+const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
+const unconfirmedBadgeHero = nextMatchUnconfirmed
+  ? `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:3px 10px;margin-left:6px">⏳ À confirmer</span>`
+  : '';
 
 function badgeTag(name, size = 28) {
   const url = logos[normTeam(name)];
@@ -309,6 +358,9 @@ function formBadgesSummary(events, tName) {
   }).join(' ');
 }
 
+/* Badge inline ⏳ pour les lignes du calendrier */
+const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:2px 8px;white-space:nowrap;flex-shrink:0">⏳ À confirmer</span>`;
+
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
   return events.map((ev, i) => {
@@ -323,10 +375,15 @@ function buildUpcomingRows(events) {
     const teamsHtml = isHome
       ? `${homeBadge} <strong>FCSM</strong> vs ${awayBadge} ${opp}`
       : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
+    /* ⏳ picto si match non encore confirmé par l'API */
+    const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
+    const timeDisplay = ev._hardcoded
+      ? `<span style="color:var(--muted)">${time} <span title="Heure à confirmer" style="font-size:10px">⏳</span></span>`
+      : `<span>${time}</span>`;
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}">
-  <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span><span class="upcoming-date-time">${time}</span></div>
+  <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
   <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
-  <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}</div>
+  <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}${unconfirmedPill}</div>
 </div>`;
   }).join('\n');
 }
@@ -335,7 +392,7 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 const vars = {
   NEXT_MATCH_DATE:       nextMatch?.dateEvent   || '—',
-  NEXT_MATCH_TIME:       nextMatch?.strTime      || '—',
+  NEXT_MATCH_TIME:       (nextMatch?.strTime || '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
   NEXT_MATCH_HOME_TEAM:  nextMatch?.strHomeTeam  || '—',
   NEXT_MATCH_AWAY_TEAM:  nextMatch?.strAwayTeam  || '—',
   NEXT_MATCH_HOME_BADGE: fcsmBigBadge,
@@ -345,6 +402,7 @@ const vars = {
   NEXT_MATCH_LEAGUE:     nextMatch?.strLeague    || '—',
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
+  NEXT_MATCH_UNCONFIRMED_BADGE: unconfirmedBadgeHero,
   LIGUE2_STATUS_BANNER:  ligue2Banner,
   TEAM_RANK_FCSM:        String(teamRow?.intRank  || teamRow?.rank  || '—'),
   TEAM_POINTS_FCSM:      String(teamRow?.intPoints || '—'),
@@ -375,11 +433,12 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, seasonSource, oppName, nextMatch, nextMatchIso, ligue2Ready,
   formFCSM, formOpp, oppLastEventsCount: oppLastEvents.length,
   totalUpcoming: teamAllNext.length,
+  hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
-  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague })),
+  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: !e._hardcoded })),
 }, null, 2), 'utf8');
 
-/* ICS */
+/* ── ICS ──────────────────────────────────────────────────────────────── */
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
@@ -401,12 +460,16 @@ for (const ev of allEventsForIcs) {
   const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
   const roundLabel = ev.intRound ? ` J${ev.intRound}` : '';
   const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
+  const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
   const summary = isHome
-    ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}`
-    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}`;
+    ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
+    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
+  const description = ev._hardcoded
+    ? `Forme FCSM : ${formFCSM}\\nDate et heure à confirmer — source : calendrier LFP officiel`
+    : `Forme FCSM : ${formFCSM}`;
   icsLines.push(
     'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`,
-    `SUMMARY:${summary}`, `DESCRIPTION:Forme FCSM : ${formFCSM}`,
+    `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
     `LOCATION:${ev.strVenue || ''}`,
   );
   if (ev.intHomeScore != null && ev.intHomeScore !== '') icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
