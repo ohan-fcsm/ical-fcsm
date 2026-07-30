@@ -10,6 +10,11 @@ const SEASON = process.env.SEASON || '2026-2027';
 const out = path.join('dist');
 fs.mkdirSync(out, { recursive: true });
 
+// Copie du favicon dans dist/
+if (fs.existsSync('favicon.svg')) {
+  fs.copyFileSync('favicon.svg', path.join(out, 'favicon.svg'));
+}
+
 const ep = (p) => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 const urls = {
   team:       ep(`lookupteam.php?id=${TEAM_ID_FCSM}`),
