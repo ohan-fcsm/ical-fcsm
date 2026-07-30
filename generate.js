@@ -38,14 +38,13 @@ const TEAM_IDS = {
   'AJ Auxerre':       '134102',
 };
 
-/* Normalise un nom d'équipe pour la déduplication (retire accents, casse, espaces) */
 function normTeam(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
 
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
     const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
-    const isHome = ev.strHomeTeam === teamName;
+    const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     if (!Number.isFinite(hs) || !Number.isFinite(as)) return { letter: '?', score: '?-?', opponent: opp, date: ev.dateEvent || '' };
     const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
@@ -55,18 +54,21 @@ function parseForm(events, teamName) {
 
 function calcFormStr(events, teamName) { return parseForm(events, teamName).map(r => r.letter).join(' ') || '—'; }
 
+/* eventLineHtml : affiche TOUJOURS les vrais noms des équipes (pas "FCSM" hardcodé) */
 function eventLineHtml(ev, teamName) {
   if (!ev || !ev.strHomeTeam) return '<li>—</li>';
   const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
-  const isHome = ev.strHomeTeam === teamName;
+  const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
   const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+  const self = isHome ? ev.strHomeTeam : ev.strAwayTeam;
   const dateOnly = ev.dateEvent ? fmtDateOnly(ev.dateEvent) : '—';
   if (!Number.isFinite(hs) || !Number.isFinite(as)) {
     return `<li><span class="form-badge form-badge--unknown">?</span> ${dateOnly} — ${ev.strHomeTeam} vs ${ev.strAwayTeam}</li>`;
   }
   const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
   const cls = letter === 'V' ? 'win' : letter === 'N' ? 'draw' : 'loss';
-  return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${isHome ? `FCSM ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} FCSM`}</li>`;
+  const scoreStr = isHome ? `${self} ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} ${self}`;
+  return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${scoreStr}</li>`;
 }
 
 function buildIso(dateEvent, strTime) {
@@ -139,8 +141,7 @@ if (seasonEvents.length > 0) {
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* Merger les matchs hardcodés manquants :
-   déduplication par date + noms normalisés pour éviter le doublon Auxerre/AJ Auxerre */
+/* Merger les matchs hardcodés manquants, dédup par normTeam */
 {
   const existingKeys = new Set(teamAllNext.map(e => `${e.dateEvent}|${normTeam(e.strHomeTeam)}|${normTeam(e.strAwayTeam)}`));
   for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
@@ -153,29 +154,37 @@ if (seasonEvents.length > 0) {
 
 console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length}`);
 
-/* ── Prochain match : Ligue 2 en priorité, jamais les amicaux ───────────── */
+/* ── Prochain match Ligue 2 ──────────────────────────────────────────────── */
 const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2');
 
 const teamLigue2Events = teamAllNext.filter(isLigue2);
 const ligue2Ready = teamLigue2Events.length > 0;
-/* nextMatch = 1er match Ligue 2 si dispo, sinon 1er match toutes compétitions */
 const nextMatch = (ligue2Ready ? teamLigue2Events : teamAllNext)[0] || null;
-const oppName = nextMatch ? (nextMatch.strHomeTeam === teamName ? nextMatch.strAwayTeam : nextMatch.strHomeTeam) : 'Adversaire';
-const teamRow = tableRows.find(r => r.strTeam === teamName || r.nameTeam === teamName) || {};
-const oppRow = tableRows.find(r => r.strTeam === oppName || r.nameTeam === oppName) || {};
+
+/* oppName : on prend le nom exact de l'événement */
+const oppName = nextMatch
+  ? (normTeam(nextMatch.strHomeTeam) === normTeam(teamName) ? nextMatch.strAwayTeam : nextMatch.strHomeTeam)
+  : 'Adversaire';
+
+const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName)) || {};
+const oppRow  = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))  || {};
 
 /* ── 5 derniers matchs adversaire ────────────────────────────────────────── */
 let oppLastEvents = [];
 if (nextMatch && API_KEY) {
-  const oppId = (nextMatch.strAwayTeam === oppName ? nextMatch.idAwayTeam : nextMatch.idHomeTeam) || TEAM_IDS[oppName];
+  /* Chercher l'ID : dans l'événement d'abord, puis dans TEAM_IDS par normTeam */
+  const isOppAway = normTeam(nextMatch.strAwayTeam) === normTeam(oppName);
+  const oppIdFromEvent = isOppAway ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
+  const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => normTeam(k) === normTeam(oppName))?.[1];
+  const oppId = oppIdFromEvent || oppIdFromMap;
   if (oppId) {
     const od = await getJson(ep(`eventslast.php?id=${oppId}`));
     oppLastEvents = od?.results || od?.events || [];
     console.log(`🔍 Opp "${oppName}" (id=${oppId}): ${oppLastEvents.length} derniers matchs`);
   } else {
-    console.warn(`⚠️  Pas d'ID pour: ${oppName}`);
+    console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
 }
 
@@ -194,8 +203,8 @@ function formBadgesSummary(events, tName) {
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
   return events.map((ev, i) => {
-    const opp = ev.strHomeTeam === teamName ? ev.strAwayTeam : ev.strHomeTeam;
-    const isHome = ev.strHomeTeam === teamName;
+    const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
+    const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
     const time = ev.strTime ? ev.strTime.slice(0,5) : '—';
     const league = ev.strLeague || '—';
@@ -262,11 +271,11 @@ for (const ev of allEventsForIcs) {
   const uid = `fcsm-${ev.idEvent || (dateStr + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
   if (seenUids.has(uid)) continue;
   seenUids.add(uid);
-  const opp = ev.strHomeTeam === teamName ? ev.strAwayTeam : ev.strHomeTeam;
+  const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
+  const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
   const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
   const roundLabel = ev.intRound ? ` J${ev.intRound}` : '';
   const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
-  const isHome = ev.strHomeTeam === teamName;
   const summary = isHome ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}` : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}`;
   icsLines.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`, `SUMMARY:${summary}`, `DESCRIPTION:Forme FCSM : ${formFCSM}`, `LOCATION:${ev.strVenue || ''}`);
   if (ev.intHomeScore != null && ev.intHomeScore !== '') icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
