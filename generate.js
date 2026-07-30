@@ -11,7 +11,9 @@ const SEASON = process.env.SEASON || '2026-2027';
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
 
 const out = 'dist';
+const badgesDir = path.join(out, 'badges');
 fs.mkdirSync(out, { recursive: true });
+fs.mkdirSync(badgesDir, { recursive: true });
 if (fs.existsSync('favicon.svg')) fs.copyFileSync('favicon.svg', path.join(out, 'favicon.svg'));
 if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join(out, 'favicon-32.svg'));
 
@@ -27,6 +29,26 @@ async function getJson(url) {
     try { return JSON.parse(text); } catch (e) { console.warn(`JSON invalide: ${text.slice(0,100)}`); return null; }
   } catch (e) { console.error(`Erreur fetch: ${e.message}`); return null; }
 }
+
+/* Télécharge un badge depuis une URL distante, le sauve dans dist/badges/{slug}.png
+   Retourne le chemin local relatif "./badges/{slug}.png" ou '' en cas d'échec */
+async function downloadBadge(remoteUrl, slug) {
+  if (!remoteUrl) return '';
+  const localPath = path.join(badgesDir, `${slug}.png`);
+  try {
+    const r = await fetch(remoteUrl, { headers: { 'User-Agent': 'fcsm-calendar-build/1.0' } });
+    if (!r.ok) { console.warn(`Badge HTTP ${r.status} : ${remoteUrl}`); return ''; }
+    const buf = await r.arrayBuffer();
+    fs.writeFileSync(localPath, Buffer.from(buf));
+    console.log(`🖼  Badge saved: badges/${slug}.png`);
+    return `./badges/${slug}.png`;
+  } catch (e) {
+    console.warn(`Badge fetch error (${slug}): ${e.message}`);
+    return '';
+  }
+}
+
+function slugify(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
 /* ── IDs TheSportsDB des adversaires ─────────────────────────────────────── */
 const TEAM_IDS = {
@@ -57,7 +79,7 @@ function calcFormStr(events, teamName) { return parseForm(events, teamName).map(
 function teamBadgeImg(name, logos, size = 20) {
   const url = logos[normTeam(name)];
   if (!url) return '';
-  return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:3px;object-fit:contain;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
+  return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:3px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
 
 function eventLineHtml(ev, teamName, logos) {
@@ -115,12 +137,12 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
-const teamBadgeUrl = team.strTeamBadge || team.strBadge || '';
+const teamBadgeRemote = team.strTeamBadge || team.strBadge || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Calendrier hardcodé — construit APRÈS fetch de teamName ───────────── */
+/* ── Calendrier hardcodé ───────────────────────────────────────────────── */
 const LIGUE2_SCHEDULE = [
   { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: teamName,        strAwayTeam: 'AJ Auxerre',       idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AJ Auxerre'],        strLeague: 'Amical',         intRound: null, strVenue: 'Stade Auguste Bonal' },
   { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: teamName,        strAwayTeam: 'AS Saint-Étienne', idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AS Saint-Étienne'], strLeague: 'French Ligue 2', intRound: '1',  strVenue: 'Stade Auguste Bonal' },
@@ -150,7 +172,6 @@ if (seasonEvents.length > 0) {
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* Merger les matchs hardcodés manquants, dédup par normTeam */
 {
   const existingKeys = new Set(teamAllNext.map(e => `${e.dateEvent}|${normTeam(e.strHomeTeam)}|${normTeam(e.strAwayTeam)}`));
   for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
@@ -163,7 +184,6 @@ if (seasonEvents.length > 0) {
 
 console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length}`);
 
-/* ── Prochain match Ligue 2 ──────────────────────────────────────────────── */
 const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2');
@@ -178,44 +198,53 @@ const oppName = nextMatch
 const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName)) || {};
 const oppRow  = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))  || {};
 
-/* ── 5 derniers matchs adversaire + badge adversaire ─────────────────── */
+/* ── 5 derniers matchs adversaire ────────────────────────────────────────── */
 let oppLastEvents = [];
-let oppBadgeUrl = '';
+let oppBadgeRemote = '';
+let oppId = null;
 if (nextMatch && API_KEY) {
   const isOppAway = normTeam(nextMatch.strAwayTeam) === normTeam(oppName);
   const oppIdFromEvent = isOppAway ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
   const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => normTeam(k) === normTeam(oppName))?.[1];
-  const oppId = oppIdFromEvent || oppIdFromMap;
+  oppId = oppIdFromEvent || oppIdFromMap;
   if (oppId) {
     const [od, oppTeamData] = await Promise.all([
       getJson(ep(`eventslast.php?id=${oppId}`)),
       getJson(ep(`lookupteam.php?id=${oppId}`)),
     ]);
     oppLastEvents = od?.results || od?.events || [];
-    oppBadgeUrl = oppTeamData?.teams?.[0]?.strTeamBadge || oppTeamData?.teams?.[0]?.strBadge || '';
-    console.log(`🔍 Opp "${oppName}" (id=${oppId}): ${oppLastEvents.length} matchs, badge=${oppBadgeUrl?'✓':'✗'}`);
+    oppBadgeRemote = oppTeamData?.teams?.[0]?.strTeamBadge || oppTeamData?.teams?.[0]?.strBadge || '';
   } else {
     console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
 }
 
-/* ── Table logos : normTeam => URL badge ────────────────────────────── */
-const logos = {};
-if (teamBadgeUrl) logos[normTeam(teamName)] = teamBadgeUrl;
-if (oppBadgeUrl)  logos[normTeam(oppName)]  = oppBadgeUrl;
-/* Logos hardcodés TheSportsDB pour les autres adversaires du calendrier */
-const BADGE_URLS = {
-  'AJ Auxerre':       'https://www.thesportsdb.com/images/media/team/badge/0xr8vf1728467454.png',
+/* ── URLs distantes de fallback pour les badges du calendrier ──────────── */
+const BADGE_REMOTE = {
   'AS Saint-Étienne': 'https://www.thesportsdb.com/images/media/team/badge/xvuuqq1420220879.png',
-  'Red Star FC':      'https://www.thesportsdb.com/images/media/team/badge/red-star-fc.png',
-  'EA Guingamp':      'https://www.thesportsdb.com/images/media/team/badge/guingamp.png',
-  'Clermont Foot':    'https://www.thesportsdb.com/images/media/team/badge/clermont.png',
-  'FC Nantes':        'https://www.thesportsdb.com/images/media/team/badge/qsrsys1420221175.png',
+  'AJ Auxerre':       'https://www.thesportsdb.com/images/media/team/badge/0xr8vf1728467454.png',
+  'Red Star FC':      'https://www.thesportsdb.com/images/media/team/badge/uswvqx1420575276.png',
+  'EA Guingamp':      'https://www.thesportsdb.com/images/media/team/badge/xvqyry1420575418.png',
+  'Clermont Foot':    'https://www.thesportsdb.com/images/media/team/badge/qsrsys1420221175.png',
+  'FC Nantes':        'https://www.thesportsdb.com/images/media/team/badge/ttqrry1534163416.png',
 };
-for (const [name, url] of Object.entries(BADGE_URLS)) {
-  const k = normTeam(name);
-  if (!logos[k]) logos[k] = url;
-}
+
+/* ── Téléchargement de tous les badges en parallèle ─────────────────────── */
+const allTeamsToDownload = [
+  { name: teamName, remoteUrl: teamBadgeRemote },
+  { name: oppName,  remoteUrl: oppBadgeRemote  },
+  ...Object.entries(BADGE_REMOTE).map(([name, remoteUrl]) => ({ name, remoteUrl })),
+];
+
+const logoResults = await Promise.all(
+  allTeamsToDownload.map(async ({ name, remoteUrl }) => {
+    const slug = slugify(name);
+    const localUrl = await downloadBadge(remoteUrl, slug);
+    return [normTeam(name), localUrl];
+  })
+);
+
+const logos = Object.fromEntries(logoResults.filter(([, url]) => url));
 
 const formFCSM = calcFormStr(lastEvents, teamName);
 const formOpp  = calcFormStr(oppLastEvents, oppName);
@@ -223,8 +252,16 @@ const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
 
-const fcsmBigBadge  = teamBadgeUrl  ? `<img src="${teamBadgeUrl}"  alt="${teamName}" width="28" height="28" style="border-radius:4px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'">` : '';
-const oppBigBadge   = oppBadgeUrl   ? `<img src="${oppBadgeUrl}"   alt="${oppName}"  width="28" height="28" style="border-radius:4px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'">` : '';
+const fcsmLocalBadge = logos[normTeam(teamName)] || '';
+const oppLocalBadge  = logos[normTeam(oppName)]  || '';
+
+function badgeTag(localUrl, name, size = 28) {
+  if (!localUrl) return '';
+  return `<img src="${localUrl}" alt="${name}" width="${size}" height="${size}" style="border-radius:4px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
+}
+
+const fcsmBigBadge = badgeTag(fcsmLocalBadge, teamName, 28);
+const oppBigBadge  = badgeTag(oppLocalBadge,  oppName,  28);
 
 function formBadgesSummary(events, tName) {
   const items = parseForm(events, tName);
@@ -298,6 +335,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, seasonSource, oppName, nextMatch, nextMatchIso, ligue2Ready,
   formFCSM, formOpp, oppLastEventsCount: oppLastEvents.length,
   totalUpcoming: teamAllNext.length,
+  badgesDownloaded: Object.keys(logos).length,
   sampleNext: teamAllNext.slice(0,6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague })),
 }, null, 2), 'utf8');
 
@@ -326,4 +364,4 @@ for (const ev of allEventsForIcs) {
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ dist/ generated', { seasonSource, totalUpcoming: teamAllNext.length, oppLastEvents: oppLastEvents.length, apiKey: API_KEY ? '✓' : '✗' });
+console.log('✅ dist/ generated', { seasonSource, totalUpcoming: teamAllNext.length, oppLastEvents: oppLastEvents.length, badgesDownloaded: Object.keys(logos).length, apiKey: API_KEY ? '✓' : '✗' });
