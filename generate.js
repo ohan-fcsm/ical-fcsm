@@ -89,11 +89,10 @@ if (nextMatch && API_KEY) {
 
 const formFCSM = calcForm(lastEvents, teamName);
 const formOpp = calcForm(oppLastEvents, oppName);
-const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible — match amical affiché.</div>';
+const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 Août - les prochains matchs sont des Amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
 
-// Build upcoming matches HTML block
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
   return events.map((ev, i) => {
@@ -153,18 +152,11 @@ const vars = {
   UPCOMING_MATCHES:     upcomingHtml,
 };
 
-const fill = (template, vs) =>
-  Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
-
+const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
-fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
-  teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso,
-  nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp,
-  totalUpcoming: teamAllNext.length
-}, null, 2), 'utf8');
+fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({ teamName, oppName, teamRow, oppRow, nextMatch, nextMatchIso, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp, totalUpcoming: teamAllNext.length }, null, 2), 'utf8');
 
-// ICS
 const icsLines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
 for (const ev of (teamAllNext.length > 0 ? teamAllNext : nextEvents)) {
   const dateStr = (ev.dateEvent || '').replace(/-/g, '');
@@ -187,9 +179,4 @@ for (const ev of (teamAllNext.length > 0 ? teamAllNext : nextEvents)) {
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ dist/ generated', {
-  teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso,
-  leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length,
-  totalUpcoming: teamAllNext.length,
-  apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)',
-});
+console.log('✅ dist/ generated', { teamName, oppName, formFCSM, formOpp, ligue2Ready, nextMatchIso, leagueEvents: leagueEvents.length, teamLigue2Events: teamLigue2Events.length, totalUpcoming: teamAllNext.length, apiKey: API_KEY ? '✓ présente' : '✗ absente (mode dégradé)' });

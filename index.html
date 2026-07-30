@@ -13,109 +13,138 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --jaune:     #F5E96A;
+      --jaune: #F5E96A;
       --jaune-btn: #FFCF21;
-      --bleu:      #0D2B5E;
-      --bleu-btn:  #1A3A7A;
-      --blanc:     #FFFFFF;
-      --bg-hero:   #F7F0BC;
-      --bg-page:   #F4F7FB;
-      --text:      #0D2B5E;
-      --muted:     #6B7A99;
-      --card-bg:   #FFFFFF;
+      --bleu: #0D2B5E;
+      --bleu-btn: #1A3A7A;
+      --blanc: #FFFFFF;
+      --bg-hero: #F7F0BC;
+      --bg-page: #F4F7FB;
+      --text: #0D2B5E;
+      --muted: #6B7A99;
+      --card-bg: #FFFFFF;
       --card-border: rgba(13,43,94,.10);
-      --radius:    20px;
-      --shadow:    0 8px 32px rgba(13,43,94,.10);
+      --radius: 20px;
+      --shadow: 0 8px 32px rgba(13,43,94,.10);
+      --overlay: rgba(13,43,94,.48);
+    }
+    body.dark {
+      --bg-hero: #101B31;
+      --bg-page: #0A1221;
+      --text: #F6F8FD;
+      --muted: #AAB7D4;
+      --card-bg: #13213D;
+      --card-border: rgba(255,255,255,.08);
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --overlay: rgba(0,0,0,.65);
     }
     * { box-sizing:border-box; }
-    html, body { margin:0; padding:0; font-family:Inter, system-ui, -apple-system, sans-serif; background:var(--bg-page); color:var(--text); line-height:1.5; }
+    html, body { margin:0; padding:0; font-family:Inter, system-ui, -apple-system, sans-serif; background:var(--bg-page); color:var(--text); line-height:1.5; transition:background .2s,color .2s; }
     a { color:inherit; text-decoration:none; }
 
-    /* ── NAVBAR ── */
-    .nav { display:flex; align-items:center; gap:14px; padding:14px 32px; background:var(--blanc); box-shadow:0 1px 0 rgba(13,43,94,.08); position:sticky; top:0; z-index:99; }
+    .nav { display:flex; align-items:center; gap:14px; padding:14px 32px; background:var(--card-bg); box-shadow:0 1px 0 rgba(13,43,94,.08); position:sticky; top:0; z-index:99; }
+    body.dark .nav { box-shadow:0 1px 0 rgba(255,255,255,.06); }
     .nav-logo { width:40px; height:40px; border-radius:10px; background:var(--bleu); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
     .nav-logo img { width:28px; height:28px; object-fit:contain; }
     .nav-logo-fallback { color:#fff; font-size:11px; font-weight:900; letter-spacing:-.5px; text-align:center; line-height:1.1; }
-    .nav-title { font-size:17px; font-weight:800; color:var(--bleu); }
+    .nav-title { font-size:17px; font-weight:800; color:var(--text); }
     .nav-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-    .btn-subscribe { display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s; }
-    .btn-subscribe:hover { background:var(--bleu-btn); }
-    .btn-theme { width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(13,43,94,.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; }
+    .btn-subscribe, .btn-ics, .btn-share {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff;
+      font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s, transform .15s;
+    }
+    .btn-ics { padding:14px 28px; font-size:15px; }
+    .btn-subscribe:hover, .btn-ics:hover, .btn-share:hover { background:var(--bleu-btn); transform:translateY(-1px); }
+    .btn-theme { width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(13,43,94,.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--text); }
+    body.dark .btn-theme { border-color:rgba(255,255,255,.18); }
 
-    /* ── HERO ── */
-    .hero { background:var(--bg-hero); padding:64px 32px 72px; }
+    .hero { background:var(--bg-hero); padding:64px 32px 72px; transition:background .2s; }
     .hero-inner { max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
-    .hero-h1 { margin:0 0 20px; font-size:clamp(40px,5.5vw,68px); font-weight:900; line-height:1.03; letter-spacing:-0.035em; color:var(--bleu); }
-    .hero-lead { margin:0 0 28px; font-size:16px; color:#3D4F6E; max-width:44ch; line-height:1.65; }
-    .btn-ics { display:inline-flex; align-items:center; gap:10px; padding:14px 28px; border-radius:999px; background:var(--bleu); color:#fff; font-size:15px; font-weight:700; transition:background .15s; }
-    .btn-ics:hover { background:var(--bleu-btn); }
+    .hero-h1 { margin:0 0 20px; font-size:clamp(40px,5.5vw,68px); font-weight:900; line-height:1.03; letter-spacing:-0.035em; color:var(--text); }
+    .hero-lead { margin:0 0 28px; font-size:16px; color:var(--muted); max-width:44ch; line-height:1.65; }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; }
 
-    /* ── NEXT MATCH CARD ── */
-    .match-card { background:var(--blanc); border-radius:var(--radius); padding:28px 28px 24px; box-shadow:var(--shadow); border:1px solid var(--card-border); }
+    .match-card { background:var(--card-bg); border-radius:var(--radius); padding:28px 28px 24px; box-shadow:var(--shadow); border:1px solid var(--card-border); }
     .match-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
     .badge-prochain { display:inline-flex; align-items:center; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
-    .match-card-teams { font-size:clamp(22px,2.8vw,30px); font-weight:900; color:var(--bleu); margin-bottom:6px; letter-spacing:-0.02em; }
+    .match-card-teams { font-size:clamp(22px,2.8vw,30px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; }
     .match-card-datetime { font-size:14px; color:var(--muted); margin-bottom:20px; }
 
-    /* Countdown */
     .countdown-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-    .countdown-box { padding:14px 8px 12px; border-radius:14px; background:#F5F0D8; text-align:center; }
-    .countdown-value { display:block; font-size:28px; font-weight:800; letter-spacing:-0.03em; color:var(--bleu); line-height:1; }
+    .countdown-box { padding:14px 8px 12px; border-radius:14px; background:color-mix(in srgb, var(--bg-hero) 70%, var(--card-bg) 30%); text-align:center; }
+    .countdown-value { display:block; font-size:28px; font-weight:800; letter-spacing:-0.03em; color:var(--text); line-height:1; }
     .countdown-unit { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:5px; }
-    .countdown-done { text-align:center; font-size:15px; font-weight:700; color:var(--bleu); padding:10px 0; }
+    .countdown-done { text-align:center; font-size:15px; font-weight:700; color:var(--text); padding:10px 0; }
 
-    /* ── PAGE CONTENT ── */
     .page { max-width:1120px; margin:0 auto; padding:40px 32px 64px; }
-    .section { margin-top:28px; padding:24px; background:#fff; border-radius:var(--radius); box-shadow:0 2px 12px rgba(13,43,94,.06); border:1px solid rgba(13,43,94,.07); }
-    .section h2 { margin:0 0 16px; font-size:20px; font-weight:800; color:var(--bleu); display:flex; align-items:center; gap:10px; }
+    .section { margin-top:28px; padding:24px; background:var(--card-bg); border-radius:var(--radius); box-shadow:0 2px 12px rgba(13,43,94,.06); border:1px solid var(--card-border); }
+    .section h2 { margin:0 0 16px; font-size:20px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:10px; }
     .section h2::before { content:""; display:inline-block; width:4px; height:20px; background:var(--jaune-btn); border-radius:2px; flex-shrink:0; }
     .section p { margin:0 0 12px; color:var(--muted); max-width:80ch; font-size:15px; }
     .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-    .card { padding:18px; border-radius:14px; background:#F8FAFF; border:1px solid rgba(13,43,94,.08); }
-    .card h3 { margin:0 0 10px; font-size:16px; color:var(--bleu); font-weight:700; }
+    .card, .match, .upcoming-row { background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); }
+    .card { padding:18px; border-radius:14px; border:1px solid var(--card-border); }
+    .card h3 { margin:0 0 10px; font-size:16px; color:var(--text); font-weight:700; }
     .card ul { margin:0; padding-left:16px; color:var(--muted); }
     .card li { margin:7px 0; font-size:14px; }
-    code { padding:2px 7px; border-radius:6px; background:rgba(13,43,94,.07); color:var(--bleu); font-size:13px; }
+    code { padding:2px 7px; border-radius:6px; background:rgba(13,43,94,.09); color:var(--text); font-size:13px; }
+    body.dark code { background:rgba(255,255,255,.08); }
     .match-list { display:grid; gap:12px; margin-top:4px; }
-    .match { padding:16px 18px; border-radius:14px; background:#F8FAFF; border:1px solid rgba(13,43,94,.08); }
+    .match { padding:16px 18px; border-radius:14px; border:1px solid var(--card-border); }
     .match-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
-    .match-date { font-size:12px; color:var(--jaune-btn); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
-    .match-clubs { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; color:var(--bleu); }
-    .vs { color:var(--muted); font-size:13px; font-weight:600; }
-    .match-meta { color:var(--muted); font-size:13px; }
+    .match-date { font-size:12px; color:#B98900; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .match-clubs { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; color:var(--text); }
+    .vs, .match-meta, .upcoming-venue, .no-matches { color:var(--muted); }
     .match-badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .match-league { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.15); border:1px solid rgba(255,207,33,.4); color:#7A5800; font-size:12px; font-weight:600; }
-    .match-round { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(13,43,94,.07); border:1px solid rgba(13,43,94,.12); color:var(--bleu); font-size:12px; font-weight:600; }
-    .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:10px; background:rgba(255,180,0,.10); border:1px solid rgba(255,180,0,.35); color:#7A5800; font-size:13px; font-weight:500; }
+    .match-round { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(13,43,94,.07); border:1px solid rgba(13,43,94,.12); color:var(--text); font-size:12px; font-weight:600; }
+    body.dark .match-round { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); }
+    .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,207,33,.14); border:1px solid rgba(255,207,33,.45); color:var(--text); font-size:13px; font-weight:600; }
 
-    /* ── UPCOMING MATCHES ── */
     .upcoming-list { display:grid; gap:10px; margin-top:4px; }
-    .upcoming-row {
-      display:grid; grid-template-columns:160px 1fr auto;
-      align-items:center; gap:16px;
-      padding:14px 18px; border-radius:14px;
-      background:#F8FAFF; border:1px solid rgba(13,43,94,.08);
-      transition:background .12s;
-    }
-    .upcoming-row:hover { background:#EEF3FF; }
-    .upcoming-row--next {
-      background:rgba(255,207,33,.08);
-      border-color:rgba(255,207,33,.45);
-    }
+    .upcoming-row { display:grid; grid-template-columns:160px 1fr auto; align-items:center; gap:16px; padding:14px 18px; border-radius:14px; border:1px solid var(--card-border); transition:background .12s; }
+    .upcoming-row:hover { background:color-mix(in srgb, var(--card-bg) 65%, #dfe9ff 35%); }
+    .upcoming-row--next { background:rgba(255,207,33,.08); border-color:rgba(255,207,33,.45); }
     .upcoming-row--next:hover { background:rgba(255,207,33,.13); }
     .upcoming-date { display:flex; flex-direction:column; gap:2px; }
-    .upcoming-date-main { font-size:14px; font-weight:700; color:var(--bleu); }
+    .upcoming-date-main { font-size:14px; font-weight:700; color:var(--text); }
     .upcoming-date-time { font-size:12px; color:var(--muted); }
     .upcoming-match { display:flex; flex-direction:column; gap:3px; }
-    .upcoming-teams { font-size:15px; font-weight:600; color:var(--bleu); }
+    .upcoming-teams { font-size:15px; font-weight:600; color:var(--text); }
     .upcoming-teams strong { font-weight:800; }
-    .upcoming-venue { font-size:12px; color:var(--muted); }
     .upcoming-meta { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-    .no-matches { color:var(--muted); font-size:14px; padding:12px 0; }
 
+    .modal {
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:var(--overlay); z-index:120;
+      padding:20px;
+    }
+    .modal.is-open { display:flex; }
+    .modal-card {
+      width:min(420px, 100%); background:var(--card-bg); color:var(--text);
+      border-radius:24px; padding:24px; border:1px solid var(--card-border); box-shadow:var(--shadow);
+      text-align:center; position:relative;
+    }
+    .modal-close {
+      position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%;
+      border:1px solid var(--card-border); background:transparent; color:var(--text); cursor:pointer; font-size:18px;
+    }
+    .modal-title { margin:0 0 8px; font-size:24px; font-weight:800; }
+    .modal-text { margin:0 0 18px; color:var(--muted); font-size:14px; }
+    .qr-wrap {
+      display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
+      width:220px; height:220px; border-radius:20px; background:#fff; padding:14px;
+    }
+    .qr-wrap img { width:100%; height:100%; object-fit:contain; }
+    .share-link {
+      display:block; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);
+      background:transparent; color:var(--text); font-size:13px; text-align:center; margin-bottom:12px;
+    }
+    .share-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
     .footer { margin-top:32px; padding:16px 0; border-top:1px solid rgba(13,43,94,.08); color:var(--muted); font-size:12px; text-align:center; }
-    .footer strong { color:var(--bleu); }
+    .footer strong { color:var(--text); }
 
     @media (max-width:860px) {
       .hero-inner { grid-template-columns:1fr; gap:32px; }
@@ -131,12 +160,11 @@
       .match-card { padding:20px 18px; }
       .countdown-wrap { gap:8px; }
       .countdown-value { font-size:24px; }
+      .hero-actions { flex-direction:column; align-items:flex-start; }
     }
   </style>
 </head>
 <body>
-
-  <!-- NAVBAR -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="./favicon.svg" alt="FCSM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -145,17 +173,19 @@
     <span class="nav-title">Calendrier FCSM</span>
     <div class="nav-right">
       <a class="btn-subscribe" href="./fcsm.ics">S'abonner</a>
-      <button class="btn-theme" aria-label="Thème" onclick="document.body.classList.toggle('dark')">🌙</button>
+      <button class="btn-theme" id="themeToggle" aria-label="Changer le thème">🌙</button>
     </div>
   </nav>
 
-  <!-- HERO -->
   <section class="hero">
     <div class="hero-inner">
       <div class="hero-left">
         <h1 class="hero-h1">Le calendrier<br>FCSM à garder<br>dans sa poche.</h1>
         <p class="hero-lead">Abonne-toi une seule fois au calendrier. Les horaires, les détails de match et les informations d'événement s'enrichiront progressivement au fil de la saison.</p>
-        <a class="btn-ics" href="./fcsm.ics">S'abonner au calendrier</a>
+        <div class="hero-actions">
+          <a class="btn-ics" href="./fcsm.ics">S'abonner au calendrier</a>
+          <button class="btn-share" id="openShareModal" type="button">Partager</button>
+        </div>
       </div>
       <div class="hero-right">
         <div class="match-card">
@@ -171,7 +201,6 @@
     </div>
   </section>
 
-  <!-- CONTENT -->
   <main class="page">
     <section class="section">
       <h2>Prochain match</h2>
@@ -188,6 +217,7 @@
         </div>
       </div></div>
     </section>
+
     <section class="section">
       <h2>Classement Ligue 2</h2>
       <div class="grid-2">
@@ -195,6 +225,7 @@
         <div class="card"><h3>Adversaire</h3><ul><li>Position : <code>{{TEAM_RANK_OPPONENT}}</code></li><li>Points : <code>{{TEAM_POINTS_OPPONENT}}</code></li></ul></div>
       </div>
     </section>
+
     <section class="section">
       <h2>5 derniers matchs</h2>
       <div class="grid-2">
@@ -202,16 +233,57 @@
         <div class="card"><h3>Adversaire — Série : <code>{{LAST_5_OPPONENT_FORM}}</code></h3><ul><li>{{LAST_5_OPPONENT_1}}</li><li>{{LAST_5_OPPONENT_2}}</li><li>{{LAST_5_OPPONENT_3}}</li><li>{{LAST_5_OPPONENT_4}}</li><li>{{LAST_5_OPPONENT_5}}</li></ul></div>
       </div>
     </section>
+
     <section class="section">
       <h2>Calendrier complet</h2>
       <div class="upcoming-list">
         {{UPCOMING_MATCHES}}
       </div>
     </section>
+
     <div class="footer">Généré automatiquement via <strong>GitHub Actions</strong> · Données <strong>TheSportsDB</strong> · FC Sochaux-Montbéliard</div>
   </main>
 
+  <div class="modal" id="shareModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <button class="modal-close" id="closeShareModal" aria-label="Fermer">✕</button>
+      <h3 class="modal-title" id="shareTitle">Partager le calendrier</h3>
+      <p class="modal-text">Scanne ce flash code ou copie le lien pour partager la page.</p>
+      <div class="qr-wrap">
+        <img id="qrImage" alt="QR code de partage">
+      </div>
+      <input class="share-link" id="shareLink" type="text" readonly>
+      <div class="share-actions">
+        <button class="btn-share" id="copyShareLink" type="button">Copier le lien</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    (function () {
+      var storageKey = 'fcsm-theme';
+      var body = document.body;
+      var toggle = document.getElementById('themeToggle');
+      function applyTheme(theme) {
+        var dark = theme === 'dark';
+        body.classList.toggle('dark', dark);
+        if (toggle) {
+          toggle.textContent = dark ? '☀️' : '🌙';
+          toggle.setAttribute('aria-label', dark ? 'Passer au thème jour' : 'Passer au thème nuit');
+        }
+      }
+      var saved = localStorage.getItem(storageKey);
+      if (saved === 'dark' || saved === 'light') applyTheme(saved);
+      else applyTheme('light');
+      if (toggle) {
+        toggle.addEventListener('click', function () {
+          var next = body.classList.contains('dark') ? 'light' : 'dark';
+          localStorage.setItem(storageKey, next);
+          applyTheme(next);
+        });
+      }
+    })();
+
     (function () {
       var isoStr = "{{NEXT_MATCH_ISO}}";
       var wrap = document.getElementById("countdown");
@@ -231,6 +303,41 @@
       }
       function box(v, l) { return '<div class="countdown-box"><span class="countdown-value">' + v + '</span><span class="countdown-unit">' + l + '</span></div>'; }
       tick(); setInterval(tick, 1000);
+    })();
+
+    (function () {
+      var modal = document.getElementById('shareModal');
+      var openBtn = document.getElementById('openShareModal');
+      var closeBtn = document.getElementById('closeShareModal');
+      var copyBtn = document.getElementById('copyShareLink');
+      var qrImage = document.getElementById('qrImage');
+      var shareLink = document.getElementById('shareLink');
+      var url = window.location.href;
+      var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(url);
+      if (qrImage) qrImage.src = qrUrl;
+      if (shareLink) shareLink.value = url;
+      function openModal() { modal.classList.add('is-open'); modal.setAttribute('aria-hidden', 'false'); }
+      function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+      if (openBtn) openBtn.addEventListener('click', openModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (modal) {
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+      }
+      if (copyBtn && shareLink) {
+        copyBtn.addEventListener('click', async function () {
+          try {
+            await navigator.clipboard.writeText(shareLink.value);
+            copyBtn.textContent = 'Lien copié';
+            setTimeout(function () { copyBtn.textContent = 'Copier le lien'; }, 1600);
+          } catch (e) {
+            shareLink.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'Lien copié';
+            setTimeout(function () { copyBtn.textContent = 'Copier le lien'; }, 1600);
+          }
+        });
+      }
     })();
   </script>
 </body>
