@@ -18,32 +18,34 @@ if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join
 const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
 async function getJson(url) {
-  if (!API_KEY) { console.warn('⚠️  THESPORTSDB_API_KEY absent — mode dégradé'); return null; }
+  if (!API_KEY) { console.warn('⚠️  THESPORTSDB_API_KEY absent'); return null; }
   try {
     const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!r.ok) { console.error(`HTTP ${r.status} for ${url}`); return null; }
     const text = await r.text();
     if (!text || text.trim() === '') { console.warn(`Réponse vide pour ${url}`); return null; }
-    try { return JSON.parse(text); } catch (e) { console.warn(`JSON invalide pour ${url}: ${text.slice(0,100)}`); return null; }
-  } catch (e) { console.error(`Erreur fetch ${url}: ${e.message}`); return null; }
+    try { return JSON.parse(text); } catch (e) { console.warn(`JSON invalide: ${text.slice(0,100)}`); return null; }
+  } catch (e) { console.error(`Erreur fetch: ${e.message}`); return null; }
 }
 
-/* ── Calendrier Ligue 2 2026-2027 hardcodé ────────────────────────────────
-   Source : LFP / fcsochaux.fr / ledauphine.com (juin 2026)
-   Utilisé comme fallback si TheSportsDB ne retourne rien.
-*/
+/* ── IDs TheSportsDB des adversaires ─────────────────────────────────────── */
+const TEAM_IDS = {
+  'AS Saint-Étienne': '133717',
+  'Red Star FC':      '134795',
+  'EA Guingamp':      '133716',
+  'Clermont Foot':    '134030',
+  'FC Nantes':        '133704',
+  'AJ Auxerre':       '134102',
+};
+
+/* ── Calendrier hardcodé 2026-2027 ── source LFP / fcsochaux.fr ──────────── */
 const LIGUE2_SCHEDULE = [
-  // --- Amicaux ---
-  { dateEvent: '2026-07-19', strTime: '14:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'Montceau Mines', strLeague: 'Amical', intRound: null, strVenue: '' },
-  { dateEvent: '2026-07-23', strTime: '18:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'Stade Lausanne-Ouchy', strLeague: 'Amical', intRound: null, strVenue: '' },
-  { dateEvent: '2026-07-26', strTime: '14:00:00', strHomeTeam: 'Hatta Club', strAwayTeam: 'FC Sochaux-Montbéliard', strLeague: 'Amical', intRound: null, strVenue: '' },
-  { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'AJ Auxerre', strLeague: 'Amical', intRound: null, strVenue: 'Stade Auguste Bonal' },
-  // --- Ligue 2 ---
-  { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'AS Saint-Étienne', strLeague: 'French Ligue 2', intRound: '1', strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-14', strTime: '20:45:00', strHomeTeam: 'Red Star FC', strAwayTeam: 'FC Sochaux-Montbéliard', strLeague: 'French Ligue 2', intRound: '2', strVenue: '' },
-  { dateEvent: '2026-08-21', strTime: '20:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'EA Guingamp', strLeague: 'French Ligue 2', intRound: '3', strVenue: 'Stade Auguste Bonal' },
-  { dateEvent: '2026-08-28', strTime: '20:00:00', strHomeTeam: 'Clermont Foot', strAwayTeam: 'FC Sochaux-Montbéliard', strLeague: 'French Ligue 2', intRound: '4', strVenue: '' },
-  { dateEvent: '2026-09-11', strTime: '20:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'FC Nantes', strLeague: 'French Ligue 2', intRound: '6', strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-01', strTime: '18:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'AJ Auxerre',        idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AJ Auxerre'],        strLeague: 'Amical',         intRound: null, strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-08', strTime: '20:45:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'AS Saint-Étienne', idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['AS Saint-Étienne'], strLeague: 'French Ligue 2', intRound: '1',  strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-14', strTime: '20:45:00', strHomeTeam: 'Red Star FC',            strAwayTeam: 'FC Sochaux-Montbéliard', idHomeTeam: TEAM_IDS['Red Star FC'], idAwayTeam: TEAM_ID_FCSM, strLeague: 'French Ligue 2', intRound: '2',  strVenue: '' },
+  { dateEvent: '2026-08-21', strTime: '20:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'EA Guingamp',     idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['EA Guingamp'],     strLeague: 'French Ligue 2', intRound: '3',  strVenue: 'Stade Auguste Bonal' },
+  { dateEvent: '2026-08-28', strTime: '20:00:00', strHomeTeam: 'Clermont Foot',          strAwayTeam: 'FC Sochaux-Montbéliard', idHomeTeam: TEAM_IDS['Clermont Foot'], idAwayTeam: TEAM_ID_FCSM, strLeague: 'French Ligue 2', intRound: '4',  strVenue: '' },
+  { dateEvent: '2026-09-11', strTime: '20:00:00', strHomeTeam: 'FC Sochaux-Montbéliard', strAwayTeam: 'FC Nantes',       idHomeTeam: TEAM_ID_FCSM, idAwayTeam: TEAM_IDS['FC Nantes'],       strLeague: 'French Ligue 2', intRound: '6',  strVenue: 'Stade Auguste Bonal' },
 ];
 
 function parseForm(events, teamName) {
@@ -71,13 +73,12 @@ function eventLineHtml(ev, teamName) {
   }
   const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
   const cls = letter === 'V' ? 'win' : letter === 'N' ? 'draw' : 'loss';
-  return `<li><span class="form-badge form-badge--${cls}" title="${cls === 'win' ? 'Victoire' : cls === 'draw' ? 'Nul' : 'Défaite'}">${letter}</span> ${dateOnly} — ${isHome ? `FCSM ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} FCSM`}</li>`;
+  return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${isHome ? `FCSM ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} FCSM`}</li>`;
 }
 
 function buildIso(dateEvent, strTime) {
   if (!dateEvent) return '';
-  const time = strTime ? strTime.slice(0, 5) : '12:00';
-  return `${dateEvent}T${time}:00Z`;
+  return `${dateEvent}T${strTime ? strTime.slice(0, 5) : '12:00'}:00Z`;
 }
 
 function fmtDateOnly(dateEvent) {
@@ -93,15 +94,14 @@ function fmtDateOnly(dateEvent) {
 function fmtDate(dateEvent, strTime) {
   if (!dateEvent) return '—';
   try {
-    const iso = buildIso(dateEvent, strTime);
-    const d = new Date(iso);
+    const d = new Date(buildIso(dateEvent, strTime));
     const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
     const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
     return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   } catch { return dateEvent; }
 }
 
-/* ── Fetch API ──────────────────────────────────────────────────────── */
+/* ── Fetch API ───────────────────────────────────────────────────────────── */
 const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
@@ -116,64 +116,61 @@ const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Calcul de teamAllNext ──────────────────────────────────────────── */
+/* ── Construction de teamAllNext ─────────────────────────────────────────── */
 const seasonEvents = seasonData?.events || [];
 const nextApiEvents = nextTeamData?.events || [];
-
 let teamAllNext, seasonPast, seasonSource;
 
 if (seasonEvents.length > 0) {
   seasonSource = 'eventsseason';
-  teamAllNext = seasonEvents.filter(ev => ev.dateEvent && ev.dateEvent >= today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
-  seasonPast  = seasonEvents.filter(ev => ev.dateEvent && ev.dateEvent < today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
+  teamAllNext = seasonEvents.filter(ev => ev.dateEvent >= today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
+  seasonPast  = seasonEvents.filter(ev => ev.dateEvent < today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 } else if (nextApiEvents.length > 0) {
   seasonSource = 'eventsnext';
-  teamAllNext = nextApiEvents.sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
-  seasonPast  = lastEvents.slice().sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
+  teamAllNext = [...nextApiEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
+  seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 } else {
-  // Fallback : calendrier hardcodé
   seasonSource = 'hardcoded';
-  console.warn('⚠️  API vide — utilisation du calendrier hardcodé');
-  const hardcodedFuture = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today);
-  teamAllNext = hardcodedFuture.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
-  seasonPast  = lastEvents.slice().sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
+  console.warn('⚠️  API vide — calendrier hardcodé utilisé');
+  teamAllNext = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
+  seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* Si l'API a des matchs mais MOINS que le hardcodé, on merge (l'API prime sur les doublons) */
-if (seasonSource !== 'hardcoded') {
-  const existingDates = new Set(teamAllNext.map(e => e.dateEvent + e.strHomeTeam + e.strAwayTeam));
-  const hardcodedFuture = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today);
-  for (const hev of hardcodedFuture) {
-    const key = hev.dateEvent + hev.strHomeTeam + hev.strAwayTeam;
-    if (!existingDates.has(key)) { teamAllNext.push(hev); existingDates.add(key); }
+/* Toujours merger les matchs hardcodés manquants */
+{
+  const existingKeys = new Set(teamAllNext.map(e => `${e.dateEvent}|${e.strHomeTeam}|${e.strAwayTeam}`));
+  for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
+    const key = `${hev.dateEvent}|${hev.strHomeTeam}|${hev.strAwayTeam}`;
+    if (!existingKeys.has(key)) { teamAllNext.push(hev); existingKeys.add(key); }
   }
   teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
-  if (teamAllNext.length > (seasonSource === 'eventsseason' ? seasonEvents.length : nextApiEvents.length)) {
-    seasonSource += '+hardcoded';
-  }
+  if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 }
 
 console.log(`📊 Source: ${seasonSource} | seasonEvents=${seasonEvents.length} | teamAllNext=${teamAllNext.length}`);
 
-/* ── Prochain match & forme ──────────────────────────────────────────── */
+/* ── Prochain match ──────────────────────────────────────────────────────── */
 const teamLigue2Events = teamAllNext.filter(ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
-  (ev.strLeague || '').toLowerCase().includes('ligue 2') ||
-  (ev.strLeague || '').toLowerCase().includes('french ligue 2')
+  (ev.strLeague || '').toLowerCase().includes('ligue 2')
 );
 const ligue2Ready = teamLigue2Events.length > 0;
-const nextEvents = ligue2Ready ? teamLigue2Events : teamAllNext;
-const nextMatch = nextEvents[0] || null;
+const nextMatch = (ligue2Ready ? teamLigue2Events : teamAllNext)[0] || null;
 const oppName = nextMatch ? (nextMatch.strHomeTeam === teamName ? nextMatch.strAwayTeam : nextMatch.strHomeTeam) : 'Adversaire';
 const teamRow = tableRows.find(r => r.strTeam === teamName || r.nameTeam === teamName) || {};
 const oppRow = tableRows.find(r => r.strTeam === oppName || r.nameTeam === oppName) || {};
 
+/* ── 5 derniers matchs adversaire ── ID API ou fallback TEAM_IDS ─────────── */
 let oppLastEvents = [];
 if (nextMatch && API_KEY) {
-  const oppId = nextMatch.idAwayTeam || nextMatch.idHomeTeam;
-  if (oppId && nextMatch.strAwayTeam === oppName ? nextMatch.idAwayTeam : nextMatch.idHomeTeam) {
-    const realOppId = nextMatch.strAwayTeam === oppName ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
-    if (realOppId) { const od = await getJson(ep(`eventslast.php?id=${realOppId}`)); oppLastEvents = od?.results || od?.events || []; }
+  const oppId = (nextMatch.strAwayTeam === oppName ? nextMatch.idAwayTeam : nextMatch.idHomeTeam)
+    || TEAM_IDS[oppName];
+  if (oppId) {
+    const od = await getJson(ep(`eventslast.php?id=${oppId}`));
+    oppLastEvents = od?.results || od?.events || [];
+    console.log(`🔍 Opp ${oppName} (id=${oppId}): ${oppLastEvents.length} derniers matchs`);
+  } else {
+    console.warn(`⚠️  Pas d'ID pour l'adversaire: ${oppName}`);
   }
 }
 
@@ -243,7 +240,8 @@ const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, seasonSource, oppName, nextMatch, nextMatchIso, ligue2Ready,
-  formFCSM, formOpp, totalUpcoming: teamAllNext.length, totalSeason: seasonEvents.length,
+  formFCSM, formOpp, oppLastEventsCount: oppLastEvents.length,
+  totalUpcoming: teamAllNext.length, totalSeason: seasonEvents.length,
   sampleNext: teamAllNext.slice(0,5).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague })),
 }, null, 2), 'utf8');
 
@@ -265,16 +263,11 @@ for (const ev of allEventsForIcs) {
   const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
   const isHome = ev.strHomeTeam === teamName;
   const summary = isHome ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}` : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}`;
-  icsLines.push('BEGIN:VEVENT');
-  icsLines.push(`UID:${uid}`);
-  icsLines.push(`DTSTART:${dt}`);
-  icsLines.push(`SUMMARY:${summary}`);
-  icsLines.push(`DESCRIPTION:Forme FCSM : ${formFCSM}`);
-  icsLines.push(`LOCATION:${ev.strVenue || ''}`);
+  icsLines.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`, `SUMMARY:${summary}`, `DESCRIPTION:Forme FCSM : ${formFCSM}`, `LOCATION:${ev.strVenue || ''}`);
   if (ev.intHomeScore != null && ev.intHomeScore !== '') icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
   icsLines.push('END:VEVENT');
 }
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ dist/ generated', { seasonSource, totalUpcoming: teamAllNext.length, totalIcs: allEventsForIcs.length, apiKey: API_KEY ? '✓' : '✗' });
+console.log('✅ dist/ generated', { seasonSource, totalUpcoming: teamAllNext.length, totalIcs: allEventsForIcs.length, oppLastEvents: oppLastEvents.length, apiKey: API_KEY ? '✓' : '✗' });
