@@ -67,37 +67,42 @@ async function ensureBadge(remoteUrl, slug) {
   }
 }
 
-/* ── IDs TheSportsDB — toutes les équipes Ligue 2 2026-2027 ───────────
-   Tous les IDs vérifiés sur thesportsdb.com/team/<ID>-<slug>            */
+/* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
-  'AS Saint-Étienne':        '133717',  // thesportsdb.com/team/133717
-  'Red Star FC':             '135467',  // thesportsdb.com/team/135467
-  'EN Avant Guingamp':       '134244',  // thesportsdb.com/team/134244
-  'Clermont Foot 63':        '134713',  // thesportsdb.com/team/134713
-  'FC Nantes':               '133861',  // thesportsdb.com/team/133861-nantes ✅
-  'FC Annecy':               '139928',  // thesportsdb.com/team/139928-annecy
-  'Dijon FCO':               '133696',  // badge forcé via BADGE_OVERRIDES
-  'Grenoble Foot 38':        '133847',  // thesportsdb.com/team/133847
-  'Stade Lavallois MFC':     '134708',  // thesportsdb.com/team/134708-laval
-  'AS Nancy Lorraine':       '133710',  // thesportsdb.com/team/133710-nancy-lorraine
-  'FC Metz':                 '133883',  // thesportsdb.com/team/133883
-  'US Boulogne CO':          '133849',  // thesportsdb.com/team/133849
-  'Montpellier Hérault SC':  '133709',  // thesportsdb.com/team/133709-montpellier ✅
-  'USL Dunkerque':           '138821',  // thesportsdb.com/team/138821
-  'Rodez Aveyron Football':  '137652',  // thesportsdb.com/team/137652
-  'Pau FC':                  '138309',  // thesportsdb.com/team/138309-pau
-  'Stade de Reims':          '133934',  // thesportsdb.com/team/133934-stade-de-reims ✅
+  'AS Saint-Étienne':        '133717',
+  'Red Star FC':             '135467',
+  'EN Avant Guingamp':       '134244',
+  'Clermont Foot 63':        '134713',
+  'FC Nantes':               '133861',
+  'FC Annecy':               '139928',
+  'Dijon FCO':               '133696',
+  'Grenoble Foot 38':        '133847',
+  'Stade Lavallois MFC':     '134708',
+  'AS Nancy Lorraine':       '133710',
+  'FC Metz':                 '133883',
+  'US Boulogne CO':          '133849',
+  'Montpellier Hérault SC':  '133709',
+  'USL Dunkerque':           '138821',
+  'Rodez Aveyron Football':  '137652',
+  'Pau FC':                  '138309',
+  'Stade de Reims':          '133934',
 };
 
-/* ── Badges forcés (URLs r2.thesportsdb.com confirmées manuellement) ───
-   Prioritaires sur l'URL retournée par l'API lookupteam.
-   Toutes les 17 équipes ont un ID + badge vérifiés. ✅              */
+/* ── Badges forcés ── */
 const BADGE_OVERRIDES = {
   'fc nantes':              'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
   'dijon fco':              'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
   'montpellier herault sc': 'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
   'stade de reims':         'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
 };
+
+/* ── Date de build (heure Europe/Paris) ── */
+function buildTimestamp() {
+  const now = new Date();
+  const opts = { timeZone: 'Europe/Paris', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return new Intl.DateTimeFormat('fr-FR', opts).format(now);
+}
+const LAST_UPDATED = buildTimestamp();
 
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
@@ -163,7 +168,6 @@ function fmtDate(dateEvent, strTime) {
   } catch { return dateEvent; }
 }
 
-/* ── Fetch API principale ──────────────────────────────────────────────── */
 const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
@@ -179,8 +183,6 @@ const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
-/* ── Fetch badges adversaires ────────────────────────────────────────
-   BADGE_OVERRIDES est prioritaire sur l'URL retournée par l'API.         */
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
     const overrideUrl = BADGE_OVERRIDES[normTeam(name)];
@@ -193,9 +195,7 @@ const calendarTeamsBadges = await Promise.all(
     return { name, id, badgeUrl };
   })
 );
-console.log('🔍 Badges API:', calendarTeamsBadges.map(t => `${t.name}=${t.badgeUrl?'✓':'✗'}`).join(', '));
 
-/* ── Calendrier complet FCSM 2026-2027 (34 journées LFP) ───────────── */
 const FCSM = teamName;
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
@@ -234,7 +234,6 @@ const LIGUE2_SCHEDULE = [
   /* J34 */ { dateEvent:'2027-05-22', strTime:'20:45:00', strHomeTeam:'EN Avant Guingamp',        strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'34', strVenue:'Stade du Roudourou',         _hardcoded:true },
 ];
 
-/* ── Construction de teamAllNext ───────────────────────────────────────── */
 const seasonEvents = seasonData?.events || [];
 const nextApiEvents = nextTeamData?.events || [];
 let teamAllNext, seasonPast, seasonSource;
@@ -273,9 +272,6 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 
-console.log(`📊 Source: ${seasonSource} | teamAllNext=${teamAllNext.length} (dont hardcoded: ${teamAllNext.filter(e=>e._hardcoded).length})`);
-
-/* ── Prochain match Ligue 2 ─────────────────────────────────────────── */
 const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2');
@@ -290,7 +286,6 @@ const oppName = nextMatch
 const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName)) || {};
 const oppRow  = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))  || {};
 
-/* ── 5 derniers matchs adversaire ─────────────────────────────────────── */
 let oppLastEvents = [];
 let oppBadgeRemote = '';
 if (nextMatch && API_KEY) {
@@ -314,7 +309,6 @@ if (nextMatch && API_KEY) {
   }
 }
 
-/* ── Badges ───────────────────────────────────────────────────────────── */
 const allBadgesToEnsure = [
   { name: teamName, remoteUrl: teamBadgeRemote },
   ...calendarTeamsBadges.map(t => ({ name: t.name, remoteUrl: t.badgeUrl })),
@@ -333,17 +327,12 @@ const logoResults = await Promise.all(
 const logos = Object.fromEntries(logoResults.filter(([, url]) => url));
 console.log(`🎨 Logos dispos: ${Object.keys(logos).length}/${allBadgesToEnsure.length}`);
 
-/* ── Rendu HTML ─────────────────────────────────────────────────────── */
 const formFCSM = calcFormStr(lastEvents, teamName);
 const formOpp  = calcFormStr(oppLastEvents, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
-
 const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
-const unconfirmedBadgeHero = nextMatchUnconfirmed
-  ? `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:3px 10px;margin-left:6px">⏳ À confirmer</span>`
-  : '';
 
 function badgeTag(name, size = 28) {
   const url = logos[normTeam(name)];
@@ -405,7 +394,6 @@ const vars = {
   NEXT_MATCH_LEAGUE:     nextMatch?.strLeague    || '—',
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
-  NEXT_MATCH_UNCONFIRMED_BADGE: unconfirmedBadgeHero,
   LIGUE2_STATUS_BANNER:  ligue2Banner,
   TEAM_RANK_FCSM:        String(teamRow?.intRank  || teamRow?.rank  || '—'),
   TEAM_POINTS_FCSM:      String(teamRow?.intPoints || '—'),
@@ -427,6 +415,7 @@ const vars = {
   LAST_5_OPPONENT_4:     eventLineHtml(oppLastEvents[3], oppName, logos),
   LAST_5_OPPONENT_5:     eventLineHtml(oppLastEvents[4], oppName, logos),
   UPCOMING_MATCHES:      upcomingHtml,
+  LAST_UPDATED:          LAST_UPDATED,
 };
 
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
@@ -438,16 +427,17 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   totalUpcoming: teamAllNext.length,
   hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
+  lastUpdated: LAST_UPDATED,
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: !e._hardcoded })),
 }, null, 2), 'utf8');
 
-/* ── ICS ──────────────────────────────────────────────────────────────── */
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
   'CALSCALE:GREGORIAN','METHOD:PUBLISH',
   'X-WR-CALNAME:FCSM — Tous les matchs',
   'X-WR-CALDESC:Matchs FC Sochaux-Montbéliard toutes compétitions',
+  `X-WR-LASTUPDATED:${new Date().toISOString()}`,
 ];
 const seenUids = new Set();
 for (const ev of allEventsForIcs) {
@@ -481,4 +471,4 @@ for (const ev of allEventsForIcs) {
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ Build OK', { seasonSource, upcoming: teamAllNext.length, logos: Object.keys(logos).length, apiKey: API_KEY ? '✓' : '✗' });
+console.log('✅ Build OK', { seasonSource, upcoming: teamAllNext.length, logos: Object.keys(logos).length, lastUpdated: LAST_UPDATED, apiKey: API_KEY ? '✓' : '✗' });

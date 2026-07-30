@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#034A97"/>
-  <rect x="1.5" y="1.5" width="29" height="29" rx="4.5" fill="none" stroke="#FFCF21" stroke-width="2"/>
-  <text x="16" y="22" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="16" fill="#FFCF21">FC</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#0D2B5E"/>
+  <rect x="4" y="7" width="24" height="21" rx="3" fill="#fff"/>
+  <rect x="4" y="7" width="24" height="7" rx="3" fill="#FFCF21"/>
+  <rect x="4" y="11" width="24" height="3" fill="#FFCF21"/>
+  <rect x="10" y="4" width="2" height="6" rx="1" fill="#FFCF21"/>
+  <rect x="20" y="4" width="2" height="6" rx="1" fill="#FFCF21"/>
+  <line x1="4" y1="20" x2="28" y2="20" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="14" y1="14" x2="14" y2="28" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="21" y1="14" x2="21" y2="28" stroke="#E8EDF5" stroke-width="1"/>
+  <polygon points="16,15 20,20 16,25 12,20" fill="#FFCF21" opacity="0.8"/>
 </svg>

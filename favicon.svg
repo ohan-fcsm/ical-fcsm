@@ -1,11 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Fond bleu FCSM #034A97 -->
-  <rect width="32" height="32" rx="6" fill="#034A97"/>
-  <!-- Bordure jaune #FFCF21 -->
-  <rect x="1.5" y="1.5" width="29" height="29" rx="4.5" fill="none" stroke="#FFCF21" stroke-width="2"/>
-  <!-- Écusson : étoile stylisée -->
-  <polygon points="16,5 18.5,12 26,12 20,17 22.5,24 16,19.5 9.5,24 12,17 6,12 13.5,12" fill="#FFCF21"/>
-  <!-- Lion stylisé au centre (cercle + détail) -->
-  <circle cx="16" cy="16" r="5" fill="#034A97"/>
-  <text x="16" y="20" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#FFCF21">FC</text>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <clipPath id="rnd">
+      <rect width="100" height="100" rx="22" ry="22"/>
+    </clipPath>
+  </defs>
+  <rect width="100" height="100" rx="22" ry="22" fill="#0D2B5E"/>
+  <!-- Calendrier -->
+  <rect x="14" y="22" width="72" height="62" rx="8" ry="8" fill="#FFCF21"/>
+  <rect x="14" y="22" width="72" height="20" rx="8" ry="8" fill="#FFCF21"/>
+  <rect x="14" y="34" width="72" height="8" fill="#FFCF21"/>
+  <!-- Grille jours -->
+  <rect x="14" y="42" width="72" height="42" rx="0" ry="0" fill="#fff"/>
+  <rect x="14" y="42" width="72" height="42" rx="0" fill="#fff"/>
+  <!-- Lignes verticales grille -->
+  <line x1="28" y1="42" x2="28" y2="84" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="42" y1="42" x2="42" y2="84" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="56" y1="42" x2="56" y2="84" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="70" y1="42" x2="70" y2="84" stroke="#E8EDF5" stroke-width="1"/>
+  <!-- Lignes horizontales grille -->
+  <line x1="14" y1="56" x2="86" y2="56" stroke="#E8EDF5" stroke-width="1"/>
+  <line x1="14" y1="70" x2="86" y2="70" stroke="#E8EDF5" stroke-width="1"/>
+  <!-- Crochets calendrier -->
+  <rect x="30" y="16" width="6" height="14" rx="3" fill="#0D2B5E"/>
+  <rect x="64" y="16" width="6" height="14" rx="3" fill="#0D2B5E"/>
+  <!-- Losange FCSM stylisé superposé -->
+  <polygon points="50,44 62,58 50,72 38,58" fill="#0D2B5E" opacity="0.18"/>
+  <polygon points="50,47 59,58 50,69 41,58" fill="#FFCF21" opacity="0.7"/>
+  <!-- Coin arrondi bas -->
+  <rect x="14" y="76" width="72" height="8" rx="0" fill="#fff"/>
+  <rect x="14" y="76" width="72" height="8" rx="8" ry="8" fill="#fff"/>
+  <!-- Masque arrondi global -->
+  <rect width="100" height="100" rx="22" ry="22" fill="none" stroke="#0D2B5E" stroke-width="0"/>
 </svg>
