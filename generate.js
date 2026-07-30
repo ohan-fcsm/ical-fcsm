@@ -10,7 +10,6 @@ const SEASON = process.env.SEASON || '2026-2027';
 const out = path.join('dist');
 fs.mkdirSync(out, { recursive: true });
 
-// Copie du favicon dans dist/
 if (fs.existsSync('favicon.svg')) {
   fs.copyFileSync('favicon.svg', path.join(out, 'favicon.svg'));
 }
@@ -19,7 +18,7 @@ const ep = (p) => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 const urls = {
   team:  ep(`lookupteam.php?id=${TEAM_ID_FCSM}`),
   last:  ep(`eventslast.php?id=${TEAM_ID_FCSM}`),
-  next:  ep(`eventsnext.php?id=${TEAM_ID_FCSM}`),  // ciblé FCSM directement
+  next:  ep(`eventsnext.php?id=${TEAM_ID_FCSM}`),
   table: ep(`lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`),
 };
 
@@ -58,11 +57,15 @@ const lastEvents    = lastData?.results || lastData?.events || [];
 const allNextEvents = nextData?.events || [];
 const tableRows     = tableData?.table || tableData?.teams || [];
 
-// Filtre Ligue 2 uniquement
-const nextEvents = allNextEvents.filter(ev =>
+// Essai Ligue 2 en priorité
+const ligue2Events = allNextEvents.filter(ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2')
 );
+
+// Fallback : si pas de Ligue 2 encore dispo, on prend tous les matchs
+const ligue2Ready  = ligue2Events.length > 0;
+const nextEvents   = ligue2Ready ? ligue2Events : allNextEvents;
 
 const nextMatch = nextEvents[0] || null;
 const oppName   = nextMatch
@@ -88,37 +91,39 @@ const fill = (template, vars) =>
   Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 
 const vars = {
-  NEXT_MATCH_DATE:      nextMatch?.dateEvent || '—',
-  NEXT_MATCH_TIME:      nextMatch?.strTime || '—',
-  NEXT_MATCH_HOME_TEAM: nextMatch?.strHomeTeam || '—',
-  NEXT_MATCH_AWAY_TEAM: nextMatch?.strAwayTeam || '—',
-  NEXT_MATCH_STATUS:    nextMatch?.strStatus || nextMatch?.strProgress || '—',
-  NEXT_MATCH_VENUE:     nextMatch?.strVenue || '—',
-  TEAM_RANK_FCSM:       teamRow?.intRank || teamRow?.rank || '—',
-  TEAM_POINTS_FCSM:     teamRow?.intPoints || '—',
-  TEAM_RANK_OPPONENT:   oppRow?.intRank || oppRow?.rank || '—',
-  TEAM_POINTS_OPPONENT: oppRow?.intPoints || '—',
-  LAST_5_FCSM_FORM:     formFCSM,
-  LAST_5_FCSM_1:        eventLine(lastEvents[0]),
-  LAST_5_FCSM_2:        eventLine(lastEvents[1]),
-  LAST_5_FCSM_3:        eventLine(lastEvents[2]),
-  LAST_5_FCSM_4:        eventLine(lastEvents[3]),
-  LAST_5_FCSM_5:        eventLine(lastEvents[4]),
-  LAST_5_OPPONENT_FORM: formOpp,
-  LAST_5_OPPONENT_1:    eventLine(oppLastEvents[0]),
-  LAST_5_OPPONENT_2:    eventLine(oppLastEvents[1]),
-  LAST_5_OPPONENT_3:    eventLine(oppLastEvents[2]),
-  LAST_5_OPPONENT_4:    eventLine(oppLastEvents[3]),
-  LAST_5_OPPONENT_5:    eventLine(oppLastEvents[4]),
+  NEXT_MATCH_DATE:        nextMatch?.dateEvent || '—',
+  NEXT_MATCH_TIME:        nextMatch?.strTime || '—',
+  NEXT_MATCH_HOME_TEAM:   nextMatch?.strHomeTeam || '—',
+  NEXT_MATCH_AWAY_TEAM:   nextMatch?.strAwayTeam || '—',
+  NEXT_MATCH_STATUS:      nextMatch?.strStatus || nextMatch?.strProgress || '—',
+  NEXT_MATCH_VENUE:       nextMatch?.strVenue || '—',
+  NEXT_MATCH_LEAGUE:      nextMatch?.strLeague || '—',
+  LIGUE2_STATUS:          ligue2Ready ? '' : '⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible — prochain match affiché : match amical',
+  TEAM_RANK_FCSM:         teamRow?.intRank || teamRow?.rank || '—',
+  TEAM_POINTS_FCSM:       teamRow?.intPoints || '—',
+  TEAM_RANK_OPPONENT:     oppRow?.intRank || oppRow?.rank || '—',
+  TEAM_POINTS_OPPONENT:   oppRow?.intPoints || '—',
+  LAST_5_FCSM_FORM:       formFCSM,
+  LAST_5_FCSM_1:          eventLine(lastEvents[0]),
+  LAST_5_FCSM_2:          eventLine(lastEvents[1]),
+  LAST_5_FCSM_3:          eventLine(lastEvents[2]),
+  LAST_5_FCSM_4:          eventLine(lastEvents[3]),
+  LAST_5_FCSM_5:          eventLine(lastEvents[4]),
+  LAST_5_OPPONENT_FORM:   formOpp,
+  LAST_5_OPPONENT_1:      eventLine(oppLastEvents[0]),
+  LAST_5_OPPONENT_2:      eventLine(oppLastEvents[1]),
+  LAST_5_OPPONENT_3:      eventLine(oppLastEvents[2]),
+  LAST_5_OPPONENT_4:      eventLine(oppLastEvents[3]),
+  LAST_5_OPPONENT_5:      eventLine(oppLastEvents[4]),
 };
 
 const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify(
-  { teamName, oppName, teamRow, oppRow, nextMatch, nextEvents, lastEvents, oppLastEvents, formFCSM, formOpp }, null, 2
+  { teamName, oppName, teamRow, oppRow, nextMatch, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp }, null, 2
 ), 'utf8');
 
-// Génération ICS — uniquement matchs Ligue 2 FCSM
+// ICS : Ligue 2 si dispo, sinon tous les matchs
 const icsLines = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -136,10 +141,11 @@ for (const ev of nextEvents) {
   const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
   const rankOpp  = evOppRow?.intRank ? `(${evOppRow.intRank})` : '';
   const evForm   = calcForm(oppLastEvents, opp);
+  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
   icsLines.push('BEGIN:VEVENT');
   icsLines.push(`UID:fcsm-${ev.idEvent || dt}@ical-fcsm`);
   icsLines.push(`DTSTART:${dt}`);
-  icsLines.push(`SUMMARY:FCSM ${rankFCSM} - ${opp} ${rankOpp}`);
+  icsLines.push(`SUMMARY:FCSM ${rankFCSM} - ${opp} ${rankOpp}${leagueLabel}`);
   icsLines.push(`DESCRIPTION:Forme FCSM : ${formFCSM} | Forme ${opp} : ${evForm}`);
   icsLines.push(`LOCATION:${ev.strVenue || ''}`);
   icsLines.push('END:VEVENT');
@@ -149,6 +155,7 @@ fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
 console.log('dist/ generated', {
   teamName, oppName, formFCSM, formOpp,
-  ligue2Events: nextEvents.length,
+  ligue2Ready,
+  ligue2Events: ligue2Events.length,
   totalEvents:  allNextEvents.length,
 });
