@@ -54,20 +54,28 @@ function parseForm(events, teamName) {
 
 function calcFormStr(events, teamName) { return parseForm(events, teamName).map(r => r.letter).join(' ') || '—'; }
 
-/* eventLineHtml : affiche TOUJOURS les vrais noms des équipes (pas "FCSM" hardcodé) */
-function eventLineHtml(ev, teamName) {
+function teamBadgeImg(name, logos, size = 20) {
+  const url = logos[normTeam(name)];
+  if (!url) return '';
+  return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:3px;object-fit:contain;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
+}
+
+function eventLineHtml(ev, teamName, logos) {
   if (!ev || !ev.strHomeTeam) return '<li>—</li>';
   const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
   const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
   const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
   const self = isHome ? ev.strHomeTeam : ev.strAwayTeam;
   const dateOnly = ev.dateEvent ? fmtDateOnly(ev.dateEvent) : '—';
+  const oppBadge = teamBadgeImg(opp, logos, 16);
   if (!Number.isFinite(hs) || !Number.isFinite(as)) {
-    return `<li><span class="form-badge form-badge--unknown">?</span> ${dateOnly} — ${ev.strHomeTeam} vs ${ev.strAwayTeam}</li>`;
+    return `<li><span class="form-badge form-badge--unknown">?</span> ${dateOnly} — ${oppBadge} ${ev.strHomeTeam} vs ${ev.strAwayTeam}</li>`;
   }
   const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
   const cls = letter === 'V' ? 'win' : letter === 'N' ? 'draw' : 'loss';
-  const scoreStr = isHome ? `${self} ${hs}-${as} ${opp}` : `${opp} ${as}-${hs} ${self}`;
+  const scoreStr = isHome
+    ? `${teamBadgeImg(self, logos, 16)} ${self} ${hs}-${as} ${oppBadge} ${opp}`
+    : `${oppBadge} ${opp} ${as}-${hs} ${teamBadgeImg(self, logos, 16)} ${self}`;
   return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${scoreStr}</li>`;
 }
 
@@ -107,6 +115,7 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
+const teamBadgeUrl = team.strTeamBadge || team.strBadge || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
@@ -162,8 +171,6 @@ const isLigue2 = ev =>
 const teamLigue2Events = teamAllNext.filter(isLigue2);
 const ligue2Ready = teamLigue2Events.length > 0;
 const nextMatch = (ligue2Ready ? teamLigue2Events : teamAllNext)[0] || null;
-
-/* oppName : on prend le nom exact de l'événement */
 const oppName = nextMatch
   ? (normTeam(nextMatch.strHomeTeam) === normTeam(teamName) ? nextMatch.strAwayTeam : nextMatch.strHomeTeam)
   : 'Adversaire';
@@ -171,21 +178,43 @@ const oppName = nextMatch
 const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName)) || {};
 const oppRow  = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))  || {};
 
-/* ── 5 derniers matchs adversaire ────────────────────────────────────────── */
+/* ── 5 derniers matchs adversaire + badge adversaire ─────────────────── */
 let oppLastEvents = [];
+let oppBadgeUrl = '';
 if (nextMatch && API_KEY) {
-  /* Chercher l'ID : dans l'événement d'abord, puis dans TEAM_IDS par normTeam */
   const isOppAway = normTeam(nextMatch.strAwayTeam) === normTeam(oppName);
   const oppIdFromEvent = isOppAway ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
   const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => normTeam(k) === normTeam(oppName))?.[1];
   const oppId = oppIdFromEvent || oppIdFromMap;
   if (oppId) {
-    const od = await getJson(ep(`eventslast.php?id=${oppId}`));
+    const [od, oppTeamData] = await Promise.all([
+      getJson(ep(`eventslast.php?id=${oppId}`)),
+      getJson(ep(`lookupteam.php?id=${oppId}`)),
+    ]);
     oppLastEvents = od?.results || od?.events || [];
-    console.log(`🔍 Opp "${oppName}" (id=${oppId}): ${oppLastEvents.length} derniers matchs`);
+    oppBadgeUrl = oppTeamData?.teams?.[0]?.strTeamBadge || oppTeamData?.teams?.[0]?.strBadge || '';
+    console.log(`🔍 Opp "${oppName}" (id=${oppId}): ${oppLastEvents.length} matchs, badge=${oppBadgeUrl?'✓':'✗'}`);
   } else {
     console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
+}
+
+/* ── Table logos : normTeam => URL badge ────────────────────────────── */
+const logos = {};
+if (teamBadgeUrl) logos[normTeam(teamName)] = teamBadgeUrl;
+if (oppBadgeUrl)  logos[normTeam(oppName)]  = oppBadgeUrl;
+/* Logos hardcodés TheSportsDB pour les autres adversaires du calendrier */
+const BADGE_URLS = {
+  'AJ Auxerre':       'https://www.thesportsdb.com/images/media/team/badge/0xr8vf1728467454.png',
+  'AS Saint-Étienne': 'https://www.thesportsdb.com/images/media/team/badge/xvuuqq1420220879.png',
+  'Red Star FC':      'https://www.thesportsdb.com/images/media/team/badge/red-star-fc.png',
+  'EA Guingamp':      'https://www.thesportsdb.com/images/media/team/badge/guingamp.png',
+  'Clermont Foot':    'https://www.thesportsdb.com/images/media/team/badge/clermont.png',
+  'FC Nantes':        'https://www.thesportsdb.com/images/media/team/badge/qsrsys1420221175.png',
+};
+for (const [name, url] of Object.entries(BADGE_URLS)) {
+  const k = normTeam(name);
+  if (!logos[k]) logos[k] = url;
 }
 
 const formFCSM = calcFormStr(lastEvents, teamName);
@@ -193,6 +222,9 @@ const formOpp  = calcFormStr(oppLastEvents, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 Août - les prochains matchs sont des Amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
+
+const fcsmBigBadge  = teamBadgeUrl  ? `<img src="${teamBadgeUrl}"  alt="${teamName}" width="28" height="28" style="border-radius:4px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'">` : '';
+const oppBigBadge   = oppBadgeUrl   ? `<img src="${oppBadgeUrl}"   alt="${oppName}"  width="28" height="28" style="border-radius:4px;object-fit:contain;vertical-align:middle" onerror="this.style.display='none'">` : '';
 
 function formBadgesSummary(events, tName) {
   const items = parseForm(events, tName);
@@ -209,9 +241,14 @@ function buildUpcomingRows(events) {
     const time = ev.strTime ? ev.strTime.slice(0,5) : '—';
     const league = ev.strLeague || '—';
     const roundLabel = ev.intRound ? `J${ev.intRound}` : '';
+    const homeBadge = teamBadgeImg(ev.strHomeTeam, logos, 22);
+    const awayBadge = teamBadgeImg(ev.strAwayTeam, logos, 22);
+    const teamsHtml = isHome
+      ? `${homeBadge} <strong>FCSM</strong> vs ${awayBadge} ${opp}`
+      : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span><span class="upcoming-date-time">${time}</span></div>
-  <div class="upcoming-match"><span class="upcoming-teams">${isHome ? `<strong>FCSM</strong> vs ${opp}` : `${opp} vs <strong>FCSM</strong>`}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
+  <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
   <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}</div>
 </div>`;
   }).join('\n');
@@ -224,6 +261,8 @@ const vars = {
   NEXT_MATCH_TIME:      nextMatch?.strTime      || '—',
   NEXT_MATCH_HOME_TEAM: nextMatch?.strHomeTeam  || '—',
   NEXT_MATCH_AWAY_TEAM: nextMatch?.strAwayTeam  || '—',
+  NEXT_MATCH_HOME_BADGE: fcsmBigBadge,
+  NEXT_MATCH_AWAY_BADGE: oppBigBadge,
   NEXT_MATCH_STATUS:    nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:     nextMatch?.strVenue     || '—',
   NEXT_MATCH_LEAGUE:    nextMatch?.strLeague    || '—',
@@ -234,18 +273,21 @@ const vars = {
   TEAM_POINTS_FCSM:     String(teamRow?.intPoints || '—'),
   TEAM_RANK_OPPONENT:   String(oppRow?.intRank   || oppRow?.rank   || '—'),
   TEAM_POINTS_OPPONENT: String(oppRow?.intPoints  || '—'),
+  FCSM_BADGE:           fcsmBigBadge,
+  OPP_BADGE:            oppBigBadge,
+  OPP_NAME:             oppName,
   LAST_5_FCSM_FORM:     formBadgesSummary(lastEvents, teamName),
-  LAST_5_FCSM_1:        eventLineHtml(lastEvents[0], teamName),
-  LAST_5_FCSM_2:        eventLineHtml(lastEvents[1], teamName),
-  LAST_5_FCSM_3:        eventLineHtml(lastEvents[2], teamName),
-  LAST_5_FCSM_4:        eventLineHtml(lastEvents[3], teamName),
-  LAST_5_FCSM_5:        eventLineHtml(lastEvents[4], teamName),
+  LAST_5_FCSM_1:        eventLineHtml(lastEvents[0], teamName, logos),
+  LAST_5_FCSM_2:        eventLineHtml(lastEvents[1], teamName, logos),
+  LAST_5_FCSM_3:        eventLineHtml(lastEvents[2], teamName, logos),
+  LAST_5_FCSM_4:        eventLineHtml(lastEvents[3], teamName, logos),
+  LAST_5_FCSM_5:        eventLineHtml(lastEvents[4], teamName, logos),
   LAST_5_OPPONENT_FORM: formBadgesSummary(oppLastEvents, oppName),
-  LAST_5_OPPONENT_1:    eventLineHtml(oppLastEvents[0], oppName),
-  LAST_5_OPPONENT_2:    eventLineHtml(oppLastEvents[1], oppName),
-  LAST_5_OPPONENT_3:    eventLineHtml(oppLastEvents[2], oppName),
-  LAST_5_OPPONENT_4:    eventLineHtml(oppLastEvents[3], oppName),
-  LAST_5_OPPONENT_5:    eventLineHtml(oppLastEvents[4], oppName),
+  LAST_5_OPPONENT_1:    eventLineHtml(oppLastEvents[0], oppName, logos),
+  LAST_5_OPPONENT_2:    eventLineHtml(oppLastEvents[1], oppName, logos),
+  LAST_5_OPPONENT_3:    eventLineHtml(oppLastEvents[2], oppName, logos),
+  LAST_5_OPPONENT_4:    eventLineHtml(oppLastEvents[3], oppName, logos),
+  LAST_5_OPPONENT_5:    eventLineHtml(oppLastEvents[4], oppName, logos),
   UPCOMING_MATCHES:     upcomingHtml,
 };
 
