@@ -125,6 +125,33 @@
     .match-league { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(255,207,33,.10); border:1px solid rgba(255,207,33,.25); color:var(--jaune); font-size:12px; font-weight:600; }
     .match-round  { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:rgba(3,74,151,.4); border:1px solid rgba(255,255,255,.15); color:var(--blanc); font-size:12px; font-weight:600; }
     .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,180,0,.12); border:1px solid rgba(255,180,0,.35); color:#FFCF21; font-size:13px; font-weight:500; }
+    /* Countdown */
+    .countdown-wrap {
+      margin-top:18px;
+      display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+    }
+    .countdown-box {
+      flex:1; min-width:80px; max-width:110px;
+      padding:18px 10px 14px;
+      border-radius:18px;
+      background:rgba(2,18,44,.7);
+      border:1px solid rgba(255,207,33,.25);
+      text-align:center;
+    }
+    .countdown-value {
+      display:block; font-size:38px; font-weight:800;
+      letter-spacing:-0.03em; color:var(--jaune);
+      line-height:1;
+    }
+    .countdown-unit {
+      display:block; font-size:11px; font-weight:600;
+      text-transform:uppercase; letter-spacing:.08em;
+      color:var(--muted); margin-top:6px;
+    }
+    .countdown-done {
+      text-align:center; font-size:16px; font-weight:700;
+      color:var(--jaune); padding:14px 0;
+    }
     .footer { margin-top:32px; padding:16px 0; border-top:1px solid rgba(255,207,33,.15); color:var(--muted); font-size:12px; text-align:center; }
     .footer strong { color:var(--jaune); }
     code { padding:2px 7px; border-radius:6px; background:rgba(255,207,33,.12); border:1px solid rgba(255,207,33,.2); color:var(--jaune); font-size:13px; }
@@ -170,6 +197,10 @@
           <span class="match-round">🗓 Journée {{NEXT_MATCH_ROUND}}</span>
         </div>
       </div></div>
+      <!-- Countdown -->
+      <div id="countdown-section">
+        <div class="countdown-wrap" id="countdown"></div>
+      </div>
     </section>
     <section class="section">
       <h2>Classement Ligue 2</h2>
@@ -187,5 +218,46 @@
     </section>
     <div class="footer">Généré automatiquement via <strong>GitHub Actions</strong> · Données <strong>TheSportsDB</strong> · FC Sochaux-Montbéliard</div>
   </main>
+
+  <script>
+    (function () {
+      var isoStr = "{{NEXT_MATCH_ISO}}";
+      var wrap = document.getElementById("countdown");
+      if (!wrap || !isoStr || isoStr.indexOf("{{") !== -1) return;
+
+      var target = new Date(isoStr);
+      if (isNaN(target.getTime())) return;
+
+      function pad(n) { return n < 10 ? "0" + n : n; }
+
+      function tick() {
+        var now = new Date();
+        var diff = target - now;
+        if (diff <= 0) {
+          wrap.innerHTML = '<div class="countdown-done">⚽ Match en cours ou terminé</div>';
+          return;
+        }
+        var totalSec = Math.floor(diff / 1000);
+        var days     = Math.floor(totalSec / 86400);
+        var hours    = Math.floor((totalSec % 86400) / 3600);
+        var minutes  = Math.floor((totalSec % 3600) / 60);
+        var seconds  = totalSec % 60;
+
+        wrap.innerHTML =
+          box(days,    "Jour" + (days !== 1 ? "s" : "")) +
+          box(hours,   "Heure" + (hours !== 1 ? "s" : "")) +
+          box(pad(minutes), "Min") +
+          box(pad(seconds), "Sec");
+      }
+
+      function box(val, label) {
+        return '<div class="countdown-box"><span class="countdown-value">' + val +
+               '</span><span class="countdown-unit">' + label + '</span></div>';
+      }
+
+      tick();
+      setInterval(tick, 1000);
+    })();
+  </script>
 </body>
 </html>
