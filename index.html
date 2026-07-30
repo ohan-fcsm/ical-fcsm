@@ -67,8 +67,7 @@
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
     .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .match-card-teams img { flex-shrink:0; }
-    .match-card-datetime { font-size:14px; color:var(--muted); margin-bottom:6px; }
-    .match-card-unconfirmed { margin-bottom:14px; }
+    .match-card-datetime { font-size:14px; color:var(--muted); margin-bottom:14px; }
     .match-card-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
     .match-card-meta-item { display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); }
     .match-card-meta-item strong { color:var(--text); font-weight:600; }
@@ -198,8 +197,6 @@
 
           <div class="match-card-datetime">{{NEXT_MATCH_DATE}} &middot; {{NEXT_MATCH_TIME}}</div>
 
-          <div class="match-card-unconfirmed">{{NEXT_MATCH_UNCONFIRMED_BADGE}}</div>
-
           <div class="match-card-meta">
             <span class="match-card-meta-item">🏆 <strong>{{NEXT_MATCH_LEAGUE}}</strong></span>
             <span class="match-card-meta-item">🏙 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
@@ -255,7 +252,7 @@
       </div>
     </section>
 
-    <div class="footer">Généré automatiquement via <strong>GitHub Actions</strong> &middot; Données <strong>TheSportsDB</strong> &middot; FC Sochaux-Montbéliard</div>
+    <div class="footer">Données <strong>TheSportsDB</strong> &middot; FC Sochaux-Montbéliard</div>
   </main>
 
   <div class="modal" id="shareModal" aria-hidden="true">
