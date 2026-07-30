@@ -9,7 +9,7 @@ const TEAM_ID_FCSM = process.env.TEAM_ID_FCSM || '133708';
 const LEAGUE_ID = process.env.LEAGUE_ID || '4401';
 const SEASON = process.env.SEASON || '2026-2027';
 
-const out = path.join('dist');
+const out = 'dist';
 fs.mkdirSync(out, { recursive: true });
 if (fs.existsSync('favicon.svg')) fs.copyFileSync('favicon.svg', path.join(out, 'favicon.svg'));
 if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join(out, 'favicon-32.svg'));
@@ -18,15 +18,22 @@ const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
 async function getJson(url) {
   if (!API_KEY) {
-    console.warn('⚠️  THESPORTSDB_API_KEY absent — mode dégradé (placeholders)');
+    console.warn('⚠️  THESPORTSDB_API_KEY absent — mode dégradé');
     return null;
   }
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!r.ok) { console.error(`HTTP ${r.status} for ${url}`); return null; }
-    return r.json();
+    const text = await r.text();
+    if (!text || text.trim() === '') { console.warn(`Réponse vide pour ${url}`); return null; }
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn(`JSON invalide pour ${url}: ${text.slice(0, 100)}`);
+      return null;
+    }
   } catch (e) {
-    console.error(`fetch error: ${e.message}`);
+    console.error(`Erreur fetch ${url}: ${e.message}`);
     return null;
   }
 }
@@ -53,7 +60,7 @@ function buildIso(dateEvent, strTime) {
   return `${dateEvent}T${time}:00Z`;
 }
 
-// Fetch all data (null-safe)
+// Fetch all data
 const [teamData, lastData, nextTeamData, nextLeagueData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
