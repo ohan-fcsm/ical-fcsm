@@ -16,10 +16,11 @@ if (fs.existsSync('favicon.svg')) {
 
 const ep = (p) => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 const urls = {
-  team:  ep(`lookupteam.php?id=${TEAM_ID_FCSM}`),
-  last:  ep(`eventslast.php?id=${TEAM_ID_FCSM}`),
-  next:  ep(`eventsnext.php?id=${TEAM_ID_FCSM}`),
-  table: ep(`lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`),
+  team:        ep(`lookupteam.php?id=${TEAM_ID_FCSM}`),
+  last:        ep(`eventslast.php?id=${TEAM_ID_FCSM}`),
+  nextTeam:    ep(`eventsnext.php?id=${TEAM_ID_FCSM}`),       // tous matchs FCSM (amicaux inclus)
+  nextLeague:  ep(`eventsnextleague.php?id=${LEAGUE_ID}`),    // tous matchs Ligue 2
+  table:       ep(`lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`),
 };
 
 async function getJson(url) {
@@ -44,28 +45,37 @@ function eventLine(ev) {
   return `${ev.dateEvent || ''} ${ev.strTime || ''} — ${ev.strHomeTeam} ${ev.intHomeScore ?? ''}-${ev.intAwayScore ?? ''} ${ev.strAwayTeam} (${ev.strStatus || ev.strProgress || ''})`;
 }
 
-const [teamData, lastData, nextData, tableData] = await Promise.all([
+const [teamData, lastData, nextTeamData, nextLeagueData, tableData] = await Promise.all([
   getJson(urls.team),
   getJson(urls.last),
-  getJson(urls.next),
+  getJson(urls.nextTeam),
+  getJson(urls.nextLeague),
   getJson(urls.table),
 ]);
 
-const team          = teamData?.teams?.[0] || {};
-const teamName      = team.strTeam || 'FCSM';
-const lastEvents    = lastData?.results || lastData?.events || [];
-const allNextEvents = nextData?.events || [];
-const tableRows     = tableData?.table || tableData?.teams || [];
+const team       = teamData?.teams?.[0] || {};
+const teamName   = team.strTeam || 'FCSM';
+const lastEvents = lastData?.results || lastData?.events || [];
+const tableRows  = tableData?.table || tableData?.teams || [];
 
-// Ligue 2 en priorité
-const ligue2Events = allNextEvents.filter(ev =>
+// Source 1 : matchs Ligue 2 de FCSM via eventsnextleague (filtré)
+const leagueEvents = (nextLeagueData?.events || []).filter(ev =>
+  ev.strHomeTeam === teamName || ev.strAwayTeam === teamName
+);
+
+// Source 2 : matchs Ligue 2 via eventsnext (filtré par league)
+const teamLigue2Events = (nextTeamData?.events || []).filter(ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2')
 );
 
-// Fallback : si Ligue 2 pas encore dispo, on affiche tous les matchs
-const ligue2Ready = ligue2Events.length > 0;
-const nextEvents  = ligue2Ready ? ligue2Events : allNextEvents;
+// Priorité : leagueEvents (plus complet), sinon teamLigue2Events, sinon tous les matchs FCSM
+const ligue2Ready = leagueEvents.length > 0 || teamLigue2Events.length > 0;
+const nextEvents  = leagueEvents.length > 0
+  ? leagueEvents
+  : teamLigue2Events.length > 0
+    ? teamLigue2Events
+    : (nextTeamData?.events || []);  // fallback amicaux
 
 const nextMatch = nextEvents[0] || null;
 const oppName   = nextMatch
@@ -90,10 +100,11 @@ const formOpp  = calcForm(oppLastEvents, oppName);
 const fill = (template, vars) =>
   Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 
-// Bandeau HTML uniquement si Ligue 2 pas encore dispo
 const ligue2Banner = ligue2Ready
   ? ''
-  : '<div class="banner-warning">⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible sur TheSportsDB — prochain match affiché : match amical.</div>';
+  : '<div class="banner-warning">⚠️ Calendrier Ligue 2 2026-2027 pas encore disponible — match amical affiché.</div>';
+
+const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 
 const vars = {
   NEXT_MATCH_DATE:        nextMatch?.dateEvent || '—',
@@ -103,6 +114,7 @@ const vars = {
   NEXT_MATCH_STATUS:      nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:       nextMatch?.strVenue || '—',
   NEXT_MATCH_LEAGUE:      nextMatch?.strLeague || '—',
+  NEXT_MATCH_ROUND:       round,
   LIGUE2_STATUS_BANNER:   ligue2Banner,
   TEAM_RANK_FCSM:         teamRow?.intRank || teamRow?.rank || '—',
   TEAM_POINTS_FCSM:       teamRow?.intPoints || '—',
@@ -128,7 +140,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify(
   { teamName, oppName, teamRow, oppRow, nextMatch, nextEvents, ligue2Ready, lastEvents, oppLastEvents, formFCSM, formOpp }, null, 2
 ), 'utf8');
 
-// ICS : Ligue 2 si dispo, sinon tous les matchs (avec label compétition)
+// ICS
 const icsLines = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
@@ -146,11 +158,11 @@ for (const ev of nextEvents) {
   const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
   const rankOpp  = evOppRow?.intRank ? `(${evOppRow.intRank})` : '';
   const evForm   = calcForm(oppLastEvents, opp);
-  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
+  const roundLabel = ev.intRound ? ` J${ev.intRound}` : '';
   icsLines.push('BEGIN:VEVENT');
   icsLines.push(`UID:fcsm-${ev.idEvent || dt}@ical-fcsm`);
   icsLines.push(`DTSTART:${dt}`);
-  icsLines.push(`SUMMARY:FCSM ${rankFCSM} - ${opp} ${rankOpp}${leagueLabel}`);
+  icsLines.push(`SUMMARY:FCSM ${rankFCSM} - ${opp} ${rankOpp}${roundLabel}`);
   icsLines.push(`DESCRIPTION:Forme FCSM : ${formFCSM} | Forme ${opp} : ${evForm}`);
   icsLines.push(`LOCATION:${ev.strVenue || ''}`);
   icsLines.push('END:VEVENT');
@@ -161,6 +173,7 @@ fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 console.log('dist/ generated', {
   teamName, oppName, formFCSM, formOpp,
   ligue2Ready,
-  ligue2Events: ligue2Events.length,
-  totalEvents:  allNextEvents.length,
+  leagueEvents: leagueEvents.length,
+  teamLigue2Events: teamLigue2Events.length,
+  totalEvents: (nextTeamData?.events || []).length,
 });
