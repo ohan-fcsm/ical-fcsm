@@ -68,32 +68,33 @@ async function ensureBadge(remoteUrl, slug) {
 }
 
 /* ── IDs TheSportsDB — toutes les équipes Ligue 2 2026-2027 ───────────
-   Sources : URLs thesportsdb.com/team/<ID>-<slug> vérifiées               */
+   Tous les IDs vérifiés sur thesportsdb.com/team/<ID>-<slug>            */
 const TEAM_IDS = {
   'AS Saint-Étienne':        '133717',  // thesportsdb.com/team/133717
-  'Red Star FC':             '135467',  // thesportsdb.com/season/.../t=135467-red-star
-  'EN Avant Guingamp':       '134244',  // thesportsdb.com/team/134244-guingamp
-  'Clermont Foot 63':        '134713',  // thesportsdb.com/season/.../t=134713-clermont-foot
+  'Red Star FC':             '135467',  // thesportsdb.com/team/135467
+  'EN Avant Guingamp':       '134244',  // thesportsdb.com/team/134244
+  'Clermont Foot 63':        '134713',  // thesportsdb.com/team/134713
   'FC Nantes':               '133861',  // thesportsdb.com/team/133861-nantes ✅
   'FC Annecy':               '139928',  // thesportsdb.com/team/139928-annecy
-  'Dijon FCO':               '133696',  // ⚠️ ID incertain — badge forcé via BADGE_OVERRIDES
-  'Grenoble Foot 38':        '133847',  // thesportsdb.com/team/133847-grenoble
+  'Dijon FCO':               '133696',  // badge forcé via BADGE_OVERRIDES
+  'Grenoble Foot 38':        '133847',  // thesportsdb.com/team/133847
   'Stade Lavallois MFC':     '134708',  // thesportsdb.com/team/134708-laval
   'AS Nancy Lorraine':       '133710',  // thesportsdb.com/team/133710-nancy-lorraine
-  'FC Metz':                 '133883',  // thesportsdb.com/team/133883-metz
-  'US Boulogne CO':          '133849',  // thesportsdb.com/team/133849-boulogne
+  'FC Metz':                 '133883',  // thesportsdb.com/team/133883
+  'US Boulogne CO':          '133849',  // thesportsdb.com/team/133849
   'Montpellier Hérault SC':  '133709',  // thesportsdb.com/team/133709-montpellier ✅
-  'USL Dunkerque':           '138821',  // thesportsdb.com/team/138821-usl-dunkerque
-  'Rodez Aveyron Football':  '137652',  // thesportsdb.com/team/137652-rodez
+  'USL Dunkerque':           '138821',  // thesportsdb.com/team/138821
+  'Rodez Aveyron Football':  '137652',  // thesportsdb.com/team/137652
   'Pau FC':                  '138309',  // thesportsdb.com/team/138309-pau
-  'Stade de Reims':          '133714',  // ⚠️ à vérifier
+  'Stade de Reims':          '133934',  // thesportsdb.com/team/133934-stade-de-reims ✅
 };
 
 /* ── Badges forcés (URLs r2.thesportsdb.com confirmées manuellement) ───
-   Utiliser quand l'API lookupteam retourne un mauvais badge ou rien.     */
+   Prioritaires sur l'URL retournée par l'API lookupteam.                */
 const BADGE_OVERRIDES = {
-  'fc nantes':  'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
-  'dijon fco':  'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
+  'fc nantes':              'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
+  'dijon fco':              'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
+  'montpellier herault sc': 'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
 };
 
 function parseForm(events, teamName) {
@@ -297,7 +298,6 @@ if (nextMatch && API_KEY) {
   const oppId = oppIdFromEvent || oppIdFromMap;
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
-  /* BADGE_OVERRIDES prioritaire aussi pour l'adversaire du prochain match */
   const overrideBadge = BADGE_OVERRIDES[normTeam(oppName)];
   if (overrideBadge) oppBadgeRemote = overrideBadge;
   if (oppId) {
