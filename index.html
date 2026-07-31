@@ -459,9 +459,11 @@
       if (els.qrIcs)         els.qrIcs.src           = qrApi + encodeURIComponent(icsUrl);
       if (els.qrIcsAndroid)  els.qrIcsAndroid.src    = qrApi + encodeURIComponent(icsUrl);
       if (els.shareLink)     els.shareLink.value     = pageUrl;
-      if (els.icsUrlAndroid) els.icsUrlAndroid.textContent = icsUrl;
+      /* webcal:// pour Android et Google (ajout via URL dans Google Calendar) */
+      if (els.icsUrlAndroid) els.icsUrlAndroid.textContent = webcalUrl;
+      if (els.icsUrlGoogle)  els.icsUrlGoogle.textContent  = webcalUrl;
+      /* https:// pour Outlook qui l'accepte nativement */
       if (els.icsUrlOutlook) els.icsUrlOutlook.textContent = icsUrl;
-      if (els.icsUrlGoogle)  els.icsUrlGoogle.textContent  = icsUrl;
       /* cid= doit recevoir webcal:// et non https:// */
       var gcalHref = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcalUrl);
       if (els.gcalLink)  els.gcalLink.href  = gcalHref;
