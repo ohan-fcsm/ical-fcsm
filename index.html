@@ -434,10 +434,12 @@
       tick(); setInterval(tick, 1000);
     })();
 
-    /* ── QR CODES ── */
+    /* ── QR CODES & LIENS ── */
     (function () {
       var base = window.location.href.split('?')[0].replace(/\/?$/, '/');
       var icsUrl = base + 'fcsm.ics';
+      /* Google Calendar n'accepte pas https:// dans cid= — utiliser webcal:// */
+      var webcalUrl = icsUrl.replace(/^https:\/\//, 'webcal://');
       var pageUrl = base;
       var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=';
       var els = {
@@ -460,7 +462,8 @@
       if (els.icsUrlAndroid) els.icsUrlAndroid.textContent = icsUrl;
       if (els.icsUrlOutlook) els.icsUrlOutlook.textContent = icsUrl;
       if (els.icsUrlGoogle)  els.icsUrlGoogle.textContent  = icsUrl;
-      var gcalHref = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(icsUrl);
+      /* cid= doit recevoir webcal:// et non https:// */
+      var gcalHref = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcalUrl);
       if (els.gcalLink)  els.gcalLink.href  = gcalHref;
       if (els.gcalLink2) els.gcalLink2.href = gcalHref;
       if (els.outlookLink) els.outlookLink.href = 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(icsUrl);
