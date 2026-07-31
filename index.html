@@ -175,7 +175,6 @@
 
     .footer { margin-top:32px; padding:20px 0 8px; border-top:1px solid rgba(13,43,94,.08); color:var(--muted); font-size:12px; text-align:center; line-height:2; }
     .footer strong { color:var(--text); }
-    .footer-logo { display:inline-block; vertical-align:middle; margin-right:8px; }
 
     @media (max-width:860px) {
       .hero-inner { grid-template-columns:1fr; gap:32px; }
@@ -296,7 +295,6 @@
     </section>
 
     <div class="footer">
-      <img class="footer-logo" src="./favicon.svg" width="20" height="20" alt="" aria-hidden="true">
       <strong>FC Sochaux-Montbéliard</strong> &middot; Données <strong>TheSportsDB</strong><br>
       <span>Mise à jour : <strong>{{LAST_UPDATED}}</strong></span>
     </div>
@@ -423,114 +421,89 @@
       function pad(n) { return n < 10 ? '0' + n : String(n); }
       function tick() {
         var diff = target - new Date();
-        if (diff <= 0) { wrap.innerHTML = '<div class="countdown-done">⚽ Match en cours ou terminé</div>'; return; }
-        var s = Math.floor(diff / 1000);
-        wrap.innerHTML = box(pad(Math.floor(s/86400)),'JOURS') + box(pad(Math.floor(s%86400/3600)),'HEURES') + box(pad(Math.floor(s%3600/60)),'MINUTES') + box(pad(s%60),'SECONDES');
+        if (diff <= 0) { wrap.innerHTML = '<p class="countdown-done">⚽ Match en cours ou terminé</p>'; return; }
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor((diff % 86400000) / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+        wrap.innerHTML =
+          '<div class="countdown-box"><span class="countdown-value">' + d + '</span><span class="countdown-unit">Jours</span></div>' +
+          '<div class="countdown-box"><span class="countdown-value">' + pad(h) + '</span><span class="countdown-unit">Heures</span></div>' +
+          '<div class="countdown-box"><span class="countdown-value">' + pad(m) + '</span><span class="countdown-unit">Min</span></div>' +
+          '<div class="countdown-box"><span class="countdown-value">' + pad(s) + '</span><span class="countdown-unit">Sec</span></div>';
       }
-      function box(v,l) { return '<div class="countdown-box"><span class="countdown-value">'+v+'</span><span class="countdown-unit">'+l+'</span></div>'; }
       tick(); setInterval(tick, 1000);
     })();
 
-    /* ── MODALS HELPERS ── */
-    function setupModal(modalId, openBtnId, closeBtnId) {
-      var modal = document.getElementById(modalId);
-      var openBtn = openBtnId ? document.getElementById(openBtnId) : null;
-      var closeBtn = document.getElementById(closeBtnId);
-      function openModal() { modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); }
-      function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); }
-      if (openBtn) openBtn.addEventListener('click', openModal);
-      if (closeBtn) closeBtn.addEventListener('click', closeModal);
-      if (modal) {
-        modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
-      }
-      return { open: openModal, close: closeModal };
-    }
-
-    /* ── MODAL PARTAGER ── */
+    /* ── QR CODES ── */
     (function () {
-      var modal = setupModal('shareModal', 'openShareModal', 'closeShareModal');
-      var copyBtn = document.getElementById('copyShareLink');
-      var qrImage = document.getElementById('qrImage');
-      var shareLink = document.getElementById('shareLink');
-      var url = window.location.href;
-      if (qrImage) qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(url);
-      if (shareLink) shareLink.value = url;
-      if (copyBtn && shareLink) copyBtn.addEventListener('click', async function () {
-        try { await navigator.clipboard.writeText(shareLink.value); }
-        catch(e) { shareLink.select(); document.execCommand('copy'); }
-        copyBtn.textContent = 'Lien copié ✓';
-        setTimeout(function(){ copyBtn.textContent = 'Copier le lien'; }, 1600);
-      });
-      /* Partage réseaux sociaux */
-      var shareText = encodeURIComponent('📅 Suis les matchs du FC Sochaux-Montbéliard directement dans ton calendrier !');
-      var waBtn = document.getElementById('shareWA');
-      var fbBtn = document.getElementById('shareFB');
-      var twBtn = document.getElementById('shareTW');
-      if (waBtn) waBtn.addEventListener('click', function() {
-        window.open('https://wa.me/?text=' + shareText + '%20' + encodeURIComponent(url), '_blank');
-      });
-      if (fbBtn) fbBtn.addEventListener('click', function() {
-        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank');
-      });
-      if (twBtn) twBtn.addEventListener('click', function() {
-        window.open('https://twitter.com/intent/tweet?text=' + shareText + '&url=' + encodeURIComponent(url), '_blank');
-      });
-    })();
-
-    /* ── MODAL COMMENT S'ABONNER ── */
-    (function () {
-      var base = window.location.href.split('?')[0].replace(/index\.html$/, '');
-      if (!base.endsWith('/')) base += '/';
+      var base = window.location.href.split('?')[0].replace(/\/?$/, '/');
       var icsUrl = base + 'fcsm.ics';
-
-      var qrIcsUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(icsUrl);
-      var gcalUrl = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(icsUrl);
-      var outlookWebUrl = 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(icsUrl);
-
-      ['qrIcs','qrIcsAndroid'].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.src = qrIcsUrl;
-      });
-      ['icsUrlAndroid','icsUrlOutlook','icsUrlGoogle'].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.textContent = icsUrl;
-      });
-      var gcalEl = document.getElementById('gcalLink');
-      if (gcalEl) gcalEl.href = gcalUrl;
-      var gcalEl2 = document.getElementById('gcalLink2');
-      if (gcalEl2) gcalEl2.href = gcalUrl;
-      var outlookEl = document.getElementById('outlookLink');
-      if (outlookEl) { outlookEl.href = outlookWebUrl; outlookEl.textContent = '📧 Ouvrir dans Outlook Web'; }
-      var icsIphone = document.getElementById('icsLinkIphone');
-      if (icsIphone) icsIphone.href = icsUrl;
-
-      setupModal('howtoModal', 'openHowtoModal', 'closeHowtoModal');
-
-      // Tabs
-      document.querySelectorAll('.howto-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-          document.querySelectorAll('.howto-tab').forEach(function(t){ t.classList.remove('active'); });
-          document.querySelectorAll('.howto-panel').forEach(function(p){ p.classList.remove('active'); });
-          tab.classList.add('active');
-          var panel = document.getElementById('panel-' + tab.dataset.tab);
-          if (panel) panel.classList.add('active');
-        });
-      });
+      var pageUrl = base;
+      var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=';
+      var els = {
+        qrImage:      document.getElementById('qrImage'),
+        qrIcs:        document.getElementById('qrIcs'),
+        qrIcsAndroid: document.getElementById('qrIcsAndroid'),
+        shareLink:    document.getElementById('shareLink'),
+        icsUrlAndroid:document.getElementById('icsUrlAndroid'),
+        icsUrlOutlook:document.getElementById('icsUrlOutlook'),
+        icsUrlGoogle: document.getElementById('icsUrlGoogle'),
+        gcalLink:     document.getElementById('gcalLink'),
+        gcalLink2:    document.getElementById('gcalLink2'),
+        outlookLink:  document.getElementById('outlookLink'),
+        icsLinkIphone:document.getElementById('icsLinkIphone'),
+      };
+      if (els.qrImage)       els.qrImage.src        = qrApi + encodeURIComponent(pageUrl);
+      if (els.qrIcs)         els.qrIcs.src           = qrApi + encodeURIComponent(icsUrl);
+      if (els.qrIcsAndroid)  els.qrIcsAndroid.src    = qrApi + encodeURIComponent(icsUrl);
+      if (els.shareLink)     els.shareLink.value     = pageUrl;
+      if (els.icsUrlAndroid) els.icsUrlAndroid.textContent = icsUrl;
+      if (els.icsUrlOutlook) els.icsUrlOutlook.textContent = icsUrl;
+      if (els.icsUrlGoogle)  els.icsUrlGoogle.textContent  = icsUrl;
+      var gcalHref = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(icsUrl);
+      if (els.gcalLink)  els.gcalLink.href  = gcalHref;
+      if (els.gcalLink2) els.gcalLink2.href = gcalHref;
+      if (els.outlookLink) els.outlookLink.href = 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(icsUrl);
+      if (els.icsLinkIphone) els.icsLinkIphone.href = icsUrl;
     })();
 
-    /* ── OPEN HOWTO FROM PLATFORMS ── */
-    function openHowto(platform) {
-      var modal = document.getElementById('howtoModal');
-      modal.classList.add('is-open');
-      modal.setAttribute('aria-hidden','false');
-      document.querySelectorAll('.howto-tab').forEach(function(t){ t.classList.remove('active'); });
-      document.querySelectorAll('.howto-panel').forEach(function(p){ p.classList.remove('active'); });
-      var tab = document.querySelector('[data-tab="'+platform+'"]');
-      var panel = document.getElementById('panel-'+platform);
-      if (tab) tab.classList.add('active');
-      if (panel) panel.classList.add('active');
-    }
+    /* ── MODALS ── */
+    (function () {
+      function openModal(id) { var m = document.getElementById(id); if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden','false'); } }
+      function closeModal(id) { var m = document.getElementById(id); if (m) { m.classList.remove('is-open'); m.setAttribute('aria-hidden','true'); } }
+      var btnShare  = document.getElementById('openShareModal');
+      var btnHowto  = document.getElementById('openHowtoModal');
+      var btnCloseS = document.getElementById('closeShareModal');
+      var btnCloseH = document.getElementById('closeHowtoModal');
+      if (btnShare)  btnShare.addEventListener('click',  function() { openModal('shareModal'); });
+      if (btnHowto)  btnHowto.addEventListener('click',  function() { openModal('howtoModal'); });
+      if (btnCloseS) btnCloseS.addEventListener('click', function() { closeModal('shareModal'); });
+      if (btnCloseH) btnCloseH.addEventListener('click', function() { closeModal('howtoModal'); });
+      document.querySelectorAll('.modal').forEach(function(m) {
+        m.addEventListener('click', function(e) { if (e.target === m) closeModal(m.id); });
+      });
+      var copyBtn = document.getElementById('copyShareLink');
+      if (copyBtn) copyBtn.addEventListener('click', function() {
+        var inp = document.getElementById('shareLink');
+        if (inp) { navigator.clipboard ? navigator.clipboard.writeText(inp.value) : (inp.select(), document.execCommand('copy')); copyBtn.textContent = 'Copié !'; setTimeout(function(){copyBtn.textContent='Copier le lien';},2000); }
+      });
+      var wa = document.getElementById('shareWA'), fb = document.getElementById('shareFB'), tw = document.getElementById('shareTW');
+      if (wa) wa.addEventListener('click', function() { var u = document.getElementById('shareLink')?.value||''; window.open('https://wa.me/?text='+encodeURIComponent('Calendrier FCSM : '+u),'_blank'); });
+      if (fb) fb.addEventListener('click', function() { var u = document.getElementById('shareLink')?.value||''; window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(u),'_blank'); });
+      if (tw) tw.addEventListener('click', function() { var u = document.getElementById('shareLink')?.value||''; window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Calendrier FCSM 🟡🔵 '+u),'_blank'); });
+    })();
+
+    /* ── HOWTO TABS ── */
+    window.openHowto = function(platform) {
+      document.querySelectorAll('.howto-tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab===platform); });
+      document.querySelectorAll('.howto-panel').forEach(function(p){ p.classList.toggle('active', p.id==='panel-'+platform); });
+      var m = document.getElementById('howtoModal');
+      if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden','false'); }
+    };
+    document.querySelectorAll('.howto-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){ openHowto(tab.dataset.tab); });
+    });
   </script>
 </body>
 </html>
