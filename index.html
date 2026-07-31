@@ -45,15 +45,15 @@
     .nav { display:flex; align-items:center; gap:14px; padding:14px 32px; background:var(--card-bg); box-shadow:0 1px 0 rgba(13,43,94,.08); position:sticky; top:0; z-index:99; }
     body.dark .nav { box-shadow:0 1px 0 rgba(255,255,255,.06); }
     .nav-logo { width:40px; height:40px; border-radius:10px; background:var(--bleu); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
-    .nav-logo img { width:32px; height:32px; object-fit:contain; }
+    .nav-logo img { width:40px; height:40px; object-fit:cover; border-radius:10px; }
     .nav-logo-fallback { color:#fff; font-size:11px; font-weight:900; letter-spacing:-.5px; text-align:center; line-height:1.1; }
     .nav-title { font-size:17px; font-weight:800; color:var(--text); }
     .nav-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-    .btn-subscribe, .btn-ics, .btn-share, .btn-howto { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s, transform .15s; }
+    .btn-ics, .btn-share, .btn-howto { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 22px; border-radius:999px; background:var(--bleu); color:#fff; font-size:14px; font-weight:700; border:none; cursor:pointer; transition:background .15s, transform .15s; }
     .btn-ics { padding:14px 28px; font-size:15px; }
     .btn-howto { background:transparent; border:2px solid var(--bleu); color:var(--bleu); }
     body.dark .btn-howto { border-color:rgba(255,255,255,.4); color:var(--text); }
-    .btn-subscribe:hover, .btn-ics:hover, .btn-share:hover { background:var(--bleu-btn); transform:translateY(-1px); }
+    .btn-ics:hover, .btn-share:hover { background:var(--bleu-btn); transform:translateY(-1px); }
     .btn-howto:hover { background:rgba(13,43,94,.07); transform:translateY(-1px); }
     body.dark .btn-howto:hover { background:rgba(255,255,255,.07); }
     .btn-theme { width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(13,43,94,.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--text); }
@@ -194,7 +194,6 @@
     </div>
     <span class="nav-title">Calendrier FCSM</span>
     <div class="nav-right">
-      <a class="btn-subscribe" id="navSubscribeBtn" href="#">S'abonner</a>
       <button class="btn-theme" id="themeToggle" aria-label="Changer le thème">🌙</button>
     </div>
   </nav>
@@ -354,12 +353,10 @@
   </div>
 
   <script>
-    /* URLS */
     var GCAL_URL = 'https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com';
     var ICS_URL  = 'https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics';
     var OUTLOOK_URL = 'https://outlook.live.com/calendar/0/addfromweb?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fl0amb9fs19rkodee59rt5q64q4345rfb%2540import.calendar.google.com%2Fpublic%2Fbasic.ics';
 
-    /* DÉTECTION PLATEFORME */
     function detectPlatform() {
       var ua = navigator.userAgent || '';
       var pl = navigator.platform || '';
@@ -370,59 +367,18 @@
     }
 
     var PLATFORM = detectPlatform();
-
     var PLATFORM_CONFIG = {
-      ios: {
-        label: '🍎 Ouvrir dans Calendrier iPhone',
-        href: ICS_URL,
-        navLabel: '🍎 S\'abonner',
-        defaultTab: 'iphone',
-        alts: [
-          { label: '🤖 Android', href: GCAL_URL },
-          { label: '📧 Outlook', href: OUTLOOK_URL }
-        ]
-      },
-      android: {
-        label: '📅 Ouvrir dans Google Calendar',
-        href: GCAL_URL,
-        navLabel: '📅 S\'abonner',
-        defaultTab: 'android',
-        alts: [
-          { label: '🍎 iPhone', href: ICS_URL },
-          { label: '📧 Outlook', href: OUTLOOK_URL }
-        ]
-      },
-      mac: {
-        label: '🍎 Ouvrir dans Calendrier Mac',
-        href: ICS_URL,
-        navLabel: '🍎 S\'abonner',
-        defaultTab: 'iphone',
-        alts: [
-          { label: '🤖 Android / Google', href: GCAL_URL },
-          { label: '📧 Outlook', href: OUTLOOK_URL }
-        ]
-      },
-      pc: {
-        label: '📅 S\'abonner au calendrier',
-        href: GCAL_URL,
-        navLabel: '📅 S\'abonner',
-        defaultTab: 'android',
-        alts: [
-          { label: '🍎 iPhone / Mac', href: ICS_URL },
-          { label: '📧 Outlook', href: OUTLOOK_URL }
-        ]
-      }
+      ios:     { label: '🍎 Ouvrir dans Calendrier iPhone', href: ICS_URL,   defaultTab: 'iphone',  alts: [{ label: '🤖 Android', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      android: { label: '📅 Ouvrir dans Google Calendar',   href: GCAL_URL,  defaultTab: 'android', alts: [{ label: '🍎 iPhone',  href: ICS_URL },  { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      mac:     { label: '🍎 Ouvrir dans Calendrier Mac',     href: ICS_URL,   defaultTab: 'iphone',  alts: [{ label: '🤖 Android / Google', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      pc:      { label: '📅 S\'abonner au calendrier',        href: GCAL_URL,  defaultTab: 'android', alts: [{ label: '🍎 iPhone / Mac', href: ICS_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] }
     };
 
     var cfg = PLATFORM_CONFIG[PLATFORM];
 
-    /* BOUTON PRINCIPAL */
     var heroBtn = document.getElementById('heroSubscribeBtn');
-    var navBtn  = document.getElementById('navSubscribeBtn');
     if (heroBtn) { heroBtn.textContent = cfg.label; heroBtn.href = cfg.href; }
-    if (navBtn)  { navBtn.textContent  = cfg.navLabel; navBtn.href = cfg.href; }
 
-    /* LIENS SECONDAIRES */
     var altLinks = document.getElementById('altLinks');
     if (altLinks && cfg.alts.length) {
       var html = '<span>Aussi sur :</span>';
@@ -433,7 +389,6 @@
       altLinks.innerHTML = html;
     }
 
-    /* MODALE HOWTO : onglet par défaut selon plateforme */
     window.openHowto = function(tab) {
       document.querySelectorAll('.howto-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
       document.querySelectorAll('.howto-panel').forEach(function(p) { p.classList.toggle('active', p.id === 'panel-' + tab); });
@@ -441,10 +396,12 @@
       if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); }
     };
 
-    /* Initialiser l'onglet actif par défaut */
-    openHowto(cfg.defaultTab);
-    /* Fermer la modale au chargement (openHowto l'ouvre, on la referme) */
-    (function() { var m = document.getElementById('howtoModal'); if (m) { m.classList.remove('is-open'); m.setAttribute('aria-hidden','true'); } })();
+    /* Initialiser l'onglet actif sans ouvrir la modale */
+    (function() {
+      var tab = cfg.defaultTab;
+      document.querySelectorAll('.howto-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
+      document.querySelectorAll('.howto-panel').forEach(function(p) { p.classList.toggle('active', p.id === 'panel-' + tab); });
+    })();
 
     document.querySelectorAll('.howto-tab').forEach(function(tab) {
       tab.addEventListener('click', function() { openHowto(tab.dataset.tab); });
