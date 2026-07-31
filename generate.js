@@ -19,6 +19,7 @@ fs.mkdirSync(DST_BADGES, { recursive: true });
 if (fs.existsSync('favicon.svg'))    fs.copyFileSync('favicon.svg',    path.join(out, 'favicon.svg'));
 if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join(out, 'favicon-32.svg'));
 if (fs.existsSync('logo.jpg'))       fs.copyFileSync('logo.jpg',       path.join(out, 'logo.jpg'));
+if (fs.existsSync('logo-512.png'))   fs.copyFileSync('logo-512.png',   path.join(out, 'logo-512.png'));
 
 const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
