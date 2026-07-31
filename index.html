@@ -63,13 +63,11 @@
     .hero-inner { max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
     .hero-h1 { margin:0 0 20px; font-size:clamp(40px,5.5vw,68px); font-weight:900; line-height:1.03; letter-spacing:-0.035em; color:var(--text); }
     .hero-lead { margin:0 0 20px; font-size:16px; color:var(--muted); max-width:44ch; line-height:1.65; }
-    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
-
-    .platforms { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:4px; }
-    .platforms-label { font-size:12px; color:var(--muted); font-weight:500; }
-    .platform-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; border:1px solid var(--card-border); background:var(--card-bg); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; transition:background .12s, border-color .12s; }
-    .platform-pill:hover { border-color:var(--bleu); background:rgba(13,43,94,.05); }
-    body.dark .platform-pill:hover { background:rgba(255,255,255,.06); }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+    .hero-alt-links { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-bottom:16px; }
+    .hero-alt-links span { font-weight:500; }
+    .hero-alt-links a { color:var(--muted); text-decoration:underline; text-underline-offset:3px; font-weight:600; transition:color .12s; }
+    .hero-alt-links a:hover { color:var(--text); }
 
     .match-card { background:var(--card-bg); border-radius:var(--radius); padding:28px 28px 24px; box-shadow:var(--shadow); border:1px solid var(--card-border); }
     .match-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
@@ -196,7 +194,7 @@
     </div>
     <span class="nav-title">Calendrier FCSM</span>
     <div class="nav-right">
-      <a class="btn-subscribe" href="https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com">S'abonner</a>
+      <a class="btn-subscribe" id="navSubscribeBtn" href="#">S'abonner</a>
       <button class="btn-theme" id="themeToggle" aria-label="Changer le thème">🌙</button>
     </div>
   </nav>
@@ -205,18 +203,13 @@
     <div class="hero-inner">
       <div class="hero-left">
         <h1 class="hero-h1">Le calendrier<br>FCSM à garder<br>dans sa poche.</h1>
-        <p class="hero-lead">Abonne-toi une seule fois. Les matchs apparaissent automatiquement dans ton agenda iPhone, Android, Outlook ou Google Calendar — et se mettent à jour tout seuls.</p>
+        <p class="hero-lead">Abonne-toi une seule fois. Les matchs apparaissent automatiquement dans ton agenda et se mettent à jour tout seuls.</p>
         <div class="hero-actions">
-          <a class="btn-ics" href="https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com">S'abonner au calendrier</a>
+          <a class="btn-ics" id="heroSubscribeBtn" href="#">S'abonner au calendrier</a>
           <button class="btn-howto" id="openHowtoModal" type="button">📲 Comment s'abonner ?</button>
           <button class="btn-share" id="openShareModal" type="button">Partager</button>
         </div>
-        <div class="platforms">
-          <span class="platforms-label">Compatible&nbsp;:</span>
-          <button class="platform-pill" onclick="openHowto('iphone')">🍎 iPhone / iPad</button>
-          <button class="platform-pill" onclick="openHowto('android')">🤖 Android</button>
-          <button class="platform-pill" onclick="openHowto('outlook')">📧 Outlook</button>
-        </div>
+        <div class="hero-alt-links" id="altLinks"></div>
       </div>
       <div class="hero-right">
         <div class="match-card">
@@ -228,7 +221,7 @@
             <span class="match-card-round">{{NEXT_MATCH_ROUND}}</span>
           </div>
           <div class="match-card-teams">{{NEXT_MATCH_HOME_BADGE}} {{NEXT_MATCH_HOME_TEAM}} <span style="color:var(--muted);font-weight:500">vs</span> {{NEXT_MATCH_AWAY_BADGE}} {{NEXT_MATCH_AWAY_TEAM}}</div>
-          <div class="match-card-datetime">{{NEXT_MATCH_DATE}} &middot; {{NEXT_MATCH_TIME}}</div>
+          <div class="match-card-datetime">{{NEXT_MATCH_DATE}} · {{NEXT_MATCH_TIME}}</div>
           <div class="match-card-meta">
             <span class="match-card-meta-item">🏆 <strong>{{NEXT_MATCH_LEAGUE}}</strong></span>
             <span class="match-card-meta-item">🏙 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
@@ -283,7 +276,7 @@
     </section>
 
     <div class="footer">
-      <strong>FC Sochaux-Montbéliard</strong> &middot; Données <strong>TheSportsDB</strong><br>
+      <strong>FC Sochaux-Montbéliard</strong> · Données <strong>TheSportsDB</strong><br>
       <span>Mise à jour : <strong>{{LAST_UPDATED}}</strong></span>
     </div>
   </main>
@@ -313,13 +306,13 @@
       <p class="modal-text">Choisis ta plateforme — l'abonnement est gratuit et les matchs se mettent à jour automatiquement.</p>
 
       <div class="howto-tabs">
-        <button class="howto-tab active" data-tab="iphone">🍎 iPhone</button>
+        <button class="howto-tab" data-tab="iphone">🍎 iPhone</button>
         <button class="howto-tab" data-tab="android">🤖 Android / Google</button>
         <button class="howto-tab" data-tab="outlook">📧 Outlook</button>
       </div>
 
       <!-- iPhone -->
-      <div class="howto-panel active" id="panel-iphone">
+      <div class="howto-panel" id="panel-iphone">
         <div class="howto-qr"><img id="qrIcs" alt="QR code abonnement iPhone"></div>
         <p style="text-align:center;font-size:13px;color:var(--muted);margin:0 0 10px">Scanne ce QR code avec l'appareil photo de ton iPhone ou appuie sur le bouton ci-dessous.</p>
         <ol class="howto-steps">
@@ -361,6 +354,102 @@
   </div>
 
   <script>
+    /* URLS */
+    var GCAL_URL = 'https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com';
+    var ICS_URL  = 'https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics';
+    var OUTLOOK_URL = 'https://outlook.live.com/calendar/0/addfromweb?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fl0amb9fs19rkodee59rt5q64q4345rfb%2540import.calendar.google.com%2Fpublic%2Fbasic.ics';
+
+    /* DÉTECTION PLATEFORME */
+    function detectPlatform() {
+      var ua = navigator.userAgent || '';
+      var pl = navigator.platform || '';
+      if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+      if (/Android/.test(ua)) return 'android';
+      if (/Mac/.test(pl) && !/Android/.test(ua)) return 'mac';
+      return 'pc';
+    }
+
+    var PLATFORM = detectPlatform();
+
+    var PLATFORM_CONFIG = {
+      ios: {
+        label: '🍎 Ouvrir dans Calendrier iPhone',
+        href: ICS_URL,
+        navLabel: '🍎 S\'abonner',
+        defaultTab: 'iphone',
+        alts: [
+          { label: '🤖 Android', href: GCAL_URL },
+          { label: '📧 Outlook', href: OUTLOOK_URL }
+        ]
+      },
+      android: {
+        label: '📅 Ouvrir dans Google Calendar',
+        href: GCAL_URL,
+        navLabel: '📅 S\'abonner',
+        defaultTab: 'android',
+        alts: [
+          { label: '🍎 iPhone', href: ICS_URL },
+          { label: '📧 Outlook', href: OUTLOOK_URL }
+        ]
+      },
+      mac: {
+        label: '🍎 Ouvrir dans Calendrier Mac',
+        href: ICS_URL,
+        navLabel: '🍎 S\'abonner',
+        defaultTab: 'iphone',
+        alts: [
+          { label: '🤖 Android / Google', href: GCAL_URL },
+          { label: '📧 Outlook', href: OUTLOOK_URL }
+        ]
+      },
+      pc: {
+        label: '📅 S\'abonner au calendrier',
+        href: GCAL_URL,
+        navLabel: '📅 S\'abonner',
+        defaultTab: 'android',
+        alts: [
+          { label: '🍎 iPhone / Mac', href: ICS_URL },
+          { label: '📧 Outlook', href: OUTLOOK_URL }
+        ]
+      }
+    };
+
+    var cfg = PLATFORM_CONFIG[PLATFORM];
+
+    /* BOUTON PRINCIPAL */
+    var heroBtn = document.getElementById('heroSubscribeBtn');
+    var navBtn  = document.getElementById('navSubscribeBtn');
+    if (heroBtn) { heroBtn.textContent = cfg.label; heroBtn.href = cfg.href; }
+    if (navBtn)  { navBtn.textContent  = cfg.navLabel; navBtn.href = cfg.href; }
+
+    /* LIENS SECONDAIRES */
+    var altLinks = document.getElementById('altLinks');
+    if (altLinks && cfg.alts.length) {
+      var html = '<span>Aussi sur :</span>';
+      cfg.alts.forEach(function(alt, i) {
+        if (i > 0) html += ' · ';
+        html += '<a href="' + alt.href + '">' + alt.label + '</a>';
+      });
+      altLinks.innerHTML = html;
+    }
+
+    /* MODALE HOWTO : onglet par défaut selon plateforme */
+    window.openHowto = function(tab) {
+      document.querySelectorAll('.howto-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
+      document.querySelectorAll('.howto-panel').forEach(function(p) { p.classList.toggle('active', p.id === 'panel-' + tab); });
+      var m = document.getElementById('howtoModal');
+      if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); }
+    };
+
+    /* Initialiser l'onglet actif par défaut */
+    openHowto(cfg.defaultTab);
+    /* Fermer la modale au chargement (openHowto l'ouvre, on la referme) */
+    (function() { var m = document.getElementById('howtoModal'); if (m) { m.classList.remove('is-open'); m.setAttribute('aria-hidden','true'); } })();
+
+    document.querySelectorAll('.howto-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() { openHowto(tab.dataset.tab); });
+    });
+
     /* THÈME */
     (function () {
       var storageKey = 'fcsm-theme';
@@ -407,21 +496,17 @@
       tick(); setInterval(tick, 1000);
     })();
 
-    /* QR CODES */
+    /* QR CODES & SHARE */
     (function () {
       var pageUrl = window.location.href.split('?')[0].replace(/\/?$/, '/');
       var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=';
-      var gcalUrl = 'https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com';
-      var icsUrl = 'https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics';
-
       var qrImage = document.getElementById('qrImage');
-      var qrIcs = document.getElementById('qrIcs');
-      var qrGcal = document.getElementById('qrGcal');
+      var qrIcs   = document.getElementById('qrIcs');
+      var qrGcal  = document.getElementById('qrGcal');
       var shareLink = document.getElementById('shareLink');
-
       if (qrImage) qrImage.src = qrApi + encodeURIComponent(pageUrl);
-      if (qrIcs) qrIcs.src = qrApi + encodeURIComponent(icsUrl);
-      if (qrGcal) qrGcal.src = qrApi + encodeURIComponent(gcalUrl);
+      if (qrIcs)   qrIcs.src   = qrApi + encodeURIComponent(ICS_URL);
+      if (qrGcal)  qrGcal.src  = qrApi + encodeURIComponent(GCAL_URL);
       if (shareLink) shareLink.value = pageUrl;
     })();
 
@@ -429,17 +514,15 @@
     (function () {
       function openModal(id) { var m = document.getElementById(id); if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); } }
       function closeModal(id) { var m = document.getElementById(id); if (m) { m.classList.remove('is-open'); m.setAttribute('aria-hidden', 'true'); } }
-
       var btnShare = document.getElementById('openShareModal');
       var btnHowto = document.getElementById('openHowtoModal');
       if (btnShare) btnShare.addEventListener('click', function () { openModal('shareModal'); });
-      if (btnHowto) btnHowto.addEventListener('click', function () { openModal('howtoModal'); });
+      if (btnHowto) btnHowto.addEventListener('click', function () { openHowto(cfg.defaultTab); });
       document.getElementById('closeShareModal').addEventListener('click', function () { closeModal('shareModal'); });
       document.getElementById('closeHowtoModal').addEventListener('click', function () { closeModal('howtoModal'); });
       document.querySelectorAll('.modal').forEach(function (m) {
         m.addEventListener('click', function (e) { if (e.target === m) closeModal(m.id); });
       });
-
       var copyBtn = document.getElementById('copyShareLink');
       if (copyBtn) copyBtn.addEventListener('click', function () {
         var inp = document.getElementById('shareLink');
@@ -449,7 +532,6 @@
           setTimeout(function () { copyBtn.textContent = 'Copier le lien'; }, 2000);
         }
       });
-
       var wa = document.getElementById('shareWA');
       var fb = document.getElementById('shareFB');
       var tw = document.getElementById('shareTW');
@@ -457,17 +539,6 @@
       if (fb) fb.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u), '_blank'); });
       if (tw) tw.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('Calendrier FCSM 🟡🔵 ' + u), '_blank'); });
     })();
-
-    /* HOWTO TABS */
-    window.openHowto = function (platform) {
-      document.querySelectorAll('.howto-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === platform); });
-      document.querySelectorAll('.howto-panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panel-' + platform); });
-      var m = document.getElementById('howtoModal');
-      if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); }
-    };
-    document.querySelectorAll('.howto-tab').forEach(function (tab) {
-      tab.addEventListener('click', function () { openHowto(tab.dataset.tab); });
-    });
   </script>
 </body>
 </html>
