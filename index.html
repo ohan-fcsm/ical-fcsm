@@ -76,7 +76,8 @@
     /* ── MATCH CARD ── */
     .match-card { background:var(--card-bg); border-radius:var(--radius); padding:28px 28px 24px; box-shadow:var(--shadow); border:1px solid var(--card-border); }
     .match-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .badge-prochain { display:inline-flex; align-items:center; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .badge-prochain { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .badge-prochain img { width:18px; height:18px; object-fit:contain; border-radius:3px; }
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
     .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .match-card-teams img { flex-shrink:0; }
@@ -228,7 +229,10 @@
       <div class="hero-right">
         <div class="match-card">
           <div class="match-card-top">
-            <span class="badge-prochain">Prochain match</span>
+            <span class="badge-prochain">
+              <img src="https://r2.thesportsdb.com/images/media/league/badge/aofb771742983333.png" alt="Ligue 2" width="18" height="18">
+              PROCHAIN MATCH LIGUE 2
+            </span>
             <span class="match-card-round">{{NEXT_MATCH_ROUND}}</span>
           </div>
 
