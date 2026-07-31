@@ -369,9 +369,7 @@ function buildUpcomingRows(events) {
       ? `${homeBadge} <strong>FCSM</strong> vs ${awayBadge} ${opp}`
       : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
     const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
-    const timeDisplay = ev._hardcoded
-      ? `<span style="color:var(--muted)">${time} <span title="Heure à confirmer" style="font-size:10px">⏳</span></span>`
-      : `<span>${time}</span>`;
+    const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
   <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
