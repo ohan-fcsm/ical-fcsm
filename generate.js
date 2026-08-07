@@ -91,13 +91,53 @@ const TEAM_IDS = {
 };
 
 /* ── Badges forcés (indépendants de la clé API) ── */
+/* Les URLs sont des candidates par ordre de priorité ; ensureBadge tente la 1ʳᵉ qui répond. */
+async function ensureBadgeWithFallbacks(urls, slug) {
+  if (!slug || !urls || !urls.length) return '';
+  const srcFile = path.join(SRC_BADGES, `${slug}.png`);
+  const dstFile = path.join(DST_BADGES, `${slug}.png`);
+  if (fs.existsSync(srcFile)) {
+    fs.copyFileSync(srcFile, dstFile);
+    return `./badges/${slug}.png`;
+  }
+  for (const remoteUrl of urls) {
+    if (!remoteUrl) continue;
+    try {
+      const r = await fetch(remoteUrl, { headers: { 'User-Agent': 'fcsm-calendar-build/1.0' } });
+      if (!r.ok) { console.warn(`Badge HTTP ${r.status}: ${remoteUrl}`); continue; }
+      const buf = Buffer.from(await r.arrayBuffer());
+      fs.writeFileSync(srcFile, buf);
+      fs.copyFileSync(srcFile, dstFile);
+      console.log(`🖼  Badge downloaded: badges/${slug}.png (via ${remoteUrl})`);
+      return `./badges/${slug}.png`;
+    } catch (e) {
+      console.warn(`Badge error (${slug}): ${e.message}`);
+    }
+  }
+  return '';
+}
+
 const BADGE_OVERRIDES = {
-  'fc sochaux-montbeliard':  'https://r2.thesportsdb.com/images/media/team/badge/xzqxpr1678808060.png',
-  'as saint-etienne':        'https://r2.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
-  'fc nantes':               'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
-  'dijon fco':               'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
-  'montpellier herault sc':  'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
-  'stade de reims':          'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
+  'fc sochaux-montbeliard': [
+    'https://r2.thesportsdb.com/images/media/team/badge/xzqxpr1678808060.png',
+  ],
+  'as saint-etienne': [
+    'https://r2.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
+    'https://www.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
+    'https://upload.wikimedia.org/wikipedia/fr/d/d4/AS_Saint-%C3%89tienne_logo.svg',
+  ],
+  'fc nantes': [
+    'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
+  ],
+  'dijon fco': [
+    'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
+  ],
+  'montpellier herault sc': [
+    'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
+  ],
+  'stade de reims': [
+    'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
+  ],
 };
 
 /* ── Date de build (heure Europe/Paris) ── */
@@ -183,21 +223,22 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 /* override en priorité pour ne pas dépendre de la clé API */
-const teamBadgeRemote = BADGE_OVERRIDES[normTeam(teamName)] || team.strTeamBadge || team.strBadge || '';
+const teamBadgeUrls = BADGE_OVERRIDES[normTeam(teamName)] || [team.strTeamBadge || team.strBadge || ''];
+const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
 
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
-    const overrideUrl = BADGE_OVERRIDES[normTeam(name)];
-    if (overrideUrl) {
+    const overrideUrls = BADGE_OVERRIDES[normTeam(name)];
+    if (overrideUrls) {
       console.log(`🏠 Badge override: ${name}`);
-      return { name, id, badgeUrl: overrideUrl };
+      return { name, id, badgeUrls: overrideUrls, badgeUrl: overrideUrls[0] };
     }
     const d = await getJson(ep(`lookupteam.php?id=${id}`));
     const badgeUrl = d?.teams?.[0]?.strTeamBadge || d?.teams?.[0]?.strBadge || '';
-    return { name, id, badgeUrl };
+    return { name, id, badgeUrls: [badgeUrl], badgeUrl };
   })
 );
 
@@ -300,8 +341,8 @@ if (nextMatch && API_KEY) {
   const oppId = oppIdFromEvent || oppIdFromMap;
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
-  const overrideBadge = BADGE_OVERRIDES[normTeam(oppName)];
-  if (overrideBadge) oppBadgeRemote = overrideBadge;
+  const overrideBadgeUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
   if (oppId) {
     const od = await getJson(ep(`eventslast.php?id=${oppId}`));
     oppLastEvents = od?.results || od?.events || [];
@@ -316,22 +357,23 @@ if (nextMatch && API_KEY) {
   /* Sans clé API : récupérer quand même le badge adversaire depuis les overrides */
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
-  const overrideBadge = BADGE_OVERRIDES[normTeam(oppName)];
-  if (overrideBadge) oppBadgeRemote = overrideBadge;
+  const overrideBadgeUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
 }
 
 const allBadgesToEnsure = [
-  { name: teamName, remoteUrl: teamBadgeRemote },
-  ...calendarTeamsBadges.map(t => ({ name: t.name, remoteUrl: t.badgeUrl })),
+  { name: teamName, urls: BADGE_OVERRIDES[normTeam(teamName)] || [teamBadgeRemote] },
+  ...calendarTeamsBadges.map(t => ({ name: t.name, urls: t.badgeUrls })),
 ];
 if (oppBadgeRemote && !allBadgesToEnsure.find(t => normTeam(t.name) === normTeam(oppName))) {
-  allBadgesToEnsure.push({ name: oppName, remoteUrl: oppBadgeRemote });
+  const overrideUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  allBadgesToEnsure.push({ name: oppName, urls: overrideUrls || [oppBadgeRemote] });
 }
 
 const logoResults = await Promise.all(
-  allBadgesToEnsure.map(async ({ name, remoteUrl }) => {
+  allBadgesToEnsure.map(async ({ name, urls }) => {
     const slug = slugify(name);
-    const localUrl = await ensureBadge(remoteUrl, slug);
+    const localUrl = await ensureBadgeWithFallbacks(urls, slug);
     return [normTeam(name), localUrl];
   })
 );
