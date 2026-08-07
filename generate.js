@@ -90,12 +90,14 @@ const TEAM_IDS = {
   'Stade de Reims':          '133934',
 };
 
-/* ── Badges forcés ── */
+/* ── Badges forcés (indépendants de la clé API) ── */
 const BADGE_OVERRIDES = {
-  'fc nantes':              'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
-  'dijon fco':              'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
-  'montpellier herault sc': 'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
-  'stade de reims':         'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
+  'fc sochaux-montbeliard':  'https://r2.thesportsdb.com/images/media/team/badge/xzqxpr1678808060.png',
+  'as saint-etienne':        'https://r2.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
+  'fc nantes':               'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
+  'dijon fco':               'https://r2.thesportsdb.com/images/media/team/badge/viin5f1547898121.png',
+  'montpellier herault sc':  'https://r2.thesportsdb.com/images/media/team/badge/8wn9x31750879448.png',
+  'stade de reims':          'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
 };
 
 /* ── Date de build (heure Europe/Paris) ── */
@@ -180,7 +182,8 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
-const teamBadgeRemote = team.strTeamBadge || team.strBadge || '';
+/* override en priorité pour ne pas dépendre de la clé API */
+const teamBadgeRemote = BADGE_OVERRIDES[normTeam(teamName)] || team.strTeamBadge || team.strBadge || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
 const today = new Date().toISOString().slice(0, 10);
@@ -309,6 +312,12 @@ if (nextMatch && API_KEY) {
   } else {
     console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
+} else if (nextMatch && !API_KEY) {
+  /* Sans clé API : récupérer quand même le badge adversaire depuis les overrides */
+  const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
+  if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
+  const overrideBadge = BADGE_OVERRIDES[normTeam(oppName)];
+  if (overrideBadge) oppBadgeRemote = overrideBadge;
 }
 
 const allBadgesToEnsure = [
