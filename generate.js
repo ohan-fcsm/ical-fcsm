@@ -558,7 +558,9 @@ const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="displa
 
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
-  return events.map((ev, i) => {
+  // Démarrer à partir du 2e match (index 1) : le premier est déjà affiché dans le bloc hero "prochain match"
+  const displayEvents = events.slice(1); // ← sauter le premier
+  const rows = displayEvents.map((ev, i) => {
     const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
@@ -572,12 +574,21 @@ function buildUpcomingRows(events) {
       : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
     const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
-    return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}">
+    // i >= 4 correspond aux matchs au-delà des 5 premiers affichés (index 0-4 dans displayEvents)
+    const hiddenClass = i >= 4 ? ' upcoming-row--hidden' : '';
+    return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
   <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
   <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}${unconfirmedPill}</div>
 </div>`;
-  }).join('\n');
+  });
+  const hiddenCount = displayEvents.length - 4;
+  const seeMoreBtn = displayEvents.length > 4
+    ? `<button class="btn-see-more" onclick="toggleMatchList(this, ${displayEvents.length})" data-sect="upcoming">
+  <span class="btn-see-more-label">Voir les ${hiddenCount > 0 ? hiddenCount : displayEvents.length - 4} matchs suivants ▾</span>
+</button>`
+    : '';
+  return rows.join('\n') + seeMoreBtn;
 }
 
 const upcomingHtml = buildUpcomingRows(teamAllNext);
