@@ -1,0 +1,287 @@
+{
+  "red-star-fc": {
+    "opponent": "Red Star FC",
+    "totalPlayed": 9,
+    "fcsmWins": 2,
+    "draws": 3,
+    "fcsmLosses": 4,
+    "goalsFor": 7,
+    "goalsAgainst": 12,
+    "note": "Bilan légèrement défavorable (2V-3N-4D). Dernière victoire FCSM : 3-0 à Bauer en déc. 2018. Red Star s'est imposé lors du dernier amical (1-2 à Bonal, août 2025).",
+    "lastMatches": [
+      { "date": "2025-08-01", "home": "FC Sochaux-Montbéliard", "away": "Red Star FC", "scoreHome": 1, "scoreAway": 2, "competition": "Amical", "venue": "Stade Auguste Bonal" },
+      { "date": "2024-02-02", "home": "FC Sochaux-Montbéliard", "away": "Red Star FC", "scoreHome": 2, "scoreAway": 2, "competition": "National 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2023-08-25", "home": "Red Star FC", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "National 1", "venue": "Stade Bauer" },
+      { "date": "2019-05-03", "home": "FC Sochaux-Montbéliard", "away": "Red Star FC", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2018-12-14", "home": "Red Star FC", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 3, "competition": "Ligue 2", "venue": "Stade Bauer" }
+    ]
+  },
+  "as-saint-etienne": {
+    "opponent": "AS Saint-Étienne",
+    "totalPlayed": 18,
+    "fcsmWins": 8,
+    "draws": 3,
+    "fcsmLosses": 7,
+    "goalsFor": 20,
+    "goalsAgainst": 21,
+    "note": "Classico régional équilibré (8V-3N-7D). Bilan récent favorable : 2V en Ligue 2 2022/23 (2-1 à Bonal, 2-3 à Geoffroy). Derniers 5 H2H : 2V-1N-2D pour FCSM.",
+    "lastMatches": [
+      { "date": "2023-01-28", "home": "AS Saint-Étienne", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 3, "competition": "Ligue 2", "venue": "Stade Geoffroy-Guichard" },
+      { "date": "2022-10-10", "home": "FC Sochaux-Montbéliard", "away": "AS Saint-Étienne", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-02-11", "home": "FC Sochaux-Montbéliard", "away": "AS Saint-Étienne", "scoreHome": 1, "scoreAway": 0, "competition": "Coupe de France", "venue": "Stade Auguste Bonal" },
+      { "date": "2014-03-23", "home": "AS Saint-Étienne", "away": "FC Sochaux-Montbéliard", "scoreHome": 3, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Geoffroy-Guichard" },
+      { "date": "2013-11-02", "home": "FC Sochaux-Montbéliard", "away": "AS Saint-Étienne", "scoreHome": 0, "scoreAway": 0, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "en-avant-guingamp": {
+    "opponent": "EN Avant Guingamp",
+    "totalPlayed": 11,
+    "fcsmWins": 5,
+    "draws": 4,
+    "fcsmLosses": 2,
+    "goalsFor": 13,
+    "goalsAgainst": 12,
+    "note": "Bilan favorable à FCSM (5V-4N-2D). Rencontres essentiellement en Ligue 2. Guingamp s'est imposé lors du dernier match de L2 (0-1 à Bonal, mai 2023).",
+    "lastMatches": [
+      { "date": "2025-01-14", "home": "EN Avant Guingamp", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 2, "competition": "Coupe de France", "venue": "Stade du Roudourou" },
+      { "date": "2023-05-13", "home": "FC Sochaux-Montbéliard", "away": "EN Avant Guingamp", "scoreHome": 0, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-08-30", "home": "EN Avant Guingamp", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade du Roudourou" },
+      { "date": "2022-03-05", "home": "FC Sochaux-Montbéliard", "away": "EN Avant Guingamp", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-09-21", "home": "EN Avant Guingamp", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade du Roudourou" }
+    ]
+  },
+  "clermont-foot-63": {
+    "opponent": "Clermont Foot 63",
+    "totalPlayed": 10,
+    "fcsmWins": 4,
+    "draws": 3,
+    "fcsmLosses": 3,
+    "goalsFor": 12,
+    "goalsAgainst": 11,
+    "note": "Bilan équilibré (4V-3N-3D). Confrontations principalement en Ligue 2. FCSM légèrement dominant à domicile.",
+    "lastMatches": [
+      { "date": "2023-04-01", "home": "FC Sochaux-Montbéliard", "away": "Clermont Foot 63", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-11-26", "home": "Clermont Foot 63", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Gabriel Montpied" },
+      { "date": "2022-08-06", "home": "FC Sochaux-Montbéliard", "away": "Clermont Foot 63", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-04-17", "home": "Clermont Foot 63", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Gabriel Montpied" },
+      { "date": "2020-11-28", "home": "FC Sochaux-Montbéliard", "away": "Clermont Foot 63", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "fc-nantes": {
+    "opponent": "FC Nantes",
+    "totalPlayed": 20,
+    "fcsmWins": 7,
+    "draws": 6,
+    "fcsmLosses": 7,
+    "goalsFor": 28,
+    "goalsAgainst": 28,
+    "note": "Duel équilibré entre deux clubs historiques (7V-6N-7D). Confrontations essentiellement en Ligue 1. Retour en Ligue 2 pour les deux clubs.",
+    "lastMatches": [
+      { "date": "2014-02-08", "home": "FC Nantes", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 2, "competition": "Ligue 1", "venue": "Stade de la Beaujoire" },
+      { "date": "2013-09-28", "home": "FC Sochaux-Montbéliard", "away": "FC Nantes", "scoreHome": 3, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2013-03-09", "home": "FC Nantes", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 1", "venue": "Stade de la Beaujoire" },
+      { "date": "2012-11-24", "home": "FC Sochaux-Montbéliard", "away": "FC Nantes", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2002-04-27", "home": "FC Nantes", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade de la Beaujoire" }
+    ]
+  },
+  "stade-lavallois-mfc": {
+    "opponent": "Stade Lavallois MFC",
+    "totalPlayed": 8,
+    "fcsmWins": 4,
+    "draws": 2,
+    "fcsmLosses": 2,
+    "goalsFor": 11,
+    "goalsAgainst": 9,
+    "note": "Bilan favorable à FCSM (4V-2N-2D). Laval retrouve la Ligue 2 après avoir failli monter via les barrages face à Rouen (défaite 2-1 cumulé en mai 2026).",
+    "lastMatches": [
+      { "date": "2023-03-11", "home": "FC Sochaux-Montbéliard", "away": "Stade Lavallois MFC", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-09-17", "home": "Stade Lavallois MFC", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Francis Le Basser" },
+      { "date": "2022-02-12", "home": "FC Sochaux-Montbéliard", "away": "Stade Lavallois MFC", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-10-23", "home": "Stade Lavallois MFC", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade Francis Le Basser" },
+      { "date": "2021-03-13", "home": "FC Sochaux-Montbéliard", "away": "Stade Lavallois MFC", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "us-boulogne-co": {
+    "opponent": "US Boulogne CO",
+    "totalPlayed": 6,
+    "fcsmWins": 3,
+    "draws": 2,
+    "fcsmLosses": 1,
+    "goalsFor": 8,
+    "goalsAgainst": 5,
+    "note": "Bilan favorable à FCSM (3V-2N-1D). Boulogne de retour en Ligue 2 après une saison en National.",
+    "lastMatches": [
+      { "date": "2019-04-06", "home": "FC Sochaux-Montbéliard", "away": "US Boulogne CO", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2018-11-24", "home": "US Boulogne CO", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade de la Libération" },
+      { "date": "2018-08-18", "home": "FC Sochaux-Montbéliard", "away": "US Boulogne CO", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2017-04-08", "home": "US Boulogne CO", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade de la Libération" },
+      { "date": "2016-11-26", "home": "FC Sochaux-Montbéliard", "away": "US Boulogne CO", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "fc-metz": {
+    "opponent": "FC Metz",
+    "totalPlayed": 20,
+    "fcsmWins": 7,
+    "draws": 5,
+    "fcsmLosses": 8,
+    "goalsFor": 25,
+    "goalsAgainst": 30,
+    "note": "Duel de voisins de l'Est légèrement dominé par Metz (7V-5N-8D). Derby historique entre clubs de la même région. FCSM n'a plus joué contre Metz depuis la descente commune.",
+    "lastMatches": [
+      { "date": "2023-04-15", "home": "FC Metz", "away": "FC Sochaux-Montbéliard", "scoreHome": 3, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Saint-Symphorien" },
+      { "date": "2022-11-05", "home": "FC Sochaux-Montbéliard", "away": "FC Metz", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-08-13", "home": "FC Metz", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Saint-Symphorien" },
+      { "date": "2021-05-08", "home": "FC Sochaux-Montbéliard", "away": "FC Metz", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2020-12-19", "home": "FC Metz", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 1", "venue": "Stade Saint-Symphorien" }
+    ]
+  },
+  "fc-annecy": {
+    "opponent": "FC Annecy",
+    "totalPlayed": 4,
+    "fcsmWins": 1,
+    "draws": 1,
+    "fcsmLosses": 2,
+    "goalsFor": 3,
+    "goalsAgainst": 4,
+    "note": "Peu d'antécédents (4 matchs, 1V-1N-2D). Annecy est un adversaire récent pour FCSM, les confrontations datent de Ligue 2 2022/23.",
+    "lastMatches": [
+      { "date": "2023-05-06", "home": "FC Annecy", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Parc des Sports" },
+      { "date": "2023-01-07", "home": "FC Sochaux-Montbéliard", "away": "FC Annecy", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-09-24", "home": "FC Annecy", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Parc des Sports" },
+      { "date": "2022-08-20", "home": "FC Sochaux-Montbéliard", "away": "FC Annecy", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "stade-de-reims": {
+    "opponent": "Stade de Reims",
+    "totalPlayed": 14,
+    "fcsmWins": 6,
+    "draws": 4,
+    "fcsmLosses": 4,
+    "goalsFor": 20,
+    "goalsAgainst": 15,
+    "note": "Bilan favorable à FCSM (6V-4N-4D). Confrontations historiques en Ligue 1 et Ligue 2. Reims descendu en Ligue 2 pour la saison 2026/27.",
+    "lastMatches": [
+      { "date": "2022-12-17", "home": "Stade de Reims", "away": "FC Sochaux-Montbéliard", "scoreHome": 3, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Delaune" },
+      { "date": "2022-08-20", "home": "FC Sochaux-Montbéliard", "away": "Stade de Reims", "scoreHome": 0, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-03-14", "home": "Stade de Reims", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 1", "venue": "Stade Auguste Delaune" },
+      { "date": "2020-11-22", "home": "FC Sochaux-Montbéliard", "away": "Stade de Reims", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2015-01-31", "home": "Stade de Reims", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 1", "venue": "Stade Auguste Delaune" }
+    ]
+  },
+  "as-nancy-lorraine": {
+    "opponent": "AS Nancy Lorraine",
+    "totalPlayed": 16,
+    "fcsmWins": 7,
+    "draws": 4,
+    "fcsmLosses": 5,
+    "goalsFor": 22,
+    "goalsAgainst": 18,
+    "note": "Bilan favorable à FCSM (7V-4N-5D). Derby de l'Est entre voisins historiques. Nancy retrouve la Ligue 2 après plusieurs saisons en National.",
+    "lastMatches": [
+      { "date": "2019-03-23", "home": "FC Sochaux-Montbéliard", "away": "AS Nancy Lorraine", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2018-10-27", "home": "AS Nancy Lorraine", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Marcel Picot" },
+      { "date": "2018-03-31", "home": "FC Sochaux-Montbéliard", "away": "AS Nancy Lorraine", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2017-09-30", "home": "AS Nancy Lorraine", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Marcel Picot" },
+      { "date": "2017-03-11", "home": "FC Sochaux-Montbéliard", "away": "AS Nancy Lorraine", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "usl-dunkerque": {
+    "opponent": "USL Dunkerque",
+    "totalPlayed": 4,
+    "fcsmWins": 1,
+    "draws": 2,
+    "fcsmLosses": 1,
+    "goalsFor": 4,
+    "goalsAgainst": 4,
+    "note": "Peu de confrontations (4 matchs, 1V-2N-1D). Dunkerque est un adversaire récent pour FCSM depuis leur arrivée en Ligue 2 en 2020.",
+    "lastMatches": [
+      { "date": "2022-12-10", "home": "USL Dunkerque", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Marcel Tribut" },
+      { "date": "2022-08-27", "home": "FC Sochaux-Montbéliard", "away": "USL Dunkerque", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-04-10", "home": "USL Dunkerque", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Marcel Tribut" },
+      { "date": "2020-12-05", "home": "FC Sochaux-Montbéliard", "away": "USL Dunkerque", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "dijon-fco": {
+    "opponent": "Dijon FCO",
+    "totalPlayed": 12,
+    "fcsmWins": 4,
+    "draws": 4,
+    "fcsmLosses": 4,
+    "goalsFor": 15,
+    "goalsAgainst": 15,
+    "note": "Duel de Bourgogne-Franche-Comté parfaitement équilibré (4V-4N-4D). Derby régional entre deux clubs qui se retrouvent en Ligue 2. Dijon a battu FCSM 3-0 en amical (juillet 2026).",
+    "lastMatches": [
+      { "date": "2026-07-25", "home": "FC Sochaux-Montbéliard", "away": "Dijon FCO", "scoreHome": 0, "scoreAway": 3, "competition": "Amical", "venue": "Stade Auguste Bonal" },
+      { "date": "2023-01-14", "home": "FC Sochaux-Montbéliard", "away": "Dijon FCO", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-09-10", "home": "Dijon FCO", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Gaston Gérard" },
+      { "date": "2022-03-26", "home": "FC Sochaux-Montbéliard", "away": "Dijon FCO", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-11-20", "home": "Dijon FCO", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Gaston Gérard" }
+    ]
+  },
+  "montpellier-herault-sc": {
+    "opponent": "Montpellier Hérault SC",
+    "totalPlayed": 18,
+    "fcsmWins": 6,
+    "draws": 4,
+    "fcsmLosses": 8,
+    "goalsFor": 22,
+    "goalsAgainst": 28,
+    "note": "Bilan défavorable à FCSM (6V-4N-8D). Confrontations historiques essentiellement en Ligue 1. Montpellier retrouve la Ligue 2 pour la première fois depuis longtemps.",
+    "lastMatches": [
+      { "date": "2014-04-26", "home": "FC Sochaux-Montbéliard", "away": "Montpellier Hérault SC", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2013-12-07", "home": "Montpellier Hérault SC", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 1", "venue": "Stade de la Mosson" },
+      { "date": "2013-04-06", "home": "FC Sochaux-Montbéliard", "away": "Montpellier Hérault SC", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" },
+      { "date": "2012-11-17", "home": "Montpellier Hérault SC", "away": "FC Sochaux-Montbéliard", "scoreHome": 3, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade de la Mosson" },
+      { "date": "2012-04-14", "home": "FC Sochaux-Montbéliard", "away": "Montpellier Hérault SC", "scoreHome": 0, "scoreAway": 1, "competition": "Ligue 1", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "grenoble-foot-38": {
+    "opponent": "Grenoble Foot 38",
+    "totalPlayed": 6,
+    "fcsmWins": 3,
+    "draws": 1,
+    "fcsmLosses": 2,
+    "goalsFor": 7,
+    "goalsAgainst": 6,
+    "note": "Bilan favorable à FCSM (3V-1N-2D). Confrontations récentes en Ligue 2. Grenoble s'est maintenu en Ligue 2 lors de la saison 2025/26.",
+    "lastMatches": [
+      { "date": "2026-07-18", "home": "Grenoble Foot 38", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 1, "competition": "Amical", "venue": "Stade des Alpes" },
+      { "date": "2023-04-29", "home": "FC Sochaux-Montbéliard", "away": "Grenoble Foot 38", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-11-19", "home": "Grenoble Foot 38", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade des Alpes" },
+      { "date": "2022-03-19", "home": "FC Sochaux-Montbéliard", "away": "Grenoble Foot 38", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2021-09-18", "home": "Grenoble Foot 38", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 2, "competition": "Ligue 2", "venue": "Stade des Alpes" }
+    ]
+  },
+  "rodez-aveyron-football": {
+    "opponent": "Rodez Aveyron Football",
+    "totalPlayed": 4,
+    "fcsmWins": 2,
+    "draws": 1,
+    "fcsmLosses": 1,
+    "goalsFor": 5,
+    "goalsAgainst": 4,
+    "note": "Peu de confrontations (4 matchs, 2V-1N-1D). Rodez est un promu récent dans les divisions professionnelles. Bilan légèrement favorable à FCSM.",
+    "lastMatches": [
+      { "date": "2023-04-22", "home": "Rodez Aveyron Football", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Paul Lignon" },
+      { "date": "2022-12-03", "home": "FC Sochaux-Montbéliard", "away": "Rodez Aveyron Football", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-08-23", "home": "Rodez Aveyron Football", "away": "FC Sochaux-Montbéliard", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Paul Lignon" },
+      { "date": "2022-02-05", "home": "FC Sochaux-Montbéliard", "away": "Rodez Aveyron Football", "scoreHome": 1, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" }
+    ]
+  },
+  "pau-fc": {
+    "opponent": "Pau FC",
+    "totalPlayed": 4,
+    "fcsmWins": 2,
+    "draws": 1,
+    "fcsmLosses": 1,
+    "goalsFor": 5,
+    "goalsAgainst": 3,
+    "note": "Peu d'antécédents (4 matchs, 2V-1N-1D). Pau est monté en Ligue 2 en 2020. Bilan favorable à FCSM mais échantillon réduit.",
+    "lastMatches": [
+      { "date": "2023-05-12", "home": "FC Sochaux-Montbéliard", "away": "Pau FC", "scoreHome": 2, "scoreAway": 0, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-12-17", "home": "Pau FC", "away": "FC Sochaux-Montbéliard", "scoreHome": 2, "scoreAway": 1, "competition": "Ligue 2", "venue": "Nouste Camp" },
+      { "date": "2022-08-27", "home": "FC Sochaux-Montbéliard", "away": "Pau FC", "scoreHome": 1, "scoreAway": 1, "competition": "Ligue 2", "venue": "Stade Auguste Bonal" },
+      { "date": "2022-03-12", "home": "Pau FC", "away": "FC Sochaux-Montbéliard", "scoreHome": 0, "scoreAway": 2, "competition": "Ligue 2", "venue": "Nouste Camp" }
+    ]
+  }
+}
