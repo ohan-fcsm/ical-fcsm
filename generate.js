@@ -163,7 +163,7 @@ function h2hKey(teamName) {
 }
 
 /**
- * Construit la partie DESCRIPTION ICS relative au H2H.
+ * Construit la partie DESCRIPTION ICS relative aux précédentes confrontations.
  */
 function buildH2hDescription(oppName) {
   const key = h2hKey(oppName);
@@ -172,7 +172,7 @@ function buildH2hDescription(oppName) {
 
   const { totalPlayed, fcsmWins, draws, fcsmLosses, goalsFor, goalsAgainst, note, lastMatches } = data;
 
-  const bilan = `H2H vs ${data.opponent || oppName} : ${totalPlayed} matchs — ${fcsmWins}V ${draws}N ${fcsmLosses}D (${goalsFor}-${goalsAgainst})`;
+  const bilan = `Précédentes confrontations vs ${data.opponent || oppName} : ${totalPlayed} matchs — ${fcsmWins}V ${draws}N ${fcsmLosses}D (${goalsFor}-${goalsAgainst})`;
   const noteStr = note ? `📝 ${note}` : '';
 
   const lastStr = (lastMatches || []).slice(0, 3).map(m => {
@@ -185,7 +185,7 @@ function buildH2hDescription(oppName) {
     return `  • ${m.date} ${where} ${result} ${score} [${m.competition}]`;
   }).join('\\n');
 
-  return [bilan, noteStr, lastStr ? `Derniers H2H :\\n${lastStr}` : ''].filter(Boolean).join('\\n');
+  return [bilan, noteStr, lastStr ? `Dernières confrontations :\\n${lastStr}` : ''].filter(Boolean).join('\\n');
 }
 
 /* ── Date de build (heure Europe/Paris) ── */
