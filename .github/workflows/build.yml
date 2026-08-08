@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "15 2 * * *"
+    - cron: "15 2 * * *"   # 02h15 UTC = 03h15 CET / 04h15 CEST (refresh nuit)
+    - cron: "0 21 * * *"   # 21h00 UTC = 22h00 CET / 23h00 CEST (synchro scores soirée)
   workflow_dispatch:
 
 permissions:
