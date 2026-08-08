@@ -106,7 +106,6 @@ const TEAM_IDS = {
 };
 
 /* ── Badges forcés (indépendants de la clé API) ── */
-/* Clés = canonicalTeamKey(nom) — toutes les variantes d'ASSE convergent vers 'as saint-etienne' */
 async function ensureBadgeWithFallbacks(urls, slug) {
   if (!slug || !urls || !urls.length) return '';
   const srcFile = path.join(SRC_BADGES, `${slug}.png`);
@@ -159,18 +158,12 @@ const HEAD2HEAD_DATA = fs.existsSync('head2head.json')
   ? JSON.parse(fs.readFileSync('head2head.json', 'utf8'))
   : {};
 
-/**
- * Retourne la clé head2head pour un adversaire donné.
- * La clé = slugify(canonicalTeamKey(nom)).
- */
 function h2hKey(teamName) {
   return slugify(canonicalTeamKey(teamName));
 }
 
 /**
  * Construit la partie DESCRIPTION ICS relative au H2H.
- * Retourne une chaîne prête à être concaténée (séparateurs \\n).
- * Si aucune donnée H2H disponible, retourne une chaîne vide.
  */
 function buildH2hDescription(oppName) {
   const key = h2hKey(oppName);
@@ -179,13 +172,9 @@ function buildH2hDescription(oppName) {
 
   const { totalPlayed, fcsmWins, draws, fcsmLosses, goalsFor, goalsAgainst, note, lastMatches } = data;
 
-  // Ligne bilan global
   const bilan = `H2H vs ${data.opponent || oppName} : ${totalPlayed} matchs — ${fcsmWins}V ${draws}N ${fcsmLosses}D (${goalsFor}-${goalsAgainst})`;
-
-  // Note éditoriale
   const noteStr = note ? `📝 ${note}` : '';
 
-  // 3 dernières confrontations (max)
   const lastStr = (lastMatches || []).slice(0, 3).map(m => {
     const isHome = normTeam(m.home) === normTeam('FC Sochaux-Montbéliard');
     const result = isHome
@@ -281,7 +270,6 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
-/* override en priorité pour ne pas dépendre de la clé API */
 const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
@@ -413,7 +401,6 @@ if (nextMatch && API_KEY) {
     console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
 } else if (nextMatch && !API_KEY) {
-  /* Sans clé API : récupérer quand même le badge adversaire depuis les overrides */
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
   const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
@@ -542,6 +529,125 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: !e._hardcoded })),
 }, null, 2), 'utf8');
 
+/* ══════════════════════════════════════════════════════════════
+   GÉNÉRATION DU FICHIER ICS
+   ══════════════════════════════════════════════════════════════ */
+
+/**
+ * Détermine si un event a un score final renseigné.
+ */
+function hasScore(ev) {
+  return ev.intHomeScore != null && ev.intHomeScore !== '' &&
+         ev.intAwayScore != null && ev.intAwayScore !== '';
+}
+
+/**
+ * Calcule le résultat FCSM depuis le point de vue FCSM.
+ * Retourne { result: 'V'|'N'|'D', fcsmScore, oppScore }
+ */
+function fcsmResult(ev, tName) {
+  const hs = Number(ev.intHomeScore);
+  const as = Number(ev.intAwayScore);
+  const isHome = normTeam(ev.strHomeTeam) === normTeam(tName);
+  const fcsmScore = isHome ? hs : as;
+  const oppScore  = isHome ? as : hs;
+  const result = fcsmScore > oppScore ? 'V' : fcsmScore === oppScore ? 'N' : 'D';
+  return { result, fcsmScore, oppScore };
+}
+
+/**
+ * Construit le SUMMARY ICS.
+ * - Match terminé avec score → préfixe emoji + score intégré
+ * - Match à venir           → format classique avec rang
+ */
+function buildIcsSummary(ev, tName, tRow) {
+  const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
+  const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+  const rankFCSM  = tRow?.intRank ? `(${tRow.intRank})` : '';
+  const roundLabel  = ev.intRound  ? ` J${ev.intRound}`   : '';
+  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
+
+  if (hasScore(ev)) {
+    const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
+    const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
+    // Score final du point de vue domicile/extérieur dans le titre
+    const scoreStr = isHome ? `${fcsmScore}-${oppScore}` : `${oppScore}-${fcsmScore}`;
+    const title = isHome
+      ? `${emoji} FCSM ${scoreStr} ${opp}`
+      : `${emoji} ${opp} ${scoreStr} FCSM`;
+    return `${title}${roundLabel}${leagueLabel}`;
+  }
+
+  // Match à venir
+  const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
+  return isHome
+    ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
+    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
+}
+
+/**
+ * Construit la DESCRIPTION ICS.
+ *
+ * Match terminé :
+ *   📍 Lieu | 🏆 Compétition | Journée
+ *   ⚽ Score final : FCSM X - Y Adversaire
+ *   Résultat : Victoire ✅  /  Nul ➖  /  Défaite ❌
+ *
+ * Match à venir :
+ *   📍 Lieu | 🏆 Compétition | Journée
+ *   ⏳ Date et heure à confirmer — source : calendrier LFP officiel  (si hardcoded)
+ *   ---
+ *   FCSM (rang) — Forme : V N D V V
+ *   Adversaire (rang) — Forme : D V N V V
+ *   ---
+ *   [Bloc H2H si disponible]
+ */
+function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
+  const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
+  const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+  const venue     = ev.strVenue   ? `📍 ${ev.strVenue}`    : '';
+  const league    = ev.strLeague  ? `🏆 ${ev.strLeague}`   : '';
+  const roundStr  = ev.intRound   ? `J${ev.intRound}`      : '';
+  const headerParts = [venue, league, roundStr].filter(Boolean).join(' | ');
+
+  if (hasScore(ev)) {
+    // ── Match terminé ──
+    const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
+    const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
+    const resultLabel = result === 'V' ? 'Victoire' : result === 'N' ? 'Nul' : 'Défaite';
+    const scoreStr = isHome
+      ? `FCSM ${fcsmScore} - ${oppScore} ${opp}`
+      : `${opp} ${oppScore} - ${fcsmScore} FCSM`;
+    const parts = [
+      headerParts,
+      `⚽ Score final : ${scoreStr}`,
+      `Résultat : ${resultLabel} ${emoji}`,
+    ].filter(Boolean);
+    return parts.join('\\n');
+  }
+
+  // ── Match à venir ──
+  const rankFCSM = tRow?.intRank ? ` (${tRow.intRank}e)` : '';
+  const rankOpp  = oRow?.intRank ? ` (${oRow.intRank}e)` : '';
+  const unconfirmedPart = ev._hardcoded
+    ? '⏳ Date et heure à confirmer — source : calendrier LFP officiel'
+    : '';
+  const formeFCSM = `FCSM${rankFCSM} — Forme : ${fFCSM || '—'}`;
+  const formeOpp  = `${opp}${rankOpp} — Forme : ${fOpp || '—'}`;
+  const h2hPart   = buildH2hDescription(opp);
+
+  const parts = [
+    headerParts,
+    unconfirmedPart,
+    '---',
+    formeFCSM,
+    formeOpp,
+    h2hPart ? '---' : '',
+    h2hPart,
+  ].filter(Boolean);
+  return parts.join('\\n');
+}
+
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
@@ -559,32 +665,16 @@ for (const ev of allEventsForIcs) {
   const uid = `fcsm-${ev.idEvent || (dateStr + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
   if (seenUids.has(uid)) continue;
   seenUids.add(uid);
-  const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
-  const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
-  const rankFCSM = teamRow?.intRank ? `(${teamRow.intRank})` : '';
-  const roundLabel = ev.intRound ? ` J${ev.intRound}` : '';
-  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
-  const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
-  const summary = isHome
-    ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
-    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
 
-  // ── Construction de la DESCRIPTION ICS ──
-  const formPart = `Forme FCSM : ${formFCSM}`;
-  const unconfirmedPart = ev._hardcoded ? 'Date et heure à confirmer — source : calendrier LFP officiel' : '';
-
-  // Bloc Head-to-Head (uniquement pour les matchs à venir / hardcoded, pas les résultats passés)
-  const h2hPart = ev._hardcoded ? buildH2hDescription(opp) : '';
-
-  const descParts = [formPart, unconfirmedPart, h2hPart].filter(Boolean);
-  const description = descParts.join('\\n---\\n');
+  const summary     = buildIcsSummary(ev, teamName, teamRow);
+  const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp);
 
   icsLines.push(
     'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`,
     `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
     `LOCATION:${ev.strVenue || ''}`,
   );
-  if (ev.intHomeScore != null && ev.intHomeScore !== '') icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
+  if (hasScore(ev)) icsLines.push(`X-SCORE:${ev.intHomeScore}-${ev.intAwayScore}`);
   icsLines.push('END:VEVENT');
 }
 icsLines.push('END:VCALENDAR');
