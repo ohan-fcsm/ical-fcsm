@@ -196,6 +196,31 @@ function buildTimestamp() {
 }
 const LAST_UPDATED = buildTimestamp();
 
+/**
+ * Retourne la date "aujourd'hui" côté Paris, mais avancée au lendemain
+ * si l'heure locale Paris est >= 22h — afin que les matchs du soir (20h45)
+ * soient considérés comme "passés" lors du build nocturne.
+ */
+function getTodayParis() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', hour12: false,
+  }).formatToParts(now);
+  const d = Object.fromEntries(parts.map(p => [p.type, p.value]));
+  const hour = parseInt(d.hour, 10);
+  const dateStr = `${d.year}-${d.month}-${d.day}`;
+  // Après 22h heure Paris, les matchs du jour sont terminés → on avance à J+1
+  if (hour >= 22) {
+    const next = new Date(dateStr + 'T12:00:00Z');
+    next.setUTCDate(next.getUTCDate() + 1);
+    return next.toISOString().slice(0, 10);
+  }
+  return dateStr;
+}
+const today = getTodayParis();
+
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
@@ -324,7 +349,6 @@ const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTe
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
-const today = new Date().toISOString().slice(0, 10);
 
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
