@@ -123,6 +123,27 @@
     body.dark .match-round { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); }
     .banner-warning { margin-bottom:16px; padding:12px 16px; border-radius:12px; background:rgba(255,207,33,.14); border:1px solid rgba(255,207,33,.45); color:var(--text); font-size:13px; font-weight:600; }
 
+    /* ── Résultats L2 ── */
+    .results-list { display:grid; gap:10px; margin-top:4px; }
+    .result-row { display:grid; grid-template-columns:80px 1fr auto; align-items:center; gap:14px; padding:14px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); }
+    .result-round { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .result-date  { font-size:11px; color:var(--muted); font-weight:500; margin-top:2px; }
+    .result-teams { font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .result-score { font-size:18px; font-weight:900; color:var(--text); letter-spacing:-0.02em; white-space:nowrap; }
+    .result-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+    .result-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
+    .result-badge--win  { background:rgba(22,163,74,.12);  border:1px solid rgba(22,163,74,.35);  color:#15803D; }
+    .result-badge--draw { background:rgba(156,163,175,.15); border:1px solid rgba(156,163,175,.4); color:#6B7280; }
+    .result-badge--loss { background:rgba(220,38,38,.10);  border:1px solid rgba(220,38,38,.3);   color:#B91C1C; }
+    body.dark .result-badge--win  { color:#4ADE80; background:rgba(22,163,74,.18); }
+    body.dark .result-badge--draw { color:#D1D5DB; background:rgba(156,163,175,.12); }
+    body.dark .result-badge--loss { color:#F87171; background:rgba(220,38,38,.15); }
+    .rank-evolution { font-size:11px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:3px; white-space:nowrap; }
+    .rank-up   { color:#16A34A; }
+    .rank-down { color:#DC2626; }
+    .rank-same { color:var(--muted); }
+    .no-results { color:var(--muted); font-size:14px; padding:8px 0; }
+
     .upcoming-list { display:grid; gap:10px; margin-top:4px; }
     .upcoming-row { display:grid; grid-template-columns:160px 1fr auto; align-items:center; gap:16px; padding:14px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); transition:background .12s; }
     .upcoming-row:hover { background:color-mix(in srgb, var(--card-bg) 65%, #dfe9ff 35%); }
@@ -178,6 +199,8 @@
       .grid-2 { grid-template-columns:1fr; }
       .upcoming-row { grid-template-columns:1fr; gap:8px; }
       .upcoming-meta { align-items:flex-start; flex-direction:row; flex-wrap:wrap; }
+      .result-row { grid-template-columns:1fr; gap:8px; }
+      .result-right { align-items:flex-start; flex-direction:row; flex-wrap:wrap; }
     }
     @media (max-width:540px) {
       .nav { padding:12px 16px; }
@@ -241,6 +264,14 @@
   </section>
 
   <main class="page">
+
+    <section class="section">
+      <h2>Résultats Ligue 2 — Saison 2026-27</h2>
+      <div class="results-list">
+        {{PAST_MATCHES_L2}}
+      </div>
+    </section>
+
     <section class="section">
       <h2>Classement Ligue 2</h2>
       <div class="grid-2">
@@ -318,7 +349,6 @@
         <button class="howto-tab" data-tab="outlook">📧 Outlook</button>
       </div>
 
-      <!-- iPhone -->
       <div class="howto-panel" id="panel-iphone">
         <div class="howto-qr"><img id="qrIcs" alt="QR code abonnement iPhone"></div>
         <p style="text-align:center;font-size:13px;color:var(--muted);margin:0 0 10px">Scanne ce QR code avec l'appareil photo de ton iPhone ou appuie sur le bouton ci-dessous.</p>
@@ -331,7 +361,6 @@
         <div class="howto-cta"><a href="https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics">🍎 Ouvrir sur iPhone</a></div>
       </div>
 
-      <!-- Android / Google -->
       <div class="howto-panel" id="panel-android">
         <div class="howto-qr"><img id="qrGcal" alt="QR code Google Calendar"></div>
         <p style="text-align:center;font-size:13px;color:var(--muted);margin:0 0 10px">Scanne ce QR code avec Google Lens ou appuie directement sur le bouton ci-dessous.</p>
@@ -344,7 +373,6 @@
         <div class="howto-cta"><a href="https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com">📅 Ouvrir dans Google Calendar</a></div>
       </div>
 
-      <!-- Outlook -->
       <div class="howto-panel" id="panel-outlook">
         <ol class="howto-steps">
           <li><span class="howto-step-num">1</span><span>Ouvre <strong>Outlook</strong> sur ordinateur ou sur le web.</span></li>
@@ -356,7 +384,6 @@
         <div class="howto-note">💡 <strong>Astuce :</strong> Outlook desktop : Fichier → Paramètres du compte → Calendriers Internet → Nouveau → colle l'URL.</div>
         <div class="howto-cta"><a href="https://outlook.live.com/calendar/0/addfromweb?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fl0amb9fs19rkodee59rt5q64q4345rfb%2540import.calendar.google.com%2Fpublic%2Fbasic.ics">📧 Ouvrir Outlook Web</a></div>
       </div>
-
     </div>
   </div>
 
@@ -383,10 +410,8 @@
     };
 
     var cfg = PLATFORM_CONFIG[PLATFORM];
-
     var heroBtn = document.getElementById('heroSubscribeBtn');
     if (heroBtn) { heroBtn.textContent = cfg.label; heroBtn.href = cfg.href; }
-
     var altLinks = document.getElementById('altLinks');
     if (altLinks && cfg.alts.length) {
       var html = '<span>Aussi sur :</span>';
@@ -404,7 +429,6 @@
       if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); }
     };
 
-    /* Initialiser l'onglet actif sans ouvrir la modale */
     (function() {
       var tab = cfg.defaultTab;
       document.querySelectorAll('.howto-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
@@ -415,7 +439,6 @@
       tab.addEventListener('click', function() { openHowto(tab.dataset.tab); });
     });
 
-    /* THÈME */
     (function () {
       var storageKey = 'fcsm-theme';
       var body = document.body;
@@ -437,7 +460,6 @@
       });
     })();
 
-    /* COUNTDOWN */
     (function () {
       var isoStr = "{{NEXT_MATCH_ISO}}";
       var wrap = document.getElementById('countdown');
@@ -461,7 +483,6 @@
       tick(); setInterval(tick, 1000);
     })();
 
-    /* QR CODES & SHARE */
     (function () {
       var pageUrl = window.location.href.split('?')[0].replace(/\/?$/, '/');
       var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=';
@@ -475,7 +496,6 @@
       if (shareLink) shareLink.value = pageUrl;
     })();
 
-    /* MODALS */
     (function () {
       function openModal(id) { var m = document.getElementById(id); if (m) { m.classList.add('is-open'); m.setAttribute('aria-hidden', 'false'); } }
       function closeModal(id) { var m = document.getElementById(id); if (m) { m.classList.remove('is-open'); m.setAttribute('aria-hidden', 'true'); } }
