@@ -235,9 +235,46 @@ function eventLineHtml(ev, teamName, logos) {
   return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${scoreStr}</li>`;
 }
 
+/**
+ * buildIso : convertit une date+heure locale Paris en timestamp UTC pour le ICS.
+ * strTime est supposé être en heure Europe/Paris (heure locale du match).
+ * On calcule l'offset CEST/CET selon le mois pour produire un timestamp UTC correct.
+ */
+function parisOffsetMinutes(dateEvent) {
+  // Heure d'été (CEST = UTC+2) : dernier dim. mars → dernier dim. octobre
+  // On utilise une approximation via Date JS en forçant un parse Paris
+  const d = new Date(dateEvent + 'T12:00:00Z');
+  const month = d.getUTCMonth() + 1; // 1-12
+  // Approximation simple : avril-octobre = CEST (+120 min), sinon CET (+60 min)
+  // Pour les cas limites (mars/octobre), on laisse une marge — suffisant pour le foot
+  if (month >= 4 && month <= 10) return 120; // CEST
+  return 60; // CET
+}
+
 function buildIso(dateEvent, strTime) {
   if (!dateEvent) return '';
-  return `${dateEvent}T${strTime ? strTime.slice(0, 5) : '12:00'}:00Z`;
+  const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
+  const offsetMin = parisOffsetMinutes(dateEvent);
+  // Construire la date locale Paris, puis soustraire l'offset pour obtenir UTC
+  const [h, m] = timeLocal.split(':').map(Number);
+  const totalMinLocal = h * 60 + m;
+  const totalMinUTC   = totalMinLocal - offsetMin;
+  const hUtc = Math.floor(((totalMinUTC % 1440) + 1440) % 1440 / 60);
+  const mUtc = ((totalMinUTC % 1440) + 1440) % 1440 % 60;
+  // Ajuster le jour si nécessaire (cas où UTC tombe la veille)
+  let d = new Date(dateEvent + 'T12:00:00Z');
+  if (totalMinUTC < 0) d = new Date(d.getTime() - 86400000);
+  const datePart = d.toISOString().slice(0, 10).replace(/-/g, '');
+  const timePart = String(hUtc).padStart(2,'0') + String(mUtc).padStart(2,'0') + '00';
+  return `${datePart}T${timePart}Z`;
+}
+
+/**
+ * fmtTime : affiche l'heure locale Paris à partir de strTime (déjà en heure Paris).
+ * Utilisé pour l'affichage HTML — on affiche directement strTime sans conversion.
+ */
+function fmtTime(strTime) {
+  return strTime ? strTime.slice(0, 5) : '—';
 }
 
 function fmtDateOnly(dateEvent) {
@@ -253,7 +290,8 @@ function fmtDateOnly(dateEvent) {
 function fmtDate(dateEvent, strTime) {
   if (!dateEvent) return '—';
   try {
-    const d = new Date(buildIso(dateEvent, strTime));
+    // strTime est en heure locale Paris — on affiche directement sans conversion
+    const d = new Date(dateEvent + 'T12:00:00Z');
     const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
     const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
     return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
@@ -297,6 +335,9 @@ const FRIENDLY_SCHEDULE = [
   { dateEvent:'2026-08-02', strTime:'15:00:00', strHomeTeam:FCSM, strAwayTeam:'Dijon FCO',        intHomeScore:0, intAwayScore:3, strLeague:'Amical', strVenue:'Stade Auguste Bonal', _friendly:true },
 ];
 
+// IMPORTANT : strTime est en heure locale Paris (Europe/Paris).
+// La conversion UTC est faite dans buildIso() via parisOffsetMinutes().
+// Ne pas mettre les heures en UTC ici — toujours en heure France.
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
   /* J2  */ { dateEvent:'2026-08-15', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true },
@@ -482,7 +523,7 @@ function buildUpcomingRows(events) {
     const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
-    const time = ev.strTime ? ev.strTime.slice(0, 5) : '—';
+    const time = fmtTime(ev.strTime);
     const league = ev.strLeague || '—';
     const roundLabel = ev.intRound ? `J${ev.intRound}` : '';
     const homeBadge = teamBadgeImg(ev.strHomeTeam, logos, 22);
@@ -504,7 +545,7 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 const vars = {
   NEXT_MATCH_DATE:       nextMatch?.dateEvent   || '—',
-  NEXT_MATCH_TIME:       (nextMatch?.strTime || '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
+  NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
   NEXT_MATCH_HOME_TEAM:  nextMatch?.strHomeTeam  || '—',
   NEXT_MATCH_AWAY_TEAM:  nextMatch?.strAwayTeam  || '—',
   NEXT_MATCH_HOME_BADGE: fcsmBigBadge,
@@ -579,8 +620,6 @@ function fcsmResult(ev, tName) {
 
 /**
  * Construit le SUMMARY ICS.
- * - Match terminé avec score → préfixe emoji + score intégré
- * - Match à venir           → format classique avec rang
  */
 function buildIcsSummary(ev, tName, tRow) {
   const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
@@ -592,7 +631,6 @@ function buildIcsSummary(ev, tName, tRow) {
   if (hasScore(ev)) {
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
     const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
-    // Score final du point de vue domicile/extérieur dans le titre
     const scoreStr = isHome ? `${fcsmScore}-${oppScore}` : `${oppScore}-${fcsmScore}`;
     const title = isHome
       ? `${emoji} FCSM ${scoreStr} ${opp}`
@@ -600,7 +638,6 @@ function buildIcsSummary(ev, tName, tRow) {
     return `${title}${roundLabel}${leagueLabel}`;
   }
 
-  // Match à venir
   const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
   return isHome
     ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
@@ -609,20 +646,6 @@ function buildIcsSummary(ev, tName, tRow) {
 
 /**
  * Construit la DESCRIPTION ICS.
- *
- * Match terminé :
- *   📍 Lieu | 🏆 Compétition | Journée
- *   ⚽ Score final : FCSM X - Y Adversaire
- *   Résultat : Victoire ✅  /  Nul ➖  /  Défaite ❌
- *
- * Match à venir :
- *   📍 Lieu | 🏆 Compétition | Journée
- *   ⏳ Date et heure à confirmer — source : calendrier LFP officiel  (si hardcoded)
- *   ---
- *   FCSM (rang) — Forme : V N D V V
- *   Adversaire (rang) — Forme : D V N V V
- *   ---
- *   [Bloc H2H si disponible]
  */
 function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
@@ -633,7 +656,6 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   const headerParts = [venue, league, roundStr].filter(Boolean).join(' | ');
 
   if (hasScore(ev)) {
-    // ── Match terminé ──
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
     const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
     const resultLabel = result === 'V' ? 'Victoire' : result === 'N' ? 'Nul' : 'Défaite';
@@ -648,7 +670,6 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
     return parts.join('\\n');
   }
 
-  // ── Match à venir ──
   const rankFCSM = tRow?.intRank ? ` (${tRow.intRank}e)` : '';
   const rankOpp  = oRow?.intRank ? ` (${oRow.intRank}e)` : '';
   const unconfirmedPart = ev._hardcoded
@@ -681,10 +702,8 @@ const icsLines = [
 const seenUids = new Set();
 for (const ev of allEventsForIcs) {
   if (!ev?.dateEvent) continue;
-  const dateStr = ev.dateEvent.replace(/-/g, '');
-  const timeStr = (ev.strTime || '120000').replace(/:/g, '').slice(0, 6);
-  const dt = `${dateStr}T${timeStr}Z`;
-  const uid = `fcsm-${ev.idEvent || (dateStr + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
+  const isoStr = buildIso(ev.dateEvent, ev.strTime);
+  const uid = `fcsm-${ev.idEvent || (ev.dateEvent.replace(/-/g,'') + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
   if (seenUids.has(uid)) continue;
   seenUids.add(uid);
 
@@ -692,7 +711,7 @@ for (const ev of allEventsForIcs) {
   const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp);
 
   icsLines.push(
-    'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`,
+    'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${isoStr}`,
     `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
     `LOCATION:${ev.strVenue || ''}`,
   );
