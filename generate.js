@@ -154,6 +154,51 @@ const BADGE_OVERRIDES = {
   ],
 };
 
+/* ── Données Head-to-Head ── */
+const HEAD2HEAD_DATA = fs.existsSync('head2head.json')
+  ? JSON.parse(fs.readFileSync('head2head.json', 'utf8'))
+  : {};
+
+/**
+ * Retourne la clé head2head pour un adversaire donné.
+ * La clé = slugify(canonicalTeamKey(nom)).
+ */
+function h2hKey(teamName) {
+  return slugify(canonicalTeamKey(teamName));
+}
+
+/**
+ * Construit la partie DESCRIPTION ICS relative au H2H.
+ * Retourne une chaîne prête à être concaténée (séparateurs \\n).
+ * Si aucune donnée H2H disponible, retourne une chaîne vide.
+ */
+function buildH2hDescription(oppName) {
+  const key = h2hKey(oppName);
+  const data = HEAD2HEAD_DATA[key];
+  if (!data) return '';
+
+  const { totalPlayed, fcsmWins, draws, fcsmLosses, goalsFor, goalsAgainst, note, lastMatches } = data;
+
+  // Ligne bilan global
+  const bilan = `H2H vs ${data.opponent || oppName} : ${totalPlayed} matchs — ${fcsmWins}V ${draws}N ${fcsmLosses}D (${goalsFor}-${goalsAgainst})`;
+
+  // Note éditoriale
+  const noteStr = note ? `📝 ${note}` : '';
+
+  // 3 dernières confrontations (max)
+  const lastStr = (lastMatches || []).slice(0, 3).map(m => {
+    const isHome = normTeam(m.home) === normTeam('FC Sochaux-Montbéliard');
+    const result = isHome
+      ? (m.scoreHome > m.scoreAway ? 'V' : m.scoreHome === m.scoreAway ? 'N' : 'D')
+      : (m.scoreAway > m.scoreHome ? 'V' : m.scoreHome === m.scoreAway ? 'N' : 'D');
+    const score = isHome ? `${m.scoreHome}-${m.scoreAway}` : `${m.scoreAway}-${m.scoreHome}`;
+    const where = isHome ? '(dom.)' : '(ext.)';
+    return `  • ${m.date} ${where} ${result} ${score} [${m.competition}]`;
+  }).join('\\n');
+
+  return [bilan, noteStr, lastStr ? `Derniers H2H :\\n${lastStr}` : ''].filter(Boolean).join('\\n');
+}
+
 /* ── Date de build (heure Europe/Paris) ── */
 function buildTimestamp() {
   const now = new Date();
@@ -523,9 +568,17 @@ for (const ev of allEventsForIcs) {
   const summary = isHome
     ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
     : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
-  const description = ev._hardcoded
-    ? `Forme FCSM : ${formFCSM}\\nDate et heure à confirmer — source : calendrier LFP officiel`
-    : `Forme FCSM : ${formFCSM}`;
+
+  // ── Construction de la DESCRIPTION ICS ──
+  const formPart = `Forme FCSM : ${formFCSM}`;
+  const unconfirmedPart = ev._hardcoded ? 'Date et heure à confirmer — source : calendrier LFP officiel' : '';
+
+  // Bloc Head-to-Head (uniquement pour les matchs à venir / hardcoded, pas les résultats passés)
+  const h2hPart = ev._hardcoded ? buildH2hDescription(opp) : '';
+
+  const descParts = [formPart, unconfirmedPart, h2hPart].filter(Boolean);
+  const description = descParts.join('\\n---\\n');
+
   icsLines.push(
     'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${dt}`,
     `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
