@@ -421,8 +421,11 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   const apiMatch = teamAllNext.find(ev => isSameMatch(ev, hev));
   if (!apiMatch) {
     teamAllNext.push({ ...hev, _hardcoded: true });
-  } else if (apiMatch && (!apiMatch.strTime || apiMatch.strTime === '00:00:00') && hev.strTime) {
+  } else if (hev.strTime && hev.strTime !== '00:00:00') {
+    // FIX: on force TOUJOURS l'heure du calendrier LFP hardcodé (heure Paris)
+    // car l'API TheSportsDB retourne parfois l'heure en UTC, ce qui décale l'affichage de -2h
     apiMatch.strTime = hev.strTime;
+    console.log(`🕐 Heure forcée (LFP) pour ${hev.dateEvent} : ${hev.strTime}`);
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
