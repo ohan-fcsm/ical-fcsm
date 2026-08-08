@@ -522,7 +522,7 @@ for (const ev of allEventsForIcs) {
   const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
   const summary = isHome
     ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
-    : `${opp} - FCSM ${${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}}`;
+    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
   const description = ev._hardcoded
     ? `Forme FCSM : ${formFCSM}\\nDate et heure à confirmer — source : calendrier LFP officiel`
     : `Forme FCSM : ${formFCSM}`;
