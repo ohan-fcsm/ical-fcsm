@@ -47,6 +47,21 @@ function normTeam(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
+/* ── Alias : ramène toutes les variantes ASSE vers une clé canonique ── */
+const TEAM_NAME_ALIASES = {
+  'as saint-etienne':  'as saint-etienne',
+  'saint-etienne':     'as saint-etienne',
+  'st etienne':        'as saint-etienne',
+  'st-etienne':        'as saint-etienne',
+  'saint etienne':     'as saint-etienne',
+  'as saint etienne':  'as saint-etienne',
+};
+
+function canonicalTeamKey(name) {
+  const n = normTeam(name);
+  return TEAM_NAME_ALIASES[n] || n;
+}
+
 async function ensureBadge(remoteUrl, slug) {
   if (!remoteUrl || !slug) return '';
   const srcFile = path.join(SRC_BADGES, `${slug}.png`);
@@ -91,7 +106,7 @@ const TEAM_IDS = {
 };
 
 /* ── Badges forcés (indépendants de la clé API) ── */
-/* Les URLs sont des candidates par ordre de priorité ; ensureBadge tente la 1ʳᵉ qui répond. */
+/* Clés = canonicalTeamKey(nom) — toutes les variantes d'ASSE convergent vers 'as saint-etienne' */
 async function ensureBadgeWithFallbacks(urls, slug) {
   if (!slug || !urls || !urls.length) return '';
   const srcFile = path.join(SRC_BADGES, `${slug}.png`);
@@ -124,7 +139,6 @@ const BADGE_OVERRIDES = {
   'as saint-etienne': [
     'https://r2.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
     'https://www.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
-    'https://upload.wikimedia.org/wikipedia/fr/d/d4/AS_Saint-%C3%89tienne_logo.svg',
   ],
   'fc nantes': [
     'https://r2.thesportsdb.com/images/media/team/badge/mla9x61678808018.png',
@@ -163,7 +177,7 @@ function parseForm(events, teamName) {
 function calcFormStr(events, teamName) { return parseForm(events, teamName).map(r => r.letter).join(' ') || '—'; }
 
 function teamBadgeImg(name, logos, size = 20) {
-  const url = logos[normTeam(name)];
+  const url = logos[canonicalTeamKey(name)];
   if (!url) return '';
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:3px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
@@ -223,7 +237,7 @@ const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.
 const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 /* override en priorité pour ne pas dépendre de la clé API */
-const teamBadgeUrls = BADGE_OVERRIDES[normTeam(teamName)] || [team.strTeamBadge || team.strBadge || ''];
+const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 const tableRows = tableData?.table || tableData?.teams || [];
@@ -231,7 +245,7 @@ const today = new Date().toISOString().slice(0, 10);
 
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
-    const overrideUrls = BADGE_OVERRIDES[normTeam(name)];
+    const overrideUrls = BADGE_OVERRIDES[canonicalTeamKey(name)];
     if (overrideUrls) {
       console.log(`🏠 Badge override: ${name}`);
       return { name, id, badgeUrls: overrideUrls, badgeUrl: overrideUrls[0] };
@@ -341,7 +355,7 @@ if (nextMatch && API_KEY) {
   const oppId = oppIdFromEvent || oppIdFromMap;
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
-  const overrideBadgeUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
   if (oppId) {
     const od = await getJson(ep(`eventslast.php?id=${oppId}`));
@@ -357,24 +371,25 @@ if (nextMatch && API_KEY) {
   /* Sans clé API : récupérer quand même le badge adversaire depuis les overrides */
   const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
-  const overrideBadgeUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
 }
 
 const allBadgesToEnsure = [
-  { name: teamName, urls: BADGE_OVERRIDES[normTeam(teamName)] || [teamBadgeRemote] },
+  { name: teamName, urls: BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [teamBadgeRemote] },
   ...calendarTeamsBadges.map(t => ({ name: t.name, urls: t.badgeUrls })),
 ];
 if (oppBadgeRemote && !allBadgesToEnsure.find(t => normTeam(t.name) === normTeam(oppName))) {
-  const overrideUrls = BADGE_OVERRIDES[normTeam(oppName)];
+  const overrideUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   allBadgesToEnsure.push({ name: oppName, urls: overrideUrls || [oppBadgeRemote] });
 }
 
 const logoResults = await Promise.all(
   allBadgesToEnsure.map(async ({ name, urls }) => {
-    const slug = slugify(name);
+    const key = canonicalTeamKey(name);
+    const slug = slugify(key);
     const localUrl = await ensureBadgeWithFallbacks(urls, slug);
-    return [normTeam(name), localUrl];
+    return [key, localUrl];
   })
 );
 const logos = Object.fromEntries(logoResults.filter(([, url]) => url));
@@ -388,7 +403,7 @@ const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
 const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
 
 function badgeTag(name, size = 28) {
-  const url = logos[normTeam(name)];
+  const url = logos[canonicalTeamKey(name)];
   if (!url) return '';
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:4px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
@@ -507,7 +522,7 @@ for (const ev of allEventsForIcs) {
   const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
   const summary = isHome
     ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
-    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
+    : `${opp} - FCSM ${${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}}`;
   const description = ev._hardcoded
     ? `Forme FCSM : ${formFCSM}\\nDate et heure à confirmer — source : calendrier LFP officiel`
     : `Forme FCSM : ${formFCSM}`;
