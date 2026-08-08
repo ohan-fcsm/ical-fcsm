@@ -6,6 +6,8 @@ on:
   schedule:
     - cron: "15 2 * * *"   # 02h15 UTC = 03h15 CET / 04h15 CEST (refresh nuit)
     - cron: "0 21 * * *"   # 21h00 UTC = 22h00 CET / 23h00 CEST (synchro scores soirée)
+    - cron: "30 21 * * *"  # 21h30 UTC = 22h30 CET / 23h30 CEST (post-match soirée)
+    - cron: "0 22 * * *"   # 22h00 UTC = 23h00 CET / 00h00 CEST (confirmation scores)
   workflow_dispatch:
 
 permissions:
