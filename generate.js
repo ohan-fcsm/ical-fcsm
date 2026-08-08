@@ -290,6 +290,13 @@ const calendarTeamsBadges = await Promise.all(
 );
 
 const FCSM = teamName;
+
+/* ── Matchs de préparation (scores définitifs) ── */
+const FRIENDLY_SCHEDULE = [
+  { dateEvent:'2026-07-26', strTime:'15:00:00', strHomeTeam:'Grenoble Foot 38', strAwayTeam:FCSM, intHomeScore:0, intAwayScore:1, strLeague:'Amical', strVenue:'Stade des Alpes', _friendly:true },
+  { dateEvent:'2026-08-02', strTime:'15:00:00', strHomeTeam:FCSM, strAwayTeam:'Dijon FCO',        intHomeScore:0, intAwayScore:3, strLeague:'Amical', strVenue:'Stade Auguste Bonal', _friendly:true },
+];
+
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
   /* J2  */ { dateEvent:'2026-08-15', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM, idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true },
@@ -344,6 +351,21 @@ if (seasonEvents.length > 0) {
   teamAllNext = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today).sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
+
+/* ── Injection des amicaux dans l'historique (si pas déjà présents via l'API) ── */
+function isSameFriendly(a, b) {
+  if (a.dateEvent !== b.dateEvent) return false;
+  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
+  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
+  const contains = (x, y) => x.includes(y) || y.includes(x);
+  return (ah === bh || contains(ah, bh)) && (aa === ba || contains(aa, ba));
+}
+for (const fev of FRIENDLY_SCHEDULE) {
+  if (fev.dateEvent >= today) continue; // amical futur → pas dans seasonPast
+  const already = seasonPast.find(ev => isSameFriendly(ev, fev));
+  if (!already) seasonPast.push(fev);
+}
+seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
 function isSameMatch(a, b) {
   if (a.dateEvent !== b.dateEvent) return false;
