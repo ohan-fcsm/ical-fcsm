@@ -236,17 +236,12 @@ function eventLineHtml(ev, teamName, logos) {
 }
 
 /**
- * buildIso : convertit une date+heure locale Paris en timestamp UTC pour le ICS.
- * strTime est supposé être en heure Europe/Paris (heure locale du match).
- * On calcule l'offset CEST/CET selon le mois pour produire un timestamp UTC correct.
+ * buildIso : convertit une date+heure locale Paris en timestamp UTC compact pour le ICS.
+ * Format retourné : YYYYMMDDTHHmmssZ  (requis par la norme iCalendar RFC 5545)
  */
 function parisOffsetMinutes(dateEvent) {
-  // Heure d'été (CEST = UTC+2) : dernier dim. mars → dernier dim. octobre
-  // On utilise une approximation via Date JS en forçant un parse Paris
   const d = new Date(dateEvent + 'T12:00:00Z');
-  const month = d.getUTCMonth() + 1; // 1-12
-  // Approximation simple : avril-octobre = CEST (+120 min), sinon CET (+60 min)
-  // Pour les cas limites (mars/octobre), on laisse une marge — suffisant pour le foot
+  const month = d.getUTCMonth() + 1;
   if (month >= 4 && month <= 10) return 120; // CEST
   return 60; // CET
 }
@@ -255,13 +250,11 @@ function buildIso(dateEvent, strTime) {
   if (!dateEvent) return '';
   const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
   const offsetMin = parisOffsetMinutes(dateEvent);
-  // Construire la date locale Paris, puis soustraire l'offset pour obtenir UTC
   const [h, m] = timeLocal.split(':').map(Number);
   const totalMinLocal = h * 60 + m;
   const totalMinUTC   = totalMinLocal - offsetMin;
   const hUtc = Math.floor(((totalMinUTC % 1440) + 1440) % 1440 / 60);
   const mUtc = ((totalMinUTC % 1440) + 1440) % 1440 % 60;
-  // Ajuster le jour si nécessaire (cas où UTC tombe la veille)
   let d = new Date(dateEvent + 'T12:00:00Z');
   if (totalMinUTC < 0) d = new Date(d.getTime() - 86400000);
   const datePart = d.toISOString().slice(0, 10).replace(/-/g, '');
@@ -270,8 +263,28 @@ function buildIso(dateEvent, strTime) {
 }
 
 /**
+ * buildIsoHtml : même conversion Paris→UTC mais retourne le format ISO 8601 standard
+ * avec tirets et deux-points, lisible par new Date() en JavaScript.
+ * Format retourné : YYYY-MM-DDTHH:mm:ssZ  (utilisé pour NEXT_MATCH_ISO / countdown)
+ */
+function buildIsoHtml(dateEvent, strTime) {
+  if (!dateEvent) return '';
+  const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
+  const offsetMin = parisOffsetMinutes(dateEvent);
+  const [h, m] = timeLocal.split(':').map(Number);
+  const totalMinLocal = h * 60 + m;
+  const totalMinUTC   = totalMinLocal - offsetMin;
+  const hUtc = Math.floor(((totalMinUTC % 1440) + 1440) % 1440 / 60);
+  const mUtc = ((totalMinUTC % 1440) + 1440) % 1440 % 60;
+  let d = new Date(dateEvent + 'T12:00:00Z');
+  if (totalMinUTC < 0) d = new Date(d.getTime() - 86400000);
+  const datePart = d.toISOString().slice(0, 10); // YYYY-MM-DD
+  const timePart = String(hUtc).padStart(2,'0') + ':' + String(mUtc).padStart(2,'0') + ':00';
+  return `${datePart}T${timePart}Z`;
+}
+
+/**
  * fmtTime : affiche l'heure locale Paris à partir de strTime (déjà en heure Paris).
- * Utilisé pour l'affichage HTML — on affiche directement strTime sans conversion.
  */
 function fmtTime(strTime) {
   return strTime ? strTime.slice(0, 5) : '—';
@@ -290,7 +303,6 @@ function fmtDateOnly(dateEvent) {
 function fmtDate(dateEvent, strTime) {
   if (!dateEvent) return '—';
   try {
-    // strTime est en heure locale Paris — on affiche directement sans conversion
     const d = new Date(dateEvent + 'T12:00:00Z');
     const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
     const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -402,7 +414,7 @@ function isSameFriendly(a, b) {
   return (ah === bh || contains(ah, bh)) && (aa === ba || contains(aa, ba));
 }
 for (const fev of FRIENDLY_SCHEDULE) {
-  if (fev.dateEvent >= today) continue; // amical futur → pas dans seasonPast
+  if (fev.dateEvent >= today) continue;
   const already = seasonPast.find(ev => isSameFriendly(ev, fev));
   if (!already) seasonPast.push(fev);
 }
@@ -423,7 +435,6 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
     teamAllNext.push({ ...hev, _hardcoded: true });
   } else if (hev.strTime && hev.strTime !== '00:00:00') {
     // FIX: on force TOUJOURS l'heure du calendrier LFP hardcodé (heure Paris)
-    // car l'API TheSportsDB retourne parfois l'heure en UTC, ce qui décale l'affichage de -2h
     apiMatch.strTime = hev.strTime;
     console.log(`🕐 Heure forcée (LFP) pour ${hev.dateEvent} : ${hev.strTime}`);
   }
@@ -497,7 +508,8 @@ const formFCSM = calcFormStr(lastEvents, teamName);
 const formOpp  = calcFormStr(oppLastEvents, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
-const nextMatchIso = buildIso(nextMatch?.dateEvent, nextMatch?.strTime);
+// buildIsoHtml : format ISO 8601 standard (avec tirets/deux-points) pour new Date() JS
+const nextMatchIso = buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
 const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
 
 function badgeTag(name, size = 28) {
@@ -599,18 +611,11 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
    GÉNÉRATION DU FICHIER ICS
    ══════════════════════════════════════════════════════════════ */
 
-/**
- * Détermine si un event a un score final renseigné.
- */
 function hasScore(ev) {
   return ev.intHomeScore != null && ev.intHomeScore !== '' &&
          ev.intAwayScore != null && ev.intAwayScore !== '';
 }
 
-/**
- * Calcule le résultat FCSM depuis le point de vue FCSM.
- * Retourne { result: 'V'|'N'|'D', fcsmScore, oppScore }
- */
 function fcsmResult(ev, tName) {
   const hs = Number(ev.intHomeScore);
   const as = Number(ev.intAwayScore);
@@ -621,9 +626,6 @@ function fcsmResult(ev, tName) {
   return { result, fcsmScore, oppScore };
 }
 
-/**
- * Construit le SUMMARY ICS.
- */
 function buildIcsSummary(ev, tName, tRow) {
   const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
   const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
@@ -647,9 +649,6 @@ function buildIcsSummary(ev, tName, tRow) {
     : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
 }
 
-/**
- * Construit la DESCRIPTION ICS.
- */
 function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
   const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
