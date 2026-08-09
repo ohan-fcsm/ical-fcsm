@@ -603,6 +603,12 @@ function badgeTag(name, size = 28) {
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:4px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
 
+/* ── Badges domicile/extérieur basés sur le vrai match (pas FCSM=home par défaut) ── */
+const nextMatchHomeName = nextMatch?.strHomeTeam || teamName;
+const nextMatchAwayName = nextMatch?.strAwayTeam || oppName;
+const homeBigBadge = badgeTag(nextMatchHomeName, 28);
+const awayBigBadge = badgeTag(nextMatchAwayName, 28);
+
 const fcsmBigBadge = badgeTag(teamName, 28);
 const oppBigBadge  = badgeTag(oppName,  28);
 
@@ -680,8 +686,8 @@ const vars = {
   NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
   NEXT_MATCH_HOME_TEAM:  nextMatch?.strHomeTeam  || '—',
   NEXT_MATCH_AWAY_TEAM:  nextMatch?.strAwayTeam  || '—',
-  NEXT_MATCH_HOME_BADGE: fcsmBigBadge,
-  NEXT_MATCH_AWAY_BADGE: oppBigBadge,
+  NEXT_MATCH_HOME_BADGE: homeBigBadge,
+  NEXT_MATCH_AWAY_BADGE: awayBigBadge,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
   NEXT_MATCH_LEAGUE:     nextMatch?.strLeague    || '—',
