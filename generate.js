@@ -524,6 +524,21 @@ function isSameMatch(a, b) {
   return Math.abs(da - db) <= 2 * 86400000;
 }
 
+/* ── LIGUE2_PAST_HARDCODED — déclaré ICI, avant FIX 0 qui en dépend ──────
+   IMPORTANT : cette constante DOIT rester avant le bloc FIX 0 ci-dessous.
+   La déplacer après provoque une ReferenceError (temporal dead zone)
+   qui désactive silencieusement le filtre anti-doublons.
+   ──────────────────────────────────────────────────────────────────────── */
+const LIGUE2_PAST_HARDCODED = [
+  {
+    dateEvent:'2026-08-08', strTime:'20:45:00',
+    strHomeTeam:'FC Sochaux-Montbéliard', strAwayTeam:'AS Saint-Étienne',
+    intHomeScore:0, intAwayScore:3,
+    strLeague:'French Ligue 2', intRound:'1',
+    strVenue:'Stade Auguste Bonal', idLeague: LEAGUE_ID,
+  },
+];
+
 // ── FIX 0 : déduplique lastEvents contre LIGUE2_PAST_HARDCODED ──────────────
 // Évite qu'un match hardcodé et retourné simultanément par l'API
 // ne se retrouve en double dans seasonPast.
@@ -566,18 +581,7 @@ for (const fev of FRIENDLY_SCHEDULE) {
 }
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
-/* ── Injection des matchs J1 passés avec scores hardcodés ── */
-const LIGUE2_PAST_HARDCODED = [
-  {
-    dateEvent:'2026-08-08', strTime:'20:45:00',
-    strHomeTeam:'FC Sochaux-Montbéliard', strAwayTeam:'AS Saint-Étienne',
-    intHomeScore:0, intAwayScore:3,
-    strLeague:'French Ligue 2', intRound:'1',
-    strVenue:'Stade Auguste Bonal', idLeague: LEAGUE_ID,
-  },
-];
-
-/* Injection des résultats passés hardcodés si absents de l'API */
+/* ── Injection des résultats passés hardcodés si absents de l'API ── */
 for (const hev of LIGUE2_PAST_HARDCODED) {
   if (hev.dateEvent >= today) continue;
   const already = seasonPast.find(ev => isSameMatch(ev, hev));
