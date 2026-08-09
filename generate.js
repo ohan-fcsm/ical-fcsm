@@ -356,8 +356,13 @@ function fmtDate(dateEvent, strTime) {
 
 /* ══════════════════════════════════════════════════════════════
    CLASSEMENT HARDCODÉ — Ligue 2 2026-2027
-   Après J1 (8 août 2026). Utilisé comme fallback si l'API
-   retourne moins de 18 équipes (classement incomplet).
+   Après J1 (8 août 2026) — scores réels intégrés.
+   FCSM : 0-3 vs ASSE → 18e, 0 pt.
+   Utilisé comme fallback si l'API retourne < 18 équipes.
+
+   MISE À JOUR : ce bloc doit être mis à jour manuellement
+   après chaque journée jusqu'à ce que TheSportsDB propose
+   un classement complet (≥ 18 équipes) via son API.
    ══════════════════════════════════════════════════════════════ */
 const LIGUE2_TABLE_HARDCODED = [
   { strTeam: 'AS Saint-Étienne',        intRank: 1,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 3, intGoalsAgainst: 0, intGoalDifference: 3,  intPoints: 3 },
@@ -377,6 +382,7 @@ const LIGUE2_TABLE_HARDCODED = [
   { strTeam: 'Pau FC',                  intRank: 15, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 1, intGoalDifference: -1, intPoints: 0 },
   { strTeam: 'Grenoble Foot 38',        intRank: 16, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 2, intGoalsAgainst: 4, intGoalDifference: -2, intPoints: 0 },
   { strTeam: 'Stade Lavallois MFC',     intRank: 17, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 1, intGoalsAgainst: 3, intGoalDifference: -2, intPoints: 0 },
+  // J1 : FCSM 0-3 AS Saint-Étienne (08/08/2026) → 18e, 0 pt, -3 diff
   { strTeam: 'FC Sochaux-Montbéliard',  intRank: 18, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 3, intGoalDifference: -3, intPoints: 0 },
 ];
 
@@ -521,7 +527,19 @@ function isSameMatch(a, b) {
   return Math.abs(da - db) <= 2 * 86400000;
 }
 
-/* ── clé de déduplication ICS/HTML ── */
+/* ══════════════════════════════════════════════════════════════
+   FONCTIONS ANTI-DOUBLONS — NE PAS MODIFIER
+   ──────────────────────────────────────────────────────────────
+   icsMatchKey : clé de déduplication unique par match.
+     - Ligue 2 : "ligue2-J{round}-{home}-{away}"  (stable même si date change)
+     - Autres   : "{date}-{home}-{away}"
+   Trois niveaux de protection appliqués lors du build :
+     FIX 1 — teamAllNext  : déduplique les matchs à venir
+     FIX 2 — seasonPast   : déduplique les résultats passés
+     FIX 3 — allEventsForIcs : retire de teamAllNext les matchs
+             déjà présents dans seasonPast (évite le doublon ICS
+             quand un match passé reste dans la liste "next")
+   ══════════════════════════════════════════════════════════════ */
 function icsMatchKey(ev) {
   const home = normTeam(ev.strHomeTeam);
   const away = normTeam(ev.strAwayTeam);
@@ -542,9 +560,6 @@ for (const hev of LIGUE2_PAST_HARDCODED) {
 }
 
 // ── FIX 2 : déduplication de seasonPast par icsMatchKey ──────────────────
-// Évite que J1 (ou tout autre match passé) apparaisse deux fois dans la
-// section "Résultats Ligue 2" quand il est à la fois dans seasonPast (API)
-// et dans LIGUE2_PAST_HARDCODED injecté juste au-dessus.
 {
   const seen = new Set();
   const deduped = [];
@@ -579,10 +594,6 @@ teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 
 // ── FIX 1 : déduplication de teamAllNext par icsMatchKey ──────────────────
-// Évite qu'un même match apparaisse deux fois dans le calendrier HTML à venir
-// (ex: match retourné par l'API ET présent dans LIGUE2_SCHEDULE, isSameMatch
-// les fusionne mais ne protège pas contre deux entrées avec des noms légèrement
-// différents ou des doublons introduits par un re-build partiel).
 {
   const seen = new Set();
   const deduped = [];
