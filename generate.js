@@ -521,6 +521,16 @@ function isSameMatch(a, b) {
   return Math.abs(da - db) <= 2 * 86400000;
 }
 
+/* ── clé de déduplication ICS/HTML ── */
+function icsMatchKey(ev) {
+  const home = normTeam(ev.strHomeTeam);
+  const away = normTeam(ev.strAwayTeam);
+  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
+    return `ligue2-J${ev.intRound}-${home}-${away}`;
+  }
+  return `${ev.dateEvent}-${home}-${away}`;
+}
+
 /* Injection des résultats passés hardcodés si absents de l'API */
 for (const hev of LIGUE2_PAST_HARDCODED) {
   if (hev.dateEvent >= today) continue;
@@ -529,6 +539,25 @@ for (const hev of LIGUE2_PAST_HARDCODED) {
     seasonPast.push(hev);
     console.log(`📥 Résultat hardcodé injecté : J${hev.intRound} ${hev.dateEvent}`);
   }
+}
+
+// ── FIX 2 : déduplication de seasonPast par icsMatchKey ──────────────────
+// Évite que J1 (ou tout autre match passé) apparaisse deux fois dans la
+// section "Résultats Ligue 2" quand il est à la fois dans seasonPast (API)
+// et dans LIGUE2_PAST_HARDCODED injecté juste au-dessus.
+{
+  const seen = new Set();
+  const deduped = [];
+  for (const ev of seasonPast) {
+    const k = icsMatchKey(ev);
+    if (seen.has(k)) {
+      console.log(`⚠️  HTML doublon (past) ignoré : ${k}`);
+      continue;
+    }
+    seen.add(k);
+    deduped.push(ev);
+  }
+  seasonPast = deduped;
 }
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
@@ -554,15 +583,6 @@ if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 // (ex: match retourné par l'API ET présent dans LIGUE2_SCHEDULE, isSameMatch
 // les fusionne mais ne protège pas contre deux entrées avec des noms légèrement
 // différents ou des doublons introduits par un re-build partiel).
-function icsMatchKey(ev) {
-  const home = normTeam(ev.strHomeTeam);
-  const away = normTeam(ev.strAwayTeam);
-  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
-    return `ligue2-J${ev.intRound}-${home}-${away}`;
-  }
-  return `${ev.dateEvent}-${home}-${away}`;
-}
-
 {
   const seen = new Set();
   const deduped = [];
@@ -576,25 +596,6 @@ function icsMatchKey(ev) {
     deduped.push(ev);
   }
   teamAllNext = deduped;
-}
-
-// ── FIX 2 : déduplication de seasonPast par icsMatchKey ──────────────────
-// Évite que J1 (ou tout autre match passé) apparaisse deux fois dans la
-// section "Résultats Ligue 2" quand il est à la fois dans seasonPast (API)
-// et dans LIGUE2_PAST_HARDCODED injecté juste au-dessus.
-{
-  const seen = new Set();
-  const deduped = [];
-  for (const ev of seasonPast) {
-    const k = icsMatchKey(ev);
-    if (seen.has(k)) {
-      console.log(`⚠️  HTML doublon (past) ignoré : ${k}`);
-      continue;
-    }
-    seen.add(k);
-    deduped.push(ev);
-  }
-  seasonPast = deduped;
 }
 
 const isLigue2 = ev =>
@@ -756,8 +757,7 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 /* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
 function buildPastL2Html(pastEvents, teamName, logos) {
-  // FIX 2 appliqué en amont sur seasonPast — déduplication supplémentaire
-  // ici par sécurité pour les matchs filtrés isLigue2 + < today
+  // Déduplication défensive dans buildPastL2Html (troisième niveau de protection)
   const seen = new Set();
   const l2Past = pastEvents
     .filter(ev => {
