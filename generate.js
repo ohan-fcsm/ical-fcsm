@@ -154,6 +154,8 @@ const BADGE_OVERRIDES = {
   'red star fc': [
     'https://r2.thesportsdb.com/images/media/team/badge/so4unb1658758422.png',
     'https://www.thesportsdb.com/images/media/team/badge/so4unb1658758422.png',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Logo_Red_Star_FC_2014.svg/512px-Logo_Red_Star_FC_2014.svg.png',
+    'https://upload.wikimedia.org/wikipedia/fr/thumb/7/7e/Logo_Red_Star_FC_2014.svg/512px-Logo_Red_Star_FC_2014.svg.png',
   ],
 };
 
