@@ -87,7 +87,7 @@ async function ensureBadge(remoteUrl, slug) {
 /* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
   'AS Saint-Étienne':        '133717',
-  'Red Star FC':             '135467',
+  // Red Star FC : badge géré via BADGE_OVERRIDES (red-star-fc.png déjà en cache)
   'EN Avant Guingamp':       '134244',
   'Clermont Foot 63':        '134713',
   'FC Nantes':               '133861',
@@ -406,6 +406,12 @@ const calendarTeamsBadges = await Promise.all(
     return { name, id, badgeUrls: [badgeUrl], badgeUrl };
   })
 );
+
+/* ── Red Star FC : ajouté manuellement depuis BADGE_OVERRIDES (non présent dans TEAM_IDS) ── */
+const redStarOverride = BADGE_OVERRIDES['red star fc'];
+if (redStarOverride && !calendarTeamsBadges.find(t => normTeam(t.name) === 'red star fc')) {
+  calendarTeamsBadges.push({ name: 'Red Star FC', id: '135467', badgeUrls: redStarOverride, badgeUrl: redStarOverride[0] });
+}
 
 const FCSM = teamName;
 
