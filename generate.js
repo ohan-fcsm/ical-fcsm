@@ -549,6 +549,54 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
 
+// ── FIX 1 : déduplication de teamAllNext par icsMatchKey ──────────────────
+// Évite qu'un même match apparaisse deux fois dans le calendrier HTML à venir
+// (ex: match retourné par l'API ET présent dans LIGUE2_SCHEDULE, isSameMatch
+// les fusionne mais ne protège pas contre deux entrées avec des noms légèrement
+// différents ou des doublons introduits par un re-build partiel).
+function icsMatchKey(ev) {
+  const home = normTeam(ev.strHomeTeam);
+  const away = normTeam(ev.strAwayTeam);
+  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
+    return `ligue2-J${ev.intRound}-${home}-${away}`;
+  }
+  return `${ev.dateEvent}-${home}-${away}`;
+}
+
+{
+  const seen = new Set();
+  const deduped = [];
+  for (const ev of teamAllNext) {
+    const k = icsMatchKey(ev);
+    if (seen.has(k)) {
+      console.log(`⚠️  HTML doublon (upcoming) ignoré : ${k}`);
+      continue;
+    }
+    seen.add(k);
+    deduped.push(ev);
+  }
+  teamAllNext = deduped;
+}
+
+// ── FIX 2 : déduplication de seasonPast par icsMatchKey ──────────────────
+// Évite que J1 (ou tout autre match passé) apparaisse deux fois dans la
+// section "Résultats Ligue 2" quand il est à la fois dans seasonPast (API)
+// et dans LIGUE2_PAST_HARDCODED injecté juste au-dessus.
+{
+  const seen = new Set();
+  const deduped = [];
+  for (const ev of seasonPast) {
+    const k = icsMatchKey(ev);
+    if (seen.has(k)) {
+      console.log(`⚠️  HTML doublon (past) ignoré : ${k}`);
+      continue;
+    }
+    seen.add(k);
+    deduped.push(ev);
+  }
+  seasonPast = deduped;
+}
+
 const isLigue2 = ev =>
   String(ev.idLeague) === String(LEAGUE_ID) ||
   (ev.strLeague || '').toLowerCase().includes('ligue 2');
@@ -708,8 +756,20 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 /* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
 function buildPastL2Html(pastEvents, teamName, logos) {
+  // FIX 2 appliqué en amont sur seasonPast — déduplication supplémentaire
+  // ici par sécurité pour les matchs filtrés isLigue2 + < today
+  const seen = new Set();
   const l2Past = pastEvents
-    .filter(ev => isLigue2(ev) && ev.dateEvent < today)
+    .filter(ev => {
+      if (!isLigue2(ev) || ev.dateEvent >= today) return false;
+      const k = icsMatchKey(ev);
+      if (seen.has(k)) {
+        console.log(`⚠️  HTML doublon (buildPastL2Html) ignoré : ${k}`);
+        return false;
+      }
+      seen.add(k);
+      return true;
+    })
     .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
   if (!l2Past.length) {
     return '<p class="no-matches">Aucun résultat de Ligue 2 pour le moment — la saison vient de commencer.</p>';
@@ -865,13 +925,23 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   return parts.join('\\n');
 }
 
-function icsMatchKey(ev) {
-  const home = normTeam(ev.strHomeTeam);
-  const away = normTeam(ev.strAwayTeam);
-  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
-    return `ligue2-J${ev.intRound}-${home}-${away}`;
+// ── FIX 3 : allEventsForIcs — exclure de teamAllNext les matchs déjà dans seasonPast ──
+// Un match dont la date est passée peut se retrouver dans seasonPast (avec score API)
+// ET rester dans teamAllNext (hardcodé sans score) → doublon ICS.
+{
+  const pastKeys = new Set(seasonPast.map(ev => icsMatchKey(ev)));
+  const before = teamAllNext.length;
+  teamAllNext = teamAllNext.filter(ev => {
+    const k = icsMatchKey(ev);
+    if (pastKeys.has(k)) {
+      console.log(`⚠️  ICS doublon (past/next overlap) ignoré dans teamAllNext : ${k}`);
+      return false;
+    }
+    return true;
+  });
+  if (teamAllNext.length < before) {
+    console.log(`🔧 Fix 3 : ${before - teamAllNext.length} match(s) retirés de teamAllNext (déjà dans seasonPast)`);
   }
-  return `${ev.dateEvent}-${home}-${away}`;
 }
 
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
