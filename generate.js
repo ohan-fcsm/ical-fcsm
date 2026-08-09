@@ -398,7 +398,6 @@ const team = teamData?.teams?.[0] || {};
 const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
-const lastEvents = lastData?.results || lastData?.events || [];
 
 /* ── Classement : API en priorité, sinon fallback hardcodé ──
    On utilise le fallback si l'API retourne 0 équipes OU
@@ -473,6 +472,76 @@ const LIGUE2_SCHEDULE = [
 
 const seasonEvents = seasonData?.events || [];
 const nextApiEvents = nextTeamData?.events || [];
+
+/* ══════════════════════════════════════════════════════════════
+   FONCTIONS ANTI-DOUBLONS — NE PAS MODIFIER
+   ──────────────────────────────────────────────────────────────
+   icsMatchKey : clé de déduplication unique par match.
+     - Ligue 2 : "ligue2-J{round}-{home}-{away}"  (stable même si date change)
+     - Autres   : "{date}-{home}-{away}"
+   Quatre niveaux de protection appliqués lors du build :
+     FIX 0 — lastEvents   : déduplique les résultats API bruts contre
+             LIGUE2_PAST_HARDCODED avant toute fusion (élimine le cas
+             où l'API et le hardcode décrivent le même match)
+     FIX 1 — teamAllNext  : déduplique les matchs à venir
+     FIX 2 — seasonPast   : déduplique les résultats passés
+     FIX 3 — allEventsForIcs : retire de teamAllNext les matchs
+             déjà présents dans seasonPast (évite le doublon ICS
+             quand un match passé reste dans la liste "next")
+   ══════════════════════════════════════════════════════════════ */
+function icsMatchKey(ev) {
+  const home = normTeam(ev.strHomeTeam);
+  const away = normTeam(ev.strAwayTeam);
+  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
+    return `ligue2-J${ev.intRound}-${home}-${away}`;
+  }
+  return `${ev.dateEvent}-${home}-${away}`;
+}
+
+function isSameFriendly(a, b) {
+  if (a.dateEvent !== b.dateEvent) return false;
+  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
+  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
+  const contains = (x, y) => x.includes(y) || y.includes(x);
+  return (ah === bh || contains(ah, bh)) && (aa === ba || contains(aa, ba));
+}
+
+function isSameMatch(a, b) {
+  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
+  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
+  const teamsMatch = ah === bh && aa === ba;
+  if (!teamsMatch) return false;
+  // Si les deux ont un intRound Ligue 2 → comparaison par journée (robuste au changement de date)
+  if (a.intRound && b.intRound &&
+      (a.strLeague || '').toLowerCase().includes('ligue 2') &&
+      (b.strLeague || '').toLowerCase().includes('ligue 2')) {
+    return String(a.intRound) === String(b.intRound);
+  }
+  // Sinon : comparaison par date exacte (±2j tolérance)
+  if (!a.dateEvent || !b.dateEvent) return teamsMatch;
+  const da = new Date(a.dateEvent + 'T12:00:00Z').getTime();
+  const db = new Date(b.dateEvent + 'T12:00:00Z').getTime();
+  return Math.abs(da - db) <= 2 * 86400000;
+}
+
+// ── FIX 0 : déduplique lastEvents contre LIGUE2_PAST_HARDCODED ──────────────
+// Évite qu'un match hardcodé et retourné simultanément par l'API
+// ne se retrouve en double dans seasonPast.
+const rawLastEvents = lastData?.results || lastData?.events || [];
+const hardcodedPastKeys = new Set(
+  LIGUE2_PAST_HARDCODED
+    .filter(ev => ev.dateEvent < today)
+    .map(ev => icsMatchKey(ev))
+);
+const lastEvents = rawLastEvents.filter(ev => {
+  const k = icsMatchKey(ev);
+  if (hardcodedPastKeys.has(k)) {
+    console.log(`⚠️  FIX 0 — lastEvents doublon API/hardcoded écarté : ${k}`);
+    return false;
+  }
+  return true;
+});
+
 let teamAllNext, seasonPast, seasonSource;
 
 if (seasonEvents.length > 0) {
@@ -490,13 +559,6 @@ if (seasonEvents.length > 0) {
 }
 
 /* ── Injection des amicaux dans l'historique ── */
-function isSameFriendly(a, b) {
-  if (a.dateEvent !== b.dateEvent) return false;
-  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
-  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
-  const contains = (x, y) => x.includes(y) || y.includes(x);
-  return (ah === bh || contains(ah, bh)) && (aa === ba || contains(aa, ba));
-}
 for (const fev of FRIENDLY_SCHEDULE) {
   if (fev.dateEvent >= today) continue;
   const already = seasonPast.find(ev => isSameFriendly(ev, fev));
@@ -514,40 +576,6 @@ const LIGUE2_PAST_HARDCODED = [
     strVenue:'Stade Auguste Bonal', idLeague: LEAGUE_ID,
   },
 ];
-
-function isSameMatch(a, b) {
-  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
-  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
-  const teamsMatch = ah === bh && aa === ba;
-  if (teamsMatch && a.intRound && b.intRound) return String(a.intRound) === String(b.intRound);
-  if (!teamsMatch) return false;
-  if (!a.dateEvent || !b.dateEvent) return teamsMatch;
-  const da = new Date(a.dateEvent + 'T12:00:00Z').getTime();
-  const db = new Date(b.dateEvent + 'T12:00:00Z').getTime();
-  return Math.abs(da - db) <= 2 * 86400000;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   FONCTIONS ANTI-DOUBLONS — NE PAS MODIFIER
-   ──────────────────────────────────────────────────────────────
-   icsMatchKey : clé de déduplication unique par match.
-     - Ligue 2 : "ligue2-J{round}-{home}-{away}"  (stable même si date change)
-     - Autres   : "{date}-{home}-{away}"
-   Trois niveaux de protection appliqués lors du build :
-     FIX 1 — teamAllNext  : déduplique les matchs à venir
-     FIX 2 — seasonPast   : déduplique les résultats passés
-     FIX 3 — allEventsForIcs : retire de teamAllNext les matchs
-             déjà présents dans seasonPast (évite le doublon ICS
-             quand un match passé reste dans la liste "next")
-   ══════════════════════════════════════════════════════════════ */
-function icsMatchKey(ev) {
-  const home = normTeam(ev.strHomeTeam);
-  const away = normTeam(ev.strAwayTeam);
-  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
-    return `ligue2-J${ev.intRound}-${home}-${away}`;
-  }
-  return `${ev.dateEvent}-${home}-${away}`;
-}
 
 /* Injection des résultats passés hardcodés si absents de l'API */
 for (const hev of LIGUE2_PAST_HARDCODED) {
@@ -768,7 +796,7 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 /* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
 function buildPastL2Html(pastEvents, teamName, logos) {
-  // Déduplication défensive dans buildPastL2Html (troisième niveau de protection)
+  // Déduplication défensive dans buildPastL2Html (quatrième niveau de protection)
   const seen = new Set();
   const l2Past = pastEvents
     .filter(ev => {
