@@ -144,16 +144,25 @@
     .rank-same { color:var(--muted); }
     .no-results { color:var(--muted); font-size:14px; padding:8px 0; }
 
+    /* ── Past L2 list (format <li>) ── */
+    .past-l2-list { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+    .past-l2-list li { display:flex; align-items:center; gap:8px; padding:12px 16px; border-radius:12px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); font-size:14px; color:var(--text); flex-wrap:wrap; }
+
     /* ── Head-to-Head ── */
     .h2h-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
-    .h2h-bilan { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+    .h2h-stats { display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:12px; padding:14px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); }
     .h2h-stat { display:flex; flex-direction:column; align-items:center; gap:2px; }
-    .h2h-stat-value { font-size:22px; font-weight:900; color:var(--text); line-height:1; }
-    .h2h-stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
-    .h2h-stat--win   .h2h-stat-value { color:#15803D; }
-    .h2h-stat--draw  .h2h-stat-value { color:var(--muted); }
-    .h2h-stat--loss  .h2h-stat-value { color:#B91C1C; }
+    .h2h-val { font-size:22px; font-weight:900; color:var(--text); line-height:1; }
+    .h2h-lbl { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+    .h2h-win  { color:#15803D !important; }
+    .h2h-draw { color:var(--muted) !important; }
+    .h2h-loss { color:#B91C1C !important; }
     .h2h-note { font-size:13px; color:var(--muted); margin-bottom:14px; padding:10px 14px; border-radius:10px; background:rgba(255,207,33,.10); border:1px solid rgba(255,207,33,.35); }
+    .h2h-matches { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+    .h2h-matches li { display:flex; align-items:center; gap:8px; padding:12px 16px; border-radius:12px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); font-size:14px; color:var(--text); flex-wrap:wrap; }
+    .h2h-match-date { font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; }
+    .h2h-match-teams { flex:1; font-weight:600; }
+    .h2h-match-comp { font-size:11px; color:var(--muted); font-weight:600; }
     .h2h-list { display:grid; gap:10px; }
     .h2h-row { display:grid; grid-template-columns:90px 1fr auto; align-items:center; gap:14px; padding:13px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); }
     .h2h-meta { display:flex; flex-direction:column; gap:2px; }
@@ -167,11 +176,14 @@
       .h2h-right { align-items:flex-start; flex-direction:row; flex-wrap:wrap; }
     }
 
+    /* ── Upcoming (calendrier complet) ── */
     .upcoming-list { display:grid; gap:10px; margin-top:4px; }
     .upcoming-row { display:grid; grid-template-columns:160px 1fr auto; align-items:center; gap:16px; padding:14px 18px; border-radius:14px; background:color-mix(in srgb, var(--card-bg) 82%, #dfe9ff 18%); border:1px solid var(--card-border); transition:background .12s; }
     .upcoming-row:hover { background:color-mix(in srgb, var(--card-bg) 65%, #dfe9ff 35%); }
     .upcoming-row--next { background:rgba(255,207,33,.08); border-color:rgba(255,207,33,.45); }
     .upcoming-row--next:hover { background:rgba(255,207,33,.13); }
+    /* Lignes masquées jusqu'au clic sur Voir plus */
+    .upcoming-row--hidden { display:none; }
     .upcoming-date { display:flex; flex-direction:column; gap:2px; }
     .upcoming-date-main { font-size:14px; font-weight:700; color:var(--text); }
     .upcoming-date-time { font-size:12px; color:var(--muted); }
@@ -179,6 +191,11 @@
     .upcoming-teams { font-size:15px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
     .upcoming-teams strong { font-weight:800; }
     .upcoming-meta { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+
+    /* ── Bouton Voir plus ── */
+    .btn-see-more { display:flex; align-items:center; justify-content:center; width:100%; margin-top:8px; padding:12px 20px; border-radius:12px; border:1.5px dashed var(--card-border); background:transparent; color:var(--muted); font-size:14px; font-weight:700; cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
+    .btn-see-more:hover { background:color-mix(in srgb, var(--card-bg) 60%, #dfe9ff 40%); color:var(--text); border-color:var(--bleu); }
+    .btn-see-more.is-open { color:var(--text); }
 
     .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:var(--overlay); z-index:120; padding:20px; }
     .modal.is-open { display:flex; }
@@ -323,15 +340,13 @@
     </section>
 
     <section class="section">
-      <h2>⚔️ Matchs précédents</h2>
+      <h2>⚔️ Matchs précédents vs {{OPP_NAME}}</h2>
       {{HEAD2HEAD_MATCHES}}
     </section>
 
     <section class="section">
       <h2>Calendrier complet</h2>
-      <div class="upcoming-list">
-        {{UPCOMING_MATCHES}}
-      </div>
+      {{UPCOMING_MATCHES}}
     </section>
 
     <section class="section">
@@ -552,6 +567,31 @@
       if (fb) fb.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u), '_blank'); });
       if (tw) tw.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('Calendrier FCSM 🟡🔵 ' + u), '_blank'); });
     })();
+
+    /* ── Voir plus / voir moins pour le calendrier complet ── */
+    window.toggleMatchList = function(btn, total) {
+      var list = btn.closest('.upcoming-list');
+      if (!list) return;
+      var hidden = list.querySelectorAll('.upcoming-row--hidden');
+      var isOpen = btn.classList.contains('is-open');
+      if (!isOpen) {
+        hidden.forEach(function(row) { row.style.display = ''; });
+        btn.classList.add('is-open');
+        btn.querySelector('.btn-see-more-label').textContent = 'Voir moins ▴';
+      } else {
+        hidden.forEach(function(row) { row.style.display = 'none'; });
+        btn.classList.remove('is-open');
+        var hiddenCount = total - 5;
+        btn.querySelector('.btn-see-more-label').textContent = 'Voir les ' + hiddenCount + ' matchs suivants ▾';
+      }
+    };
+
+    /* Masquer les lignes cachées au chargement (CSS display:none redondant mais sûr) */
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.upcoming-row--hidden').forEach(function(row) {
+        row.style.display = 'none';
+      });
+    });
   </script>
 </body>
 </html>
