@@ -55,7 +55,6 @@ const TEAM_NAME_ALIASES = {
   'st-etienne':        'as saint-etienne',
   'saint etienne':     'as saint-etienne',
   'as saint etienne':  'as saint-etienne',
-  // Red Star FC : toutes les variantes possibles renvoyées par l'API
   'red star':          'red star fc',
   'red star 93':       'red star fc',
   'red star paris':    'red star fc',
@@ -172,19 +171,13 @@ function h2hKey(teamName) {
   return slugify(canonicalTeamKey(teamName));
 }
 
-/**
- * Construit la partie DESCRIPTION ICS relative aux précédentes confrontations.
- */
 function buildH2hDescription(oppName) {
   const key = h2hKey(oppName);
   const data = HEAD2HEAD_DATA[key];
   if (!data) return '';
-
   const { totalPlayed, fcsmWins, draws, fcsmLosses, goalsFor, goalsAgainst, note, lastMatches } = data;
-
   const bilan = `Précédentes confrontations vs ${data.opponent || oppName} : ${totalPlayed} matchs — ${fcsmWins}V ${draws}N ${fcsmLosses}D (${goalsFor}-${goalsAgainst})`;
   const noteStr = note ? `📝 ${note}` : '';
-
   const lastStr = (lastMatches || []).slice(0, 3).map(m => {
     const isHome = normTeam(m.home) === normTeam('FC Sochaux-Montbéliard');
     const result = isHome
@@ -194,13 +187,9 @@ function buildH2hDescription(oppName) {
     const where = isHome ? '(dom.)' : '(ext.)';
     return `  • ${m.date} ${where} ${result} ${score} [${m.competition}]`;
   }).join('\\n');
-
   return [bilan, noteStr, lastStr ? `Dernières confrontations :\\n${lastStr}` : ''].filter(Boolean).join('\\n');
 }
 
-/**
- * buildH2hHtml : génère le HTML du bloc "Matchs précédents vs [adversaire]"
- */
 function buildH2hHtml(oppName, logos) {
   const key = h2hKey(oppName);
   const data = HEAD2HEAD_DATA[key];
@@ -217,7 +206,6 @@ function buildH2hHtml(oppName, logos) {
   <div class="h2h-stat"><span class="h2h-val">${totalPlayed}</span><span class="h2h-lbl">Matchs joués</span></div>
 </div>
 ${note ? `<p class="h2h-note">📝 ${note}</p>` : ''}`;
-
   const matchesHtml = (lastMatches || []).map(m => {
     const isHome = normTeam(m.home) === normTeam('FC Sochaux-Montbéliard');
     const result = isHome
@@ -234,7 +222,6 @@ ${note ? `<p class="h2h-note">📝 ${note}</p>` : ''}`;
   <span class="h2h-match-comp">${m.competition}</span>
 </li>`;
   }).join('\n');
-
   return `${bilanHtml}<ul class="h2h-matches">${matchesHtml}</ul>`;
 }
 
@@ -246,11 +233,6 @@ function buildTimestamp() {
 }
 const LAST_UPDATED = buildTimestamp();
 
-/**
- * Retourne la date "aujourd'hui" côté Paris, mais avancée au lendemain
- * si l'heure locale Paris est >= 22h — afin que les matchs du soir (20h45)
- * soient considérés comme "passés" lors du build nocturne.
- */
 function getTodayParis() {
   const now = new Date();
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -261,7 +243,6 @@ function getTodayParis() {
   const d = Object.fromEntries(parts.map(p => [p.type, p.value]));
   const hour = parseInt(d.hour, 10);
   const dateStr = `${d.year}-${d.month}-${d.day}`;
-  // Après 22h heure Paris, les matchs du jour sont terminés → on avance à J+1
   if (hour >= 22) {
     const next = new Date(dateStr + 'T12:00:00Z');
     next.setUTCDate(next.getUTCDate() + 1);
@@ -310,15 +291,11 @@ function eventLineHtml(ev, teamName, logos) {
   return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${scoreStr}</li>`;
 }
 
-/**
- * buildIso : convertit une date+heure locale Paris en timestamp UTC compact pour le ICS.
- * Format retourné : YYYYMMDDTHHmmssZ  (requis par la norme iCalendar RFC 5545)
- */
 function parisOffsetMinutes(dateEvent) {
   const d = new Date(dateEvent + 'T12:00:00Z');
   const month = d.getUTCMonth() + 1;
-  if (month >= 4 && month <= 10) return 120; // CEST
-  return 60; // CET
+  if (month >= 4 && month <= 10) return 120;
+  return 60;
 }
 
 function buildIso(dateEvent, strTime) {
@@ -337,11 +314,6 @@ function buildIso(dateEvent, strTime) {
   return `${datePart}T${timePart}Z`;
 }
 
-/**
- * buildIsoHtml : même conversion Paris→UTC mais retourne le format ISO 8601 standard
- * avec tirets et deux-points, lisible par new Date() en JavaScript.
- * Format retourné : YYYY-MM-DDTHH:mm:ssZ  (utilisé pour NEXT_MATCH_ISO / countdown)
- */
 function buildIsoHtml(dateEvent, strTime) {
   if (!dateEvent) return '';
   const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
@@ -353,14 +325,11 @@ function buildIsoHtml(dateEvent, strTime) {
   const mUtc = ((totalMinUTC % 1440) + 1440) % 1440 % 60;
   let d = new Date(dateEvent + 'T12:00:00Z');
   if (totalMinUTC < 0) d = new Date(d.getTime() - 86400000);
-  const datePart = d.toISOString().slice(0, 10); // YYYY-MM-DD
+  const datePart = d.toISOString().slice(0, 10);
   const timePart = String(hUtc).padStart(2,'0') + ':' + String(mUtc).padStart(2,'0') + ':00';
   return `${datePart}T${timePart}Z`;
 }
 
-/**
- * fmtTime : affiche l'heure locale Paris à partir de strTime (déjà en heure Paris).
- */
 function fmtTime(strTime) {
   return strTime ? strTime.slice(0, 5) : '—';
 }
@@ -385,6 +354,32 @@ function fmtDate(dateEvent, strTime) {
   } catch { return dateEvent; }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   CLASSEMENT HARDCODÉ — Ligue 2 2026-2027
+   Mis à jour après la J1 (8 août 2026). Utilisé comme fallback
+   quand l'API lookuptable.php ne retourne pas encore de données.
+   ══════════════════════════════════════════════════════════════ */
+const LIGUE2_TABLE_HARDCODED = [
+  { strTeam: 'AS Saint-Étienne',        intRank: 1,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 3, intGoalsAgainst: 0, intGoalDifference: 3,  intPoints: 3 },
+  { strTeam: 'USL Dunkerque',           intRank: 2,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 4, intGoalsAgainst: 2, intGoalDifference: 2,  intPoints: 3 },
+  { strTeam: 'Rodez Aveyron Football',  intRank: 3,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 3, intGoalsAgainst: 1, intGoalDifference: 2,  intPoints: 3 },
+  { strTeam: 'FC Metz',                 intRank: 4,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 2, intGoalsAgainst: 1, intGoalDifference: 1,  intPoints: 3 },
+  { strTeam: 'FC Annecy',               intRank: 5,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 1, intGoalsAgainst: 0, intGoalDifference: 1,  intPoints: 3 },
+  { strTeam: 'Red Star FC',             intRank: 6,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 1, intGoalsAgainst: 0, intGoalDifference: 1,  intPoints: 3 },
+  { strTeam: 'Dijon FCO',               intRank: 7,  intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 1, intGoalsAgainst: 1, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'Montpellier Hérault SC',  intRank: 8,  intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 1, intGoalsAgainst: 1, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'AS Nancy Lorraine',       intRank: 9,  intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 0, intGoalsAgainst: 0, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'US Boulogne CO',          intRank: 10, intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 0, intGoalsAgainst: 0, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'Clermont Foot 63',        intRank: 11, intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 0, intGoalsAgainst: 0, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'Stade de Reims',          intRank: 12, intPlayed: 1, intWin: 0, intDraw: 1, intLoss: 0, intGoalsFor: 0, intGoalsAgainst: 0, intGoalDifference: 0,  intPoints: 1 },
+  { strTeam: 'EN Avant Guingamp',       intRank: 13, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 1, intGoalsAgainst: 2, intGoalDifference: -1, intPoints: 0 },
+  { strTeam: 'FC Nantes',               intRank: 14, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 1, intGoalDifference: -1, intPoints: 0 },
+  { strTeam: 'Pau FC',                  intRank: 15, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 1, intGoalDifference: -1, intPoints: 0 },
+  { strTeam: 'Grenoble Foot 38',        intRank: 16, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 2, intGoalsAgainst: 4, intGoalDifference: -2, intPoints: 0 },
+  { strTeam: 'Stade Lavallois MFC',     intRank: 17, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 1, intGoalsAgainst: 3, intGoalDifference: -2, intPoints: 0 },
+  { strTeam: 'FC Sochaux-Montbéliard',  intRank: 18, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 3, intGoalDifference: -3, intPoints: 0 },
+];
+
 const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
@@ -398,7 +393,15 @@ const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
-const tableRows = tableData?.table || tableData?.teams || [];
+
+/* ── Classement : API en priorité, sinon fallback hardcodé ── */
+const apiTableRows = tableData?.table || tableData?.teams || [];
+const tableRows = apiTableRows.length > 0 ? apiTableRows : LIGUE2_TABLE_HARDCODED;
+if (apiTableRows.length === 0) {
+  console.log('📋 Classement API vide → fallback hardcodé J1 utilisé');
+} else {
+  console.log(`📋 Classement API : ${apiTableRows.length} équipes`);
+}
 
 const calendarTeamsBadges = await Promise.all(
   Object.entries(TEAM_IDS).map(async ([name, id]) => {
@@ -421,9 +424,6 @@ const FRIENDLY_SCHEDULE = [
   { dateEvent:'2026-08-01', strTime:'15:00:00', strHomeTeam:FCSM, strAwayTeam:'AJ Auxerre',       intHomeScore:1, intAwayScore:1, strLeague:'Amical', strVenue:'Stade Auguste Bonal', _friendly:true },
 ];
 
-// IMPORTANT : strTime est en heure locale Paris (Europe/Paris).
-// La conversion UTC est faite dans buildIso() via parisOffsetMinutes().
-// Ne pas mettre les heures en UTC ici — toujours en heure France.
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
   /* J2  */ { dateEvent:'2026-08-15', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true },
@@ -479,7 +479,7 @@ if (seasonEvents.length > 0) {
   seasonPast  = [...lastEvents].sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
 }
 
-/* ── Injection des amicaux dans l'historique (si pas déjà présents via l'API) ── */
+/* ── Injection des amicaux dans l'historique ── */
 function isSameFriendly(a, b) {
   if (a.dateEvent !== b.dateEvent) return false;
   const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
@@ -494,6 +494,17 @@ for (const fev of FRIENDLY_SCHEDULE) {
 }
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
+/* ── Injection des matchs J1 passés avec scores hardcodés ── */
+const LIGUE2_PAST_HARDCODED = [
+  {
+    dateEvent:'2026-08-08', strTime:'20:45:00',
+    strHomeTeam:'FC Sochaux-Montbéliard', strAwayTeam:'AS Saint-Étienne',
+    intHomeScore:0, intAwayScore:3,
+    strLeague:'French Ligue 2', intRound:'1',
+    strVenue:'Stade Auguste Bonal', idLeague: LEAGUE_ID,
+  },
+];
+
 function isSameMatch(a, b) {
   const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
   const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
@@ -505,6 +516,17 @@ function isSameMatch(a, b) {
   const db = new Date(b.dateEvent + 'T12:00:00Z').getTime();
   return Math.abs(da - db) <= 2 * 86400000;
 }
+
+/* Injection des résultats passés hardcodés si absents de l'API */
+for (const hev of LIGUE2_PAST_HARDCODED) {
+  if (hev.dateEvent >= today) continue;
+  const already = seasonPast.find(ev => isSameMatch(ev, hev));
+  if (!already) {
+    seasonPast.push(hev);
+    console.log(`📥 Résultat hardcodé injecté : J${hev.intRound} ${hev.dateEvent}`);
+  }
+}
+seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
 for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   const apiMatch = teamAllNext.find(ev => isSameMatch(ev, hev));
@@ -586,9 +608,7 @@ const logos = Object.fromEntries(logoResults.filter(([, url]) => url));
 console.log(`🎨 Logos dispos: ${Object.keys(logos).length}/${allBadgesToEnsure.length}`);
 
 /* ── "5 derniers matchs" : uniquement Ligue 2 saison en cours ── */
-// On combine : matchs passés de la saison (API ou hardcoded) + matchs du calendrier LFP joués
-// filtrés sur Ligue 2, triés du plus récent au plus ancien, max 5.
-const ligue2PastFromSchedule = LIGUE2_SCHEDULE
+const ligue2PastFromSchedule = LIGUE2_PAST_HARDCODED
   .filter(ev => ev.dateEvent < today)
   .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
 
@@ -596,10 +616,8 @@ const ligue2PastFromSeason = seasonPast
   .filter(ev => isLigue2(ev))
   .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
 
-// Priorité aux données API (seasonPast) ; si vide, on prend le calendrier hardcoded
 const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
 
-// Pour l'adversaire : ses matchs de Ligue 2 passés (via eventslast filtrés)
 const last5Ligue2Opp = oppLastEvents
   .filter(ev => isLigue2(ev))
   .sort((a, b) => (b.dateEvent || '').localeCompare(a.dateEvent || ''))
@@ -740,6 +758,9 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
   lastUpdated: LAST_UPDATED,
+  tableSource: apiTableRows.length > 0 ? 'api' : 'hardcoded-J1',
+  fcsmRank: teamRow?.intRank || '—',
+  fcsmPoints: teamRow?.intPoints || '—',
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: !e._hardcoded })),
 }, null, 2), 'utf8');
 
@@ -829,7 +850,6 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   return parts.join('\\n');
 }
 
-/* ── ICS : déduplication robuste (par journée OU par équipes+date) ── */
 function icsMatchKey(ev) {
   const home = normTeam(ev.strHomeTeam);
   const away = normTeam(ev.strAwayTeam);
