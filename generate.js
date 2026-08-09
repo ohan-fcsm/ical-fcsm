@@ -90,7 +90,7 @@ async function ensureBadge(remoteUrl, slug) {
 
 /* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
-  'Red Star FC':             '135467',  // ajouté ici pour éviter le bloc manuel fragile
+  'Red Star FC':             '135467',
   'AS Saint-Étienne':        '133717',
   'EN Avant Guingamp':       '134244',
   'Clermont Foot 63':        '134713',
@@ -495,18 +495,15 @@ for (const fev of FRIENDLY_SCHEDULE) {
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
 function isSameMatch(a, b) {
-  // Même équipes (quelle que soit la date) + même journée si disponible
   const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
   const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
   const teamsMatch = ah === bh && aa === ba;
-  // Si même journée de championnat, on déduplique même si dates légèrement différentes
   if (teamsMatch && a.intRound && b.intRound) return String(a.intRound) === String(b.intRound);
-  // Sinon on compare aussi la date (à 2 jours près pour robustesse)
   if (!teamsMatch) return false;
   if (!a.dateEvent || !b.dateEvent) return teamsMatch;
   const da = new Date(a.dateEvent + 'T12:00:00Z').getTime();
   const db = new Date(b.dateEvent + 'T12:00:00Z').getTime();
-  return Math.abs(da - db) <= 2 * 86400000; // ±2 jours
+  return Math.abs(da - db) <= 2 * 86400000;
 }
 
 for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
@@ -514,7 +511,6 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   if (!apiMatch) {
     teamAllNext.push({ ...hev, _hardcoded: true });
   } else {
-    // FIX: forcer la date du calendrier LFP officiel (au cas où l'API renvoie une mauvaise date)
     apiMatch.dateEvent = hev.dateEvent;
     if (hev.strTime && hev.strTime !== '00:00:00') {
       apiMatch.strTime = hev.strTime;
@@ -589,11 +585,30 @@ const logoResults = await Promise.all(
 const logos = Object.fromEntries(logoResults.filter(([, url]) => url));
 console.log(`🎨 Logos dispos: ${Object.keys(logos).length}/${allBadgesToEnsure.length}`);
 
-const formFCSM = calcFormStr(lastEvents, teamName);
-const formOpp  = calcFormStr(oppLastEvents, oppName);
+/* ── "5 derniers matchs" : uniquement Ligue 2 saison en cours ── */
+// On combine : matchs passés de la saison (API ou hardcoded) + matchs du calendrier LFP joués
+// filtrés sur Ligue 2, triés du plus récent au plus ancien, max 5.
+const ligue2PastFromSchedule = LIGUE2_SCHEDULE
+  .filter(ev => ev.dateEvent < today)
+  .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
+
+const ligue2PastFromSeason = seasonPast
+  .filter(ev => isLigue2(ev))
+  .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
+
+// Priorité aux données API (seasonPast) ; si vide, on prend le calendrier hardcoded
+const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
+
+// Pour l'adversaire : ses matchs de Ligue 2 passés (via eventslast filtrés)
+const last5Ligue2Opp = oppLastEvents
+  .filter(ev => isLigue2(ev))
+  .sort((a, b) => (b.dateEvent || '').localeCompare(a.dateEvent || ''))
+  .slice(0, 5);
+
+const formFCSM = calcFormStr(last5Ligue2FCSM, teamName);
+const formOpp  = calcFormStr(last5Ligue2Opp, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
-// buildIsoHtml : format ISO 8601 standard (avec tirets/deux-points) pour new Date() JS
 const nextMatchIso = buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
 const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
 
@@ -603,7 +618,6 @@ function badgeTag(name, size = 28) {
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:4px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
 
-/* ── Badges domicile/extérieur basés sur le vrai match (pas FCSM=home par défaut) ── */
 const nextMatchHomeName = nextMatch?.strHomeTeam || teamName;
 const nextMatchAwayName = nextMatch?.strAwayTeam || oppName;
 const homeBigBadge = badgeTag(nextMatchHomeName, 28);
@@ -626,7 +640,6 @@ const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="displa
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
-  // On affiche les 5 premiers directement, le reste est masqué
   const VISIBLE = 5;
   const rows = events.map((ev, i) => {
     const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
@@ -642,7 +655,6 @@ function buildUpcomingRows(events) {
       : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
     const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
-    // Au-delà du 5e match affiché : masqué jusqu'au clic sur "Voir plus"
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
@@ -663,10 +675,9 @@ const upcomingHtml = buildUpcomingRows(teamAllNext);
 
 /* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
 function buildPastL2Html(pastEvents, teamName, logos) {
-  // Filtre uniquement les matchs de Ligue 2 passés
   const l2Past = pastEvents
     .filter(ev => isLigue2(ev) && ev.dateEvent < today)
-    .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent)); // plus récent en premier
+    .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
   if (!l2Past.length) {
     return '<p class="no-matches">Aucun résultat de Ligue 2 pour le moment — la saison vient de commencer.</p>';
   }
@@ -701,18 +712,18 @@ const vars = {
   FCSM_BADGE:            fcsmBigBadge,
   OPP_BADGE:             oppBigBadge,
   OPP_NAME:              oppName,
-  LAST_5_FCSM_FORM:      formBadgesSummary(lastEvents, teamName),
-  LAST_5_FCSM_1:         eventLineHtml(lastEvents[0], teamName, logos),
-  LAST_5_FCSM_2:         eventLineHtml(lastEvents[1], teamName, logos),
-  LAST_5_FCSM_3:         eventLineHtml(lastEvents[2], teamName, logos),
-  LAST_5_FCSM_4:         eventLineHtml(lastEvents[3], teamName, logos),
-  LAST_5_FCSM_5:         eventLineHtml(lastEvents[4], teamName, logos),
-  LAST_5_OPPONENT_FORM:  formBadgesSummary(oppLastEvents, oppName),
-  LAST_5_OPPONENT_1:     eventLineHtml(oppLastEvents[0], oppName, logos),
-  LAST_5_OPPONENT_2:     eventLineHtml(oppLastEvents[1], oppName, logos),
-  LAST_5_OPPONENT_3:     eventLineHtml(oppLastEvents[2], oppName, logos),
-  LAST_5_OPPONENT_4:     eventLineHtml(oppLastEvents[3], oppName, logos),
-  LAST_5_OPPONENT_5:     eventLineHtml(oppLastEvents[4], oppName, logos),
+  LAST_5_FCSM_FORM:      formBadgesSummary(last5Ligue2FCSM, teamName),
+  LAST_5_FCSM_1:         eventLineHtml(last5Ligue2FCSM[0], teamName, logos),
+  LAST_5_FCSM_2:         eventLineHtml(last5Ligue2FCSM[1], teamName, logos),
+  LAST_5_FCSM_3:         eventLineHtml(last5Ligue2FCSM[2], teamName, logos),
+  LAST_5_FCSM_4:         eventLineHtml(last5Ligue2FCSM[3], teamName, logos),
+  LAST_5_FCSM_5:         eventLineHtml(last5Ligue2FCSM[4], teamName, logos),
+  LAST_5_OPPONENT_FORM:  formBadgesSummary(last5Ligue2Opp, oppName),
+  LAST_5_OPPONENT_1:     eventLineHtml(last5Ligue2Opp[0], oppName, logos),
+  LAST_5_OPPONENT_2:     eventLineHtml(last5Ligue2Opp[1], oppName, logos),
+  LAST_5_OPPONENT_3:     eventLineHtml(last5Ligue2Opp[2], oppName, logos),
+  LAST_5_OPPONENT_4:     eventLineHtml(last5Ligue2Opp[3], oppName, logos),
+  LAST_5_OPPONENT_5:     eventLineHtml(last5Ligue2Opp[4], oppName, logos),
   UPCOMING_MATCHES:      upcomingHtml,
   PAST_MATCHES_L2:       pastL2Html,
   HEAD2HEAD_MATCHES:     h2hHtml,
@@ -822,11 +833,9 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
 function icsMatchKey(ev) {
   const home = normTeam(ev.strHomeTeam);
   const away = normTeam(ev.strAwayTeam);
-  // Si journée disponible : clé = round+home+away (indépendante de la date)
   if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
     return `ligue2-J${ev.intRound}-${home}-${away}`;
   }
-  // Sinon : clé = date+home+away
   return `${ev.dateEvent}-${home}-${away}`;
 }
 
