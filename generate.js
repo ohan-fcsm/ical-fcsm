@@ -356,8 +356,8 @@ function fmtDate(dateEvent, strTime) {
 
 /* ══════════════════════════════════════════════════════════════
    CLASSEMENT HARDCODÉ — Ligue 2 2026-2027
-   Mis à jour après la J1 (8 août 2026). Utilisé comme fallback
-   quand l'API lookuptable.php ne retourne pas encore de données.
+   Après J1 (8 août 2026). Utilisé comme fallback si l'API
+   retourne moins de 18 équipes (classement incomplet).
    ══════════════════════════════════════════════════════════════ */
 const LIGUE2_TABLE_HARDCODED = [
   { strTeam: 'AS Saint-Étienne',        intRank: 1,  intPlayed: 1, intWin: 1, intDraw: 0, intLoss: 0, intGoalsFor: 3, intGoalsAgainst: 0, intGoalDifference: 3,  intPoints: 3 },
@@ -394,11 +394,15 @@ const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTe
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 const lastEvents = lastData?.results || lastData?.events || [];
 
-/* ── Classement : API en priorité, sinon fallback hardcodé ── */
+/* ── Classement : API en priorité, sinon fallback hardcodé ──
+   On utilise le fallback si l'API retourne 0 équipes OU
+   si le classement est incomplet (< 18 équipes), ce qui arrive
+   en début de saison quand TheSportsDB n'a pas encore tout mis à jour.
+── */
 const apiTableRows = tableData?.table || tableData?.teams || [];
-const tableRows = apiTableRows.length > 0 ? apiTableRows : LIGUE2_TABLE_HARDCODED;
-if (apiTableRows.length === 0) {
-  console.log('📋 Classement API vide → fallback hardcodé J1 utilisé');
+const tableRows = apiTableRows.length >= 18 ? apiTableRows : LIGUE2_TABLE_HARDCODED;
+if (apiTableRows.length < 18) {
+  console.log(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) → fallback hardcodé J1 utilisé`);
 } else {
   console.log(`📋 Classement API : ${apiTableRows.length} équipes`);
 }
@@ -758,7 +762,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
   lastUpdated: LAST_UPDATED,
-  tableSource: apiTableRows.length > 0 ? 'api' : 'hardcoded-J1',
+  tableSource: apiTableRows.length >= 18 ? 'api' : 'hardcoded-J1',
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: !e._hardcoded })),
