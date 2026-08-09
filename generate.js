@@ -151,6 +151,10 @@ const BADGE_OVERRIDES = {
   'stade de reims': [
     'https://r2.thesportsdb.com/images/media/team/badge/xcrw1b1592925946.png',
   ],
+  'red star fc': [
+    'https://r2.thesportsdb.com/images/media/team/badge/red-star-fc.png',
+    'https://www.thesportsdb.com/images/media/team/badge/red-star-fc.png',
+  ],
 };
 
 /* ── Données Head-to-Head ── */
@@ -368,7 +372,7 @@ const FCSM = teamName;
 /* ── Matchs de préparation (scores définitifs) ── */
 const FRIENDLY_SCHEDULE = [
   { dateEvent:'2026-07-26', strTime:'15:00:00', strHomeTeam:'Grenoble Foot 38', strAwayTeam:FCSM, intHomeScore:0, intAwayScore:1, strLeague:'Amical', strVenue:'Stade des Alpes', _friendly:true },
-  { dateEvent:'2026-08-01', strTime:'15:00:00', strHomeTeam:FCSM, strAwayTeam:'AJ Auxerre',       intHomeScore:null, intAwayScore:null, strLeague:'Amical', strVenue:'Stade Auguste Bonal', _friendly:true },
+  { dateEvent:'2026-08-01', strTime:'15:00:00', strHomeTeam:FCSM, strAwayTeam:'AJ Auxerre',       intHomeScore:1, intAwayScore:1, strLeague:'Amical', strVenue:'Stade Auguste Bonal', _friendly:true },
 ];
 
 // IMPORTANT : strTime est en heure locale Paris (Europe/Paris).
