@@ -560,8 +560,19 @@ const oppName = nextMatch
   ? (normTeam(nextMatch.strHomeTeam) === normTeam(teamName) ? nextMatch.strAwayTeam : nextMatch.strHomeTeam)
   : 'Adversaire';
 
-const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName)) || {};
-const oppRow  = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))  || {};
+/* ── Recherche dans le classement avec double fallback ──
+   1. Recherche par teamName (nom venant de l'API)
+   2. Fallback sur TEAM_NAME_FALLBACK si l'API renvoie un nom différent
+── */
+const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName))
+  || tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(TEAM_NAME_FALLBACK))
+  || {};
+const oppRow  = tableRows.find(r => canonicalTeamKey(r.strTeam || r.nameTeam) === canonicalTeamKey(oppName))
+  || tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))
+  || {};
+
+console.log(`🏆 teamRow trouvé: "${teamRow?.strTeam || 'AUCUN'}" (rank: ${teamRow?.intRank || '—'}, pts: ${teamRow?.intPoints || '—'})`);
+console.log(`🏆 oppRow trouvé:  "${oppRow?.strTeam || 'AUCUN'}" (rank: ${oppRow?.intRank || '—'}, pts: ${oppRow?.intPoints || '—'})`);
 
 let oppLastEvents = [];
 let oppBadgeRemote = '';
