@@ -47,7 +47,7 @@ function normTeam(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
-/* ── Alias : ramène toutes les variantes ASSE vers une clé canonique ── */
+/* ── Alias : ramène toutes les variantes vers une clé canonique ── */
 const TEAM_NAME_ALIASES = {
   'as saint-etienne':  'as saint-etienne',
   'saint-etienne':     'as saint-etienne',
@@ -55,6 +55,10 @@ const TEAM_NAME_ALIASES = {
   'st-etienne':        'as saint-etienne',
   'saint etienne':     'as saint-etienne',
   'as saint etienne':  'as saint-etienne',
+  // Red Star FC : toutes les variantes possibles renvoyées par l'API
+  'red star':          'red star fc',
+  'red star 93':       'red star fc',
+  'red star paris':    'red star fc',
 };
 
 function canonicalTeamKey(name) {
@@ -86,8 +90,8 @@ async function ensureBadge(remoteUrl, slug) {
 
 /* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
+  'Red Star FC':             '135467',  // ajouté ici pour éviter le bloc manuel fragile
   'AS Saint-Étienne':        '133717',
-  // Red Star FC : badge géré via BADGE_OVERRIDES (red-star-fc.png déjà en cache)
   'EN Avant Guingamp':       '134244',
   'Clermont Foot 63':        '134713',
   'FC Nantes':               '133861',
@@ -408,12 +412,6 @@ const calendarTeamsBadges = await Promise.all(
     return { name, id, badgeUrls: [badgeUrl], badgeUrl };
   })
 );
-
-/* ── Red Star FC : ajouté manuellement depuis BADGE_OVERRIDES (non présent dans TEAM_IDS) ── */
-const redStarOverride = BADGE_OVERRIDES['red star fc'];
-if (redStarOverride && !calendarTeamsBadges.find(t => normTeam(t.name) === 'red star fc')) {
-  calendarTeamsBadges.push({ name: 'Red Star FC', id: '135467', badgeUrls: redStarOverride, badgeUrl: redStarOverride[0] });
-}
 
 const FCSM = teamName;
 
