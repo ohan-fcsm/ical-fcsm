@@ -192,6 +192,46 @@ function buildH2hDescription(oppName) {
   return [bilan, noteStr, lastStr ? `Dernières confrontations :\\n${lastStr}` : ''].filter(Boolean).join('\\n');
 }
 
+/**
+ * buildH2hHtml : génère le HTML du bloc "Matchs précédents vs [adversaire]"
+ */
+function buildH2hHtml(oppName, logos) {
+  const key = h2hKey(oppName);
+  const data = HEAD2HEAD_DATA[key];
+  if (!data) {
+    return `<p class="no-matches">Aucune donnée historique disponible pour cet adversaire.</p>`;
+  }
+  const { totalPlayed, fcsmWins, draws, fcsmLosses, goalsFor, goalsAgainst, note, lastMatches } = data;
+  const bilanHtml = `
+<div class="h2h-stats">
+  <div class="h2h-stat"><span class="h2h-val h2h-win">${fcsmWins}</span><span class="h2h-lbl">Victoires</span></div>
+  <div class="h2h-stat"><span class="h2h-val h2h-draw">${draws}</span><span class="h2h-lbl">Nuls</span></div>
+  <div class="h2h-stat"><span class="h2h-val h2h-loss">${fcsmLosses}</span><span class="h2h-lbl">Défaites</span></div>
+  <div class="h2h-stat"><span class="h2h-val">${goalsFor}-${goalsAgainst}</span><span class="h2h-lbl">Buts (pour-contre)</span></div>
+  <div class="h2h-stat"><span class="h2h-val">${totalPlayed}</span><span class="h2h-lbl">Matchs joués</span></div>
+</div>
+${note ? `<p class="h2h-note">📝 ${note}</p>` : ''}`;
+
+  const matchesHtml = (lastMatches || []).map(m => {
+    const isHome = normTeam(m.home) === normTeam('FC Sochaux-Montbéliard');
+    const result = isHome
+      ? (m.scoreHome > m.scoreAway ? 'V' : m.scoreHome === m.scoreAway ? 'N' : 'D')
+      : (m.scoreAway > m.scoreHome ? 'V' : m.scoreHome === m.scoreAway ? 'N' : 'D');
+    const cls = result === 'V' ? 'win' : result === 'N' ? 'draw' : 'loss';
+    const homeBadge = teamBadgeImg(m.home, logos, 16);
+    const awayBadge = teamBadgeImg(m.away, logos, 16);
+    const dateStr = fmtDateOnly(m.date);
+    return `<li>
+  <span class="form-badge form-badge--${cls}">${result}</span>
+  <span class="h2h-match-date">${dateStr}</span>
+  <span class="h2h-match-teams">${homeBadge} ${m.home} ${m.scoreHome}–${m.scoreAway} ${awayBadge} ${m.away}</span>
+  <span class="h2h-match-comp">${m.competition}</span>
+</li>`;
+  }).join('\n');
+
+  return `${bilanHtml}<ul class="h2h-matches">${matchesHtml}</ul>`;
+}
+
 /* ── Date de build (heure Europe/Paris) ── */
 function buildTimestamp() {
   const now = new Date();
@@ -449,25 +489,33 @@ for (const fev of FRIENDLY_SCHEDULE) {
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
 function isSameMatch(a, b) {
-  if (a.dateEvent !== b.dateEvent) return false;
+  // Même équipes (quelle que soit la date) + même journée si disponible
   const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
   const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
-  if (ah === bh && aa === ba) return true;
-  const contains = (x, y) => x.includes(y) || y.includes(x);
-  return contains(ah, bh) && contains(aa, ba);
+  const teamsMatch = ah === bh && aa === ba;
+  // Si même journée de championnat, on déduplique même si dates légèrement différentes
+  if (teamsMatch && a.intRound && b.intRound) return String(a.intRound) === String(b.intRound);
+  // Sinon on compare aussi la date (à 2 jours près pour robustesse)
+  if (!teamsMatch) return false;
+  if (!a.dateEvent || !b.dateEvent) return teamsMatch;
+  const da = new Date(a.dateEvent + 'T12:00:00Z').getTime();
+  const db = new Date(b.dateEvent + 'T12:00:00Z').getTime();
+  return Math.abs(da - db) <= 2 * 86400000; // ±2 jours
 }
 
 for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   const apiMatch = teamAllNext.find(ev => isSameMatch(ev, hev));
   if (!apiMatch) {
     teamAllNext.push({ ...hev, _hardcoded: true });
-  } else if (hev.strTime && hev.strTime !== '00:00:00') {
-    // FIX: on force TOUJOURS l'heure du calendrier LFP hardcodé (heure Paris)
-    apiMatch.strTime = hev.strTime;
-    // Injection des IDs depuis le calendrier hardcodé si absents dans l'event API
+  } else {
+    // FIX: forcer la date du calendrier LFP officiel (au cas où l'API renvoie une mauvaise date)
+    apiMatch.dateEvent = hev.dateEvent;
+    if (hev.strTime && hev.strTime !== '00:00:00') {
+      apiMatch.strTime = hev.strTime;
+    }
     if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
     if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
-    console.log(`🕐 Heure forcée (LFP) pour ${hev.dateEvent} : ${hev.strTime}`);
+    console.log(`🕐 Heure/date forcée (LFP) pour J${hev.intRound} ${hev.dateEvent} : ${hev.strTime}`);
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
@@ -563,11 +611,12 @@ function formBadgesSummary(events, tName) {
 
 const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:2px 8px;white-space:nowrap;flex-shrink:0">⏳ À confirmer</span>`;
 
+/* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
-  // Démarrer à partir du 2e match (index 1) : le premier est déjà affiché dans le bloc hero "prochain match"
-  const displayEvents = events.slice(1); // ← sauter le premier
-  const rows = displayEvents.map((ev, i) => {
+  // On affiche les 5 premiers directement, le reste est masqué
+  const VISIBLE = 5;
+  const rows = events.map((ev, i) => {
     const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
@@ -581,24 +630,44 @@ function buildUpcomingRows(events) {
       : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
     const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
-    // i >= 4 correspond aux matchs au-delà des 5 premiers affichés (index 0-4 dans displayEvents)
-    const hiddenClass = i >= 4 ? ' upcoming-row--hidden' : '';
+    // Au-delà du 5e match affiché : masqué jusqu'au clic sur "Voir plus"
+    const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
   <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
   <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}${unconfirmedPill}</div>
 </div>`;
   });
-  const hiddenCount = displayEvents.length - 4;
-  const seeMoreBtn = displayEvents.length > 4
-    ? `<button class="btn-see-more" onclick="toggleMatchList(this, ${displayEvents.length})" data-sect="upcoming">
-  <span class="btn-see-more-label">Voir les ${hiddenCount > 0 ? hiddenCount : displayEvents.length - 4} matchs suivants ▾</span>
+  const hiddenCount = events.length - VISIBLE;
+  const seeMoreBtn = events.length > VISIBLE
+    ? `<button class="btn-see-more" onclick="toggleMatchList(this, ${events.length})" data-sect="upcoming">
+  <span class="btn-see-more-label">Voir les ${hiddenCount} matchs suivants ▾</span>
 </button>`
     : '';
-  return rows.join('\n') + seeMoreBtn;
+  return `<div class="upcoming-list">${rows.join('\n')}${seeMoreBtn}</div>`;
 }
 
 const upcomingHtml = buildUpcomingRows(teamAllNext);
+
+/* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
+function buildPastL2Html(pastEvents, teamName, logos) {
+  // Filtre uniquement les matchs de Ligue 2 passés
+  const l2Past = pastEvents
+    .filter(ev => isLigue2(ev) && ev.dateEvent < today)
+    .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent)); // plus récent en premier
+  if (!l2Past.length) {
+    return '<p class="no-matches">Aucun résultat de Ligue 2 pour le moment — la saison vient de commencer.</p>';
+  }
+  const rows = l2Past.map(ev => {
+    return eventLineHtml(ev, teamName, logos);
+  });
+  return `<ul class="past-l2-list">${rows.join('\n')}</ul>`;
+}
+
+const pastL2Html = buildPastL2Html(seasonPast, teamName, logos);
+
+/* ── Bloc H2H HTML ── */
+const h2hHtml = buildH2hHtml(oppName, logos);
 
 const vars = {
   NEXT_MATCH_DATE:       nextMatch?.dateEvent   || '—',
@@ -633,6 +702,8 @@ const vars = {
   LAST_5_OPPONENT_4:     eventLineHtml(oppLastEvents[3], oppName, logos),
   LAST_5_OPPONENT_5:     eventLineHtml(oppLastEvents[4], oppName, logos),
   UPCOMING_MATCHES:      upcomingHtml,
+  PAST_MATCHES_L2:       pastL2Html,
+  HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
 };
 
@@ -735,6 +806,18 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   return parts.join('\\n');
 }
 
+/* ── ICS : déduplication robuste (par journée OU par équipes+date) ── */
+function icsMatchKey(ev) {
+  const home = normTeam(ev.strHomeTeam);
+  const away = normTeam(ev.strAwayTeam);
+  // Si journée disponible : clé = round+home+away (indépendante de la date)
+  if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
+    return `ligue2-J${ev.intRound}-${home}-${away}`;
+  }
+  // Sinon : clé = date+home+away
+  return `${ev.dateEvent}-${home}-${away}`;
+}
+
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
@@ -746,10 +829,15 @@ const icsLines = [
 const seenUids = new Set();
 for (const ev of allEventsForIcs) {
   if (!ev?.dateEvent) continue;
+  const matchKey = icsMatchKey(ev);
+  if (seenUids.has(matchKey)) {
+    console.log(`⚠️  ICS doublon ignoré : ${matchKey}`);
+    continue;
+  }
+  seenUids.add(matchKey);
+
   const isoStr = buildIso(ev.dateEvent, ev.strTime);
-  const uid = `fcsm-${ev.idEvent || (ev.dateEvent.replace(/-/g,'') + normTeam(ev.strHomeTeam) + normTeam(ev.strAwayTeam))}@ical-fcsm`;
-  if (seenUids.has(uid)) continue;
-  seenUids.add(uid);
+  const uid = `fcsm-${ev.idEvent || matchKey}@ical-fcsm`;
 
   const summary     = buildIcsSummary(ev, teamName, teamRow);
   const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp);
