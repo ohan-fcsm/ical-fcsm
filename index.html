@@ -78,8 +78,20 @@
     .badge-prochain { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
     .badge-prochain img { width:18px; height:18px; object-fit:contain; border-radius:3px; }
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
-    .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; justify-content:center; text-align:center; align-items:center; gap:10px; flex-wrap:wrap; }
-    .form-row { display:flex; justify-content:center; align-items:center; gap:8px; text-align:center; margin-bottom:8px; }
+    .match-card-teams { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; margin-bottom:10px; color:var(--text); }
+    .match-card-team { min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .match-card-team--home { align-items:flex-start; text-align:left; }
+    .match-card-team--away { align-items:flex-end; text-align:right; }
+    .match-card-team-line { display:flex; align-items:center; gap:8px; min-width:0; font-size:clamp(19px,2.25vw,27px); font-weight:900; letter-spacing:-0.02em; line-height:1.1; }
+    .match-card-team--away .match-card-team-line { flex-direction:row-reverse; }
+    .match-card-team-name { overflow-wrap:anywhere; }
+    .match-card-team small { font-size:13px; font-weight:700; color:var(--muted); letter-spacing:0; }
+    .match-card-vs { color:var(--muted); font-size:18px; font-weight:600; }
+    .form-row { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; text-align:center; margin-bottom:8px; }
+    .form-row__team { display:flex; gap:6px; min-width:0; }
+    .form-row__team--home { justify-content:flex-start; }
+    .form-row__team--away { justify-content:flex-end; }
+    .form-row__vs { color:var(--muted); font-weight:700; }
     .match-card-datetime { text-align:center; font-weight:800; color:var(--text); }
     .match-card-meta { justify-content:center; }
     .match-card-teams img { flex-shrink:0; }
@@ -250,6 +262,11 @@
       .page { padding:24px 16px 48px; }
       .hero-h1 { font-size:36px; }
       .match-card { padding:20px 18px; }
+      .match-card-teams, .form-row { gap:8px; }
+      .match-card-team-line { gap:5px; font-size:clamp(16px,5.2vw,20px); }
+      .match-card-team small { font-size:11px; }
+      .match-card-vs { font-size:15px; }
+      .form-row__team { gap:4px; }
       .countdown-wrap { gap:8px; }
       .countdown-value { font-size:24px; }
       .hero-actions { flex-direction:column; align-items:flex-start; }
@@ -294,8 +311,12 @@
             <span class="match-card-round">{{NEXT_MATCH_ROUND}}</span>
           </div>
           <div class="match-card-datetime">{{NEXT_MATCH_DATE}} · {{NEXT_MATCH_TIME}}</div>
-          <div class="match-card-teams">{{NEXT_MATCH_HOME_BADGE}} {{NEXT_MATCH_HOME_TEAM}} <small>{{NEXT_MATCH_HOME_STANDING}}</small> <span style="color:var(--muted);font-weight:500">vs</span> {{NEXT_MATCH_AWAY_BADGE}} {{NEXT_MATCH_AWAY_TEAM}} <small>{{NEXT_MATCH_AWAY_STANDING}}</small></div>
-          <div class="form-row"><span>{{NEXT_MATCH_HOME_FORM}}</span><span style="color:var(--muted);font-weight:700">vs</span><span>{{NEXT_MATCH_AWAY_FORM}}</span></div>
+          <div class="match-card-teams">
+            <div class="match-card-team match-card-team--home"><div class="match-card-team-line">{{NEXT_MATCH_HOME_BADGE}} <span class="match-card-team-name">{{NEXT_MATCH_HOME_TEAM}}</span></div><small>{{NEXT_MATCH_HOME_STANDING}}</small></div>
+            <span class="match-card-vs">vs</span>
+            <div class="match-card-team match-card-team--away"><div class="match-card-team-line">{{NEXT_MATCH_AWAY_BADGE}} <span class="match-card-team-name">{{NEXT_MATCH_AWAY_TEAM}}</span></div><small>{{NEXT_MATCH_AWAY_STANDING}}</small></div>
+          </div>
+          <div class="form-row"><span class="form-row__team form-row__team--home">{{NEXT_MATCH_HOME_FORM}}</span><span class="form-row__vs">vs</span><span class="form-row__team form-row__team--away">{{NEXT_MATCH_AWAY_FORM}}</span></div>
           {{LIGUE2_STATUS_BANNER}}
           <div class="countdown-wrap" id="countdown"></div>
           <div class="match-card-meta">
