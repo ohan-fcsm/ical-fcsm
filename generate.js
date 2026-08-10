@@ -10,7 +10,8 @@ const LEAGUE_ID = process.env.LEAGUE_ID || '4401';
 const SEASON = process.env.SEASON || '2026-2027';
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
 const TEAM_DISPLAY_NAME = 'FC Sochaux';
-const FCSM_BADGE_LOCAL = './logo-512.png';
+// Secours neutre : logo de la compétition, jamais le logo éditorial du site.
+const FCSM_BADGE_LOCAL = 'https://r2.thesportsdb.com/images/media/league/badge/aofb771742983333.png';
 
 const out = 'dist';
 const SRC_BADGES = 'badges';
