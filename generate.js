@@ -357,20 +357,14 @@ function fmtDateOnly(dateEvent) {
   if (!dateEvent) return '—';
   try {
     const d = new Date(dateEvent + 'T12:00:00Z');
-    const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-    const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
     return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   } catch { return dateEvent; }
 }
 
 function fmtDate(dateEvent, strTime) {
-  if (!dateEvent) return '—';
-  try {
-    const d = new Date(dateEvent + 'T12:00:00Z');
-    const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-    const months = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-    return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  } catch { return dateEvent; }
+  return fmtDateOnly(dateEvent);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -925,7 +919,7 @@ const pastL2Html = buildPastL2Html(seasonPast, teamName, logos);
 const h2hHtml = buildH2hHtml(oppName, logos);
 
 const vars = {
-  NEXT_MATCH_DATE:       nextMatch?.dateEvent   || '—',
+  NEXT_MATCH_DATE:       fmtDateOnly(nextMatch?.dateEvent),
   NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
   NEXT_MATCH_HOME_TEAM:  displayTeamName(nextMatch?.strHomeTeam) || '—',
   NEXT_MATCH_AWAY_TEAM:  displayTeamName(nextMatch?.strAwayTeam) || '—',
