@@ -840,7 +840,8 @@ function buildUpcomingRows(events) {
   return `<div class="upcoming-list">${rows.join('\n')}${seeMoreBtn}</div>`;
 }
 
-const upcomingHtml = buildUpcomingRows(teamAllNext);
+// Le prochain match est déjà mis en avant dans la carte principale.
+const upcomingHtml = buildUpcomingRows(teamAllNext.filter(ev => ev !== nextMatch));
 
 /* ── Bloc "Résultats Ligue 2 — Saison 2026-27" ── */
 function buildPastL2Html(pastEvents, teamName, logos) {
