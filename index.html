@@ -78,7 +78,10 @@
     .badge-prochain { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
     .badge-prochain img { width:18px; height:18px; object-fit:contain; border-radius:3px; }
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
-    .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; justify-content:center; text-align:center; align-items:center; gap:10px; flex-wrap:wrap; }
+    .form-row { display:flex; justify-content:center; align-items:center; gap:8px; text-align:center; margin-bottom:8px; }
+    .match-card-datetime { text-align:center; }
+    .match-card-meta { justify-content:center; }
     .match-card-teams img { flex-shrink:0; }
     .match-card-datetime { font-size:14px; color:var(--muted); margin-bottom:14px; }
     .match-card-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
@@ -294,10 +297,7 @@
           <div class="form-row"><span>{{NEXT_MATCH_HOME_FORM}}</span><span style="color:var(--muted);font-weight:700">vs</span><span>{{NEXT_MATCH_AWAY_FORM}}</span></div>
           <div class="match-card-datetime">{{NEXT_MATCH_DATE}} · {{NEXT_MATCH_TIME}}</div>
           <div class="match-card-meta">
-            <span class="match-card-meta-item">🏆 <strong>{{NEXT_MATCH_LEAGUE}}</strong></span>
-            <span class="match-card-meta-item">🏙 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
-            <span class="match-card-meta-item">📊 FC Sochaux : <strong>{{TEAM_RANK_FCSM}}e · {{TEAM_POINTS_FCSM}}</strong></span>
-            <span class="match-card-meta-item">📊 {{OPP_NAME}} : <strong>{{TEAM_RANK_OPPONENT}}e · {{TEAM_POINTS_OPPONENT}}</strong></span>
+            <span class="match-card-meta-item">🏟 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
           </div>
           {{LIGUE2_STATUS_BANNER}}
           <div class="countdown-wrap" id="countdown"></div>
