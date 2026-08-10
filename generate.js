@@ -9,6 +9,7 @@ const TEAM_ID_FCSM = process.env.TEAM_ID_FCSM || '133708';
 const LEAGUE_ID = process.env.LEAGUE_ID || '4401';
 const SEASON = process.env.SEASON || '2026-2027';
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
+const TEAM_DISPLAY_NAME = 'FC Sochaux';
 const FCSM_BADGE_LOCAL = './logo-512.png';
 
 const out = 'dist';
@@ -68,6 +69,12 @@ const TEAM_NAME_ALIASES = {
 function canonicalTeamKey(name) {
   const n = normTeam(name);
   return TEAM_NAME_ALIASES[n] || n;
+}
+
+function displayTeamName(name) {
+  return canonicalTeamKey(name) === canonicalTeamKey(TEAM_NAME_FALLBACK)
+    ? TEAM_DISPLAY_NAME
+    : name;
 }
 
 async function ensureBadge(remoteUrl, slug) {
@@ -284,6 +291,8 @@ function eventLineHtml(ev, teamName, logos) {
   const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
   const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
   const self = isHome ? ev.strHomeTeam : ev.strAwayTeam;
+  const oppDisplay = displayTeamName(opp);
+  const selfDisplay = displayTeamName(self);
   const dateOnly = ev.dateEvent ? fmtDateOnly(ev.dateEvent) : '—';
   const oppBadge = teamBadgeImg(opp, logos, 16);
   if (!Number.isFinite(hs) || !Number.isFinite(as)) {
@@ -292,8 +301,8 @@ function eventLineHtml(ev, teamName, logos) {
   const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
   const cls = letter === 'V' ? 'win' : letter === 'N' ? 'draw' : 'loss';
   const scoreStr = isHome
-    ? `${teamBadgeImg(self, logos, 16)} ${self} ${hs}-${as} ${oppBadge} ${opp}`
-    : `${oppBadge} ${opp} ${as}-${hs} ${teamBadgeImg(self, logos, 16)} ${self}`;
+    ? `${teamBadgeImg(self, logos, 16)} ${selfDisplay} ${hs}-${as} ${oppBadge} ${oppDisplay}`
+    : `${oppBadge} ${oppDisplay} ${as}-${hs} ${teamBadgeImg(self, logos, 16)} ${selfDisplay}`;
   return `<li><span class="form-badge form-badge--${cls}">${letter}</span> ${dateOnly} — ${scoreStr}</li>`;
 }
 
@@ -787,6 +796,7 @@ function buildUpcomingRows(events) {
   const rows = events.map((ev, i) => {
     const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+    const oppDisplay = displayTeamName(opp);
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
     const time = fmtTime(ev.strTime);
     const league = ev.strLeague || '—';
@@ -794,8 +804,8 @@ function buildUpcomingRows(events) {
     const homeBadge = teamBadgeImg(ev.strHomeTeam, logos, 22);
     const awayBadge = teamBadgeImg(ev.strAwayTeam, logos, 22);
     const teamsHtml = isHome
-      ? `${homeBadge} <strong>FCSM</strong> vs ${awayBadge} ${opp}`
-      : `${homeBadge} ${opp} vs ${awayBadge} <strong>FCSM</strong>`;
+      ? `${homeBadge} <strong>${TEAM_DISPLAY_NAME}</strong> vs ${awayBadge} ${oppDisplay}`
+      : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
     const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
@@ -849,8 +859,8 @@ const h2hHtml = buildH2hHtml(oppName, logos);
 const vars = {
   NEXT_MATCH_DATE:       nextMatch?.dateEvent   || '—',
   NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
-  NEXT_MATCH_HOME_TEAM:  nextMatch?.strHomeTeam  || '—',
-  NEXT_MATCH_AWAY_TEAM:  nextMatch?.strAwayTeam  || '—',
+  NEXT_MATCH_HOME_TEAM:  displayTeamName(nextMatch?.strHomeTeam) || '—',
+  NEXT_MATCH_AWAY_TEAM:  displayTeamName(nextMatch?.strAwayTeam) || '—',
   NEXT_MATCH_HOME_BADGE: homeBigBadge,
   NEXT_MATCH_AWAY_BADGE: awayBigBadge,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
@@ -931,8 +941,8 @@ function buildIcsSummary(ev, tName, tRow) {
     const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
     const scoreStr = isHome ? `${fcsmScore}-${oppScore}` : `${oppScore}-${fcsmScore}`;
     const title = isHome
-      ? `${emoji} FCSM ${scoreStr} ${opp}`
-      : `${emoji} ${opp} ${scoreStr} FCSM`;
+      ? `${emoji} ${TEAM_DISPLAY_NAME} ${scoreStr} ${opp}`
+      : `${emoji} ${opp} ${scoreStr} ${TEAM_DISPLAY_NAME}`;
     return `${title}${roundLabel}${leagueLabel}`;
   }
 
@@ -955,8 +965,8 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
     const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
     const resultLabel = result === 'V' ? 'Victoire' : result === 'N' ? 'Nul' : 'Défaite';
     const scoreStr = isHome
-      ? `FCSM ${fcsmScore} - ${oppScore} ${opp}`
-      : `${opp} ${oppScore} - ${fcsmScore} FCSM`;
+      ? `${TEAM_DISPLAY_NAME} ${fcsmScore} - ${oppScore} ${opp}`
+      : `${opp} ${oppScore} - ${fcsmScore} ${TEAM_DISPLAY_NAME}`;
     const parts = [
       headerParts,
       `⚽ Score final : ${scoreStr}`,
@@ -970,7 +980,7 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
   const unconfirmedPart = ev._hardcoded
     ? '⏳ Date et heure à confirmer — source : calendrier LFP officiel'
     : '';
-  const formeFCSM = `FCSM${rankFCSM} — Forme : ${fFCSM || '—'}`;
+  const formeFCSM = `${TEAM_DISPLAY_NAME}${rankFCSM} — Forme : ${fFCSM || '—'}`;
   const formeOpp  = `${opp}${rankOpp} — Forme : ${fOpp || '—'}`;
   const h2hPart   = buildH2hDescription(opp);
 
@@ -1008,8 +1018,8 @@ const allEventsForIcs = [...seasonPast, ...teamAllNext];
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
   'CALSCALE:GREGORIAN','METHOD:PUBLISH',
-  'X-WR-CALNAME:FCSM — Tous les matchs',
-  'X-WR-CALDESC:Matchs FC Sochaux-Montbéliard toutes compétitions',
+  'X-WR-CALNAME:FC Sochaux — Tous les matchs',
+  'X-WR-CALDESC:Matchs FC Sochaux toutes compétitions',
   `X-WR-LASTUPDATED:${new Date().toISOString()}`,
 ];
 const seenUids = new Set();
