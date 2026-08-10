@@ -794,7 +794,11 @@ const last5Ligue2Opp = [
 
 const formFCSM = calcFormStr(last5Ligue2FCSM, teamName);
 const nextMatchFcsmHome = nextMatch ? canonicalTeamKey(nextMatch.strHomeTeam) === canonicalTeamKey(teamName) : true;
-const compactStanding = (rank, points) => (rank && rank !== '—') ? `(${rank}e, ${Number(points) || 0}pt)` : '';
+const compactStanding = (rank, points) => {
+  if (!rank || rank === '—') return '';
+  const value = Number(points) || 0;
+  return `(${rank}e, ${value}${value > 1 ? 'pts' : 'pt'})`;
+};
 const fcsmStanding = compactStanding(teamRow?.intRank, teamRow?.intPoints);
 const oppStanding = compactStanding(oppRow?.intRank, oppRow?.intPoints);
 const formOpp  = calcFormStr(last5Ligue2Opp, oppName);
@@ -851,7 +855,8 @@ function buildUpcomingRows(events) {
     const teamsHtml = isHome
       ? `${homeBadge} <strong>${TEAM_DISPLAY_NAME}</strong> vs ${awayBadge} ${oppDisplay}`
       : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
-    const unconfirmedPill = ev._hardcoded ? UNCONFIRMED_PILL : '';
+    // Le calendrier de secours reprend les dates TheSportsDB : ne pas afficher un faux doute à l'utilisateur.
+    const unconfirmedPill = '';
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
