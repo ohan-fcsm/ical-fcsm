@@ -836,7 +836,24 @@ function formBadgesSummary(events, tName) {
   return badges.join(' ');
 }
 
-const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:2px 8px;white-space:nowrap;flex-shrink:0">⏳ À confirmer</span>`;
+// Les programmations sont habituellement annoncées au moins six semaines avant le match.
+function isDateTimeConfirmed(ev) {
+  if (!ev?._hardcoded) return true;
+  if (!ev.dateEvent) return false;
+  const matchDay = new Date(ev.dateEvent + 'T12:00:00Z').getTime();
+  const todayDay = new Date(today + 'T12:00:00Z').getTime();
+  return matchDay - todayDay <= 42 * 86400000;
+}
+
+function unconfirmedHourglass(ev) {
+  return isDateTimeConfirmed(ev) ? '' : ' ⏳';
+}
+
+function unconfirmedHourglassHtml(ev) {
+  return isDateTimeConfirmed(ev)
+    ? ''
+    : '<span title="Date et heure en attente de confirmation officielle" aria-label="Date et heure en attente de confirmation"> ⏳</span>';
+}
 
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
 function buildUpcomingRows(events) {
@@ -855,9 +872,8 @@ function buildUpcomingRows(events) {
     const teamsHtml = isHome
       ? `${homeBadge} <strong>${TEAM_DISPLAY_NAME}</strong> vs ${awayBadge} ${oppDisplay}`
       : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
-    // Le calendrier de secours reprend les dates TheSportsDB : ne pas afficher un faux doute à l'utilisateur.
-    const unconfirmedPill = '';
-    const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
+    const hourglass = unconfirmedHourglassHtml(ev);
+    const timeDisplay = `<span style="color:var(--muted)">${time}${hourglass}</span>`;
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
@@ -1008,7 +1024,7 @@ function buildIcsSummary(ev, tName, tRow, oRow, isNextMatch) {
     const rank = isNextMatch ? rankFor(name) : null;
     return `${icsTeamName(name)}${rank ? ` (${rank}e)` : ''}`;
   };
-  return `${label(ev.strHomeTeam)} - ${label(ev.strAwayTeam)}${roundLabel}${leagueLabel}`;
+  return `${label(ev.strHomeTeam)} - ${label(ev.strAwayTeam)}${roundLabel}${leagueLabel}${unconfirmedHourglass(ev)}`;
 }
 
 function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
