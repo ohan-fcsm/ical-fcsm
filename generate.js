@@ -650,13 +650,12 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   if (!apiMatch) {
     teamAllNext.push({ ...hev, _hardcoded: true });
   } else {
-    apiMatch.dateEvent = hev.dateEvent;
-    if (hev.strTime && hev.strTime !== '00:00:00') {
-      apiMatch.strTime = hev.strTime;
-    }
+    // Les créneaux réellement publiés par l'API priment sur le calendrier de secours.
+    if (!apiMatch.dateEvent) apiMatch.dateEvent = hev.dateEvent;
+    if ((!apiMatch.strTime || apiMatch.strTime === '00:00:00') && hev.strTime) apiMatch.strTime = hev.strTime;
     if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
     if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
-    console.log(`🕐 Heure/date forcée (LFP) pour J${hev.intRound} ${hev.dateEvent} : ${hev.strTime}`);
+    console.log(`🗓 Date API conservée pour J${hev.intRound} : ${apiMatch.dateEvent} ${apiMatch.strTime || ''}`);
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
@@ -703,7 +702,7 @@ const oppRow  = tableRows.find(r => canonicalTeamKey(r.strTeam || r.nameTeam) ==
 console.log(`🏆 teamRow trouvé: "${teamRow?.strTeam || 'AUCUN'}" (rank: ${teamRow?.intRank || '—'}, pts: ${teamRow?.intPoints || '—'})`);
 console.log(`🏆 oppRow trouvé:  "${oppRow?.strTeam || 'AUCUN'}" (rank: ${oppRow?.intRank || '—'}, pts: ${oppRow?.intPoints || '—'})`);
 
-let oppLastEvents = [];
+let oppSeasonEvents = [];
 let oppBadgeRemote = '';
 if (nextMatch && API_KEY) {
   const isOppAway = normTeam(nextMatch.strAwayTeam) === normTeam(oppName);
@@ -715,8 +714,13 @@ if (nextMatch && API_KEY) {
   const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
   if (oppId) {
-    const od = await getJson(ep(`eventslast.php?id=${oppId}`));
-    oppLastEvents = od?.results || od?.events || [];
+    // La saison de l'adversaire est la source prioritaire : elle inclut son dernier match de Ligue 2.
+    const od = await getJson(ep(`eventsseason.php?id=${oppId}&s=${SEASON}`));
+    oppSeasonEvents = od?.events || [];
+    if (!oppSeasonEvents.length) {
+      const odLast = await getJson(ep(`eventslast.php?id=${oppId}`));
+      oppSeasonEvents = odLast?.results || odLast?.events || [];
+    }
     if (!oppBadgeRemote) {
       const od2 = await getJson(ep(`lookupteam.php?id=${oppId}`));
       oppBadgeRemote = od2?.teams?.[0]?.strTeamBadge || '';
@@ -763,8 +767,8 @@ const ligue2PastFromSeason = [
 
 const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
 
-const last5Ligue2Opp = oppLastEvents
-  .filter(ev => isLigue2(ev))
+const last5Ligue2Opp = oppSeasonEvents
+  .filter(ev => isLigue2(ev) && (ev.dateEvent || '') < today)
   .sort((a, b) => (b.dateEvent || '').localeCompare(a.dateEvent || ''))
   .slice(0, 5);
 
@@ -774,6 +778,10 @@ const compactStanding = (rank, points) => (rank && rank !== '—') ? `(${rank}e,
 const fcsmStanding = compactStanding(teamRow?.intRank, teamRow?.intPoints);
 const oppStanding = compactStanding(oppRow?.intRank, oppRow?.intPoints);
 const formOpp  = calcFormStr(last5Ligue2Opp, oppName);
+const homeFormEvents = nextMatchFcsmHome ? last5Ligue2FCSM : last5Ligue2Opp;
+const awayFormEvents = nextMatchFcsmHome ? last5Ligue2Opp : last5Ligue2FCSM;
+const homeFormTeam = nextMatchFcsmHome ? teamName : oppName;
+const awayFormTeam = nextMatchFcsmHome ? oppName : teamName;
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
 const nextMatchIso = buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
@@ -795,12 +803,13 @@ const fcsmBigBadge = badgeTag(teamName, 28);
 const oppBigBadge  = badgeTag(oppName,  28);
 
 function formBadgesSummary(events, tName) {
-  const items = parseForm(events, tName);
-  if (!items.length) return '—';
-  return items.map(r => {
+  const items = parseForm(events, tName).slice(0, 5);
+  const badges = items.map(r => {
     const cls = r.letter === 'V' ? 'win' : r.letter === 'N' ? 'draw' : 'loss';
     return `<span class="form-badge form-badge--${cls}">${r.letter}</span>`;
-  }).join(' ');
+  });
+  while (badges.length < 5) badges.push('<span class="form-badge form-badge--unknown">—</span>');
+  return badges.join(' ');
 }
 
 const UNCONFIRMED_PILL = `<span title="Date et heure à confirmer" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#B98900;background:rgba(255,207,33,.15);border:1px solid rgba(255,207,33,.5);border-radius:999px;padding:2px 8px;white-space:nowrap;flex-shrink:0">⏳ À confirmer</span>`;
@@ -896,6 +905,8 @@ const vars = {
   OPP_BADGE:             oppBigBadge,
   OPP_NAME:              oppName,
   LAST_5_FCSM_FORM:      formBadgesSummary(last5Ligue2FCSM, teamName),
+  NEXT_MATCH_HOME_FORM:  formBadgesSummary(homeFormEvents, homeFormTeam),
+  NEXT_MATCH_AWAY_FORM:  formBadgesSummary(awayFormEvents, awayFormTeam),
   LAST_5_FCSM_1:         eventLineHtml(last5Ligue2FCSM[0], teamName, logos),
   LAST_5_FCSM_2:         eventLineHtml(last5Ligue2FCSM[1], teamName, logos),
   LAST_5_FCSM_3:         eventLineHtml(last5Ligue2FCSM[2], teamName, logos),
@@ -918,7 +929,7 @@ const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, seasonSource, oppName, nextMatch, nextMatchIso, ligue2Ready,
-  formFCSM, formOpp, oppLastEventsCount: oppLastEvents.length,
+  formFCSM, formOpp, oppSeasonEventsCount: oppSeasonEvents.length,
   totalUpcoming: teamAllNext.length,
   hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
