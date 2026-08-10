@@ -9,6 +9,7 @@ const TEAM_ID_FCSM = process.env.TEAM_ID_FCSM || '133708';
 const LEAGUE_ID = process.env.LEAGUE_ID || '4401';
 const SEASON = process.env.SEASON || '2026-2027';
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
+const FCSM_BADGE_LOCAL = './logo-512.png';
 
 const out = 'dist';
 const SRC_BADGES = 'badges';
@@ -271,7 +272,8 @@ function parseForm(events, teamName) {
 function calcFormStr(events, teamName) { return parseForm(events, teamName).map(r => r.letter).join(' ') || '—'; }
 
 function teamBadgeImg(name, logos, size = 20) {
-  const url = logos[canonicalTeamKey(name)];
+  const key = canonicalTeamKey(name);
+  const url = logos[key] || (key === canonicalTeamKey(TEAM_NAME_FALLBACK) ? FCSM_BADGE_LOCAL : '');
   if (!url) return '';
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:3px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
@@ -753,7 +755,8 @@ const nextMatchIso = buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
 const nextMatchUnconfirmed = nextMatch?._hardcoded === true;
 
 function badgeTag(name, size = 28) {
-  const url = logos[canonicalTeamKey(name)];
+  const key = canonicalTeamKey(name);
+  const url = logos[key] || (key === canonicalTeamKey(TEAM_NAME_FALLBACK) ? FCSM_BADGE_LOCAL : '');
   if (!url) return '';
   return `<img src="${url}" alt="${name}" width="${size}" height="${size}" style="border-radius:4px;object-fit:contain;vertical-align:middle;flex-shrink:0">`;
 }
