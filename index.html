@@ -544,11 +544,11 @@
       var hidden = list.querySelectorAll('.upcoming-row--hidden');
       var isOpen = btn.classList.contains('is-open');
       if (!isOpen) {
-        hidden.forEach(function(row) { row.classList.remove('upcoming-row--hidden'); });
+        hidden.forEach(function(row) { row.classList.remove('upcoming-row--hidden'); row.style.display = ''; });
         btn.classList.add('is-open');
         btn.querySelector('.btn-see-more-label').textContent = 'Voir moins ▴';
       } else {
-        list.querySelectorAll('.upcoming-row').forEach(function(row) { if (Number(row.dataset.index) >= 5) row.classList.add('upcoming-row--hidden'); });
+        list.querySelectorAll('.upcoming-row').forEach(function(row) { if (Number(row.dataset.index) >= 5) { row.classList.add('upcoming-row--hidden'); row.style.display = 'none'; } });
         btn.classList.remove('is-open');
         var hiddenCount = total - 5;
         btn.querySelector('.btn-see-more-label').textContent = 'Voir les ' + hiddenCount + ' matchs suivants ▾';
