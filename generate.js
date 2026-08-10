@@ -977,39 +977,43 @@ function hasScore(ev) {
 function fcsmResult(ev, tName) {
   const hs = Number(ev.intHomeScore);
   const as = Number(ev.intAwayScore);
-  const isHome = normTeam(ev.strHomeTeam) === normTeam(tName);
+  const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(tName);
   const fcsmScore = isHome ? hs : as;
   const oppScore  = isHome ? as : hs;
   const result = fcsmScore > oppScore ? 'V' : fcsmScore === oppScore ? 'N' : 'D';
   return { result, fcsmScore, oppScore };
 }
 
-function buildIcsSummary(ev, tName, tRow) {
-  const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
-  const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
-  const rankFCSM  = tRow?.intRank ? `(${tRow.intRank})` : '';
+function icsTeamName(name) {
+  return displayTeamName(name);
+}
+
+function buildIcsSummary(ev, tName, tRow, oRow, isNextMatch) {
+  const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(tName);
   const roundLabel  = ev.intRound  ? ` J${ev.intRound}`   : '';
-  const leagueLabel = ev.strLeague ? ` [${ev.strLeague}]` : '';
+  const leagueLabel = ev.strLeague ? ` [${displayLeague(ev.strLeague)}]` : '';
 
   if (hasScore(ev)) {
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
     const emoji = result === 'V' ? '✅' : result === 'N' ? '➖' : '❌';
-    const scoreStr = isHome ? `${fcsmScore}-${oppScore}` : `${oppScore}-${fcsmScore}`;
-    const title = isHome
-      ? `${emoji} ${TEAM_DISPLAY_NAME} ${scoreStr} ${opp}`
-      : `${emoji} ${opp} ${scoreStr} ${TEAM_DISPLAY_NAME}`;
-    return `${title}${roundLabel}${leagueLabel}`;
+    const homeName = icsTeamName(ev.strHomeTeam);
+    const awayName = icsTeamName(ev.strAwayTeam);
+    return `${emoji} ${homeName} ${ev.intHomeScore}-${ev.intAwayScore} ${awayName}${roundLabel}${leagueLabel}`;
   }
 
-  const unconfirmedLabel = ev._hardcoded ? ' ⏳' : '';
-  return isHome
-    ? `FCSM ${rankFCSM} - ${opp}${roundLabel}${leagueLabel}${unconfirmedLabel}`
-    : `${opp} - FCSM ${rankFCSM}${roundLabel}${leagueLabel}${unconfirmedLabel}`;
+  const rankFor = name => canonicalTeamKey(name) === canonicalTeamKey(tName)
+    ? tRow?.intRank
+    : oRow?.intRank;
+  const label = name => {
+    const rank = isNextMatch ? rankFor(name) : null;
+    return `${icsTeamName(name)}${rank ? ` (${rank}e)` : ''}`;
+  };
+  return `${label(ev.strHomeTeam)} - ${label(ev.strAwayTeam)}${roundLabel}${leagueLabel}`;
 }
 
-function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
-  const isHome    = normTeam(ev.strHomeTeam) === normTeam(tName);
-  const opp       = isHome ? ev.strAwayTeam : ev.strHomeTeam;
+function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
+  const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(tName);
+  const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
   const venue     = ev.strVenue   ? `📍 ${ev.strVenue}`    : '';
   const league    = ev.strLeague  ? `🏆 ${ev.strLeague}`   : '';
   const roundStr  = ev.intRound   ? `J${ev.intRound}`      : '';
@@ -1030,18 +1034,17 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
     return parts.join('\\n');
   }
 
+  // Classements et formes ne concernent que le prochain rendez-vous.
+  if (!isNextMatch) return headerParts;
+
   const rankFCSM = tRow?.intRank ? ` (${tRow.intRank}e)` : '';
   const rankOpp  = oRow?.intRank ? ` (${oRow.intRank}e)` : '';
-  const unconfirmedPart = ev._hardcoded
-    ? '⏳ Date et heure à confirmer — source : calendrier LFP officiel'
-    : '';
   const formeFCSM = `${TEAM_DISPLAY_NAME}${rankFCSM} — Forme : ${fFCSM || '—'}`;
-  const formeOpp  = `${opp}${rankOpp} — Forme : ${fOpp || '—'}`;
+  const formeOpp  = `${displayTeamName(opp)}${rankOpp} — Forme : ${fOpp || '—'}`;
   const h2hPart   = buildH2hDescription(opp);
 
   const parts = [
     headerParts,
-    unconfirmedPart,
     '---',
     formeFCSM,
     formeOpp,
@@ -1090,8 +1093,9 @@ for (const ev of allEventsForIcs) {
   const isoStr = buildIso(ev.dateEvent, ev.strTime);
   const uid = `fcsm-${ev.idEvent || matchKey}@ical-fcsm`;
 
-  const summary     = buildIcsSummary(ev, teamName, teamRow);
-  const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp);
+  const isNextIcsEvent = Boolean(nextMatch && isSameMatch(ev, nextMatch));
+  const summary = buildIcsSummary(ev, teamName, teamRow, oppRow, isNextIcsEvent);
+  const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp, isNextIcsEvent);
 
   icsLines.push(
     'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${isoStr}`,
