@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calendrier FCSM</title>
-  <meta name="description" content="Le calendrier FCSM à garder dans sa poche. Abonne-toi une seule fois, les matchs et infos s'actualisent automatiquement." />
+  <title>Calendrier FC Sochaux</title>
+  <meta name="description" content="Le calendrier FC Sochaux à garder dans sa poche. Abonne-toi une seule fois, les matchs et infos s'actualisent automatiquement." />
   <link rel="icon" type="image/png" href="./logo-512.png">
   <link rel="shortcut icon" href="./logo-512.png">
   <link rel="apple-touch-icon" href="./logo-512.png">
@@ -78,10 +78,13 @@
     .badge-prochain { display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; background:var(--jaune-btn); color:var(--bleu); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
     .badge-prochain img { width:18px; height:18px; object-fit:contain; border-radius:3px; }
     .match-card-round { font-size:13px; color:var(--muted); font-weight:500; }
-    .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .match-card-teams { font-size:clamp(20px,2.4vw,28px); font-weight:900; color:var(--text); margin-bottom:6px; letter-spacing:-0.02em; display:flex; justify-content:center; text-align:center; align-items:center; gap:10px; flex-wrap:wrap; }
+    .form-row { display:flex; justify-content:center; align-items:center; gap:8px; text-align:center; margin-bottom:8px; }
+    .match-card-datetime { text-align:center; font-weight:800; color:var(--text); }
+    .match-card-meta { justify-content:center; }
     .match-card-teams img { flex-shrink:0; }
     .match-card-datetime { font-size:14px; color:var(--muted); margin-bottom:14px; }
-    .match-card-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .match-card-meta { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
     .match-card-meta-item { display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); }
     .match-card-meta-item strong { color:var(--text); font-weight:600; }
 
@@ -256,10 +259,10 @@
 <body>
   <nav class="nav">
     <div class="nav-logo">
-      <img src="./logo-512.png" alt="FCSM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <img src="./logo-512.png" alt="FC Sochaux" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="nav-logo-fallback" style="display:none">FC<br>SM</div>
     </div>
-    <span class="nav-title">Calendrier FCSM</span>
+    <span class="nav-title">Calendrier FC Sochaux</span>
     <div class="nav-right">
       <a class="btn-facebook" href="https://www.facebook.com/share/1H8iE3W9Dh/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" aria-label="Page Facebook du projet">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
@@ -272,7 +275,7 @@
   <section class="hero">
     <div class="hero-inner">
       <div class="hero-left">
-        <h1 class="hero-h1">Le calendrier<br>FCSM à garder<br>dans sa poche.</h1>
+        <h1 class="hero-h1">Le calendrier<br>FC Sochaux à garder<br>dans sa poche.</h1>
         <p class="hero-lead">Abonne-toi une seule fois. Les matchs apparaissent automatiquement dans ton agenda et se mettent à jour tout seuls.</p>
         <div class="hero-actions">
           <a class="btn-ics" id="heroSubscribeBtn" href="#">S'abonner au calendrier</a>
@@ -286,58 +289,25 @@
           <div class="match-card-top">
             <span class="badge-prochain">
               <img src="https://r2.thesportsdb.com/images/media/league/badge/aofb771742983333.png" alt="Ligue 2" width="18" height="18">
-              PROCHAIN MATCH LIGUE 2
+              PROCHAIN MATCH — LIGUE 2 BKT
             </span>
             <span class="match-card-round">{{NEXT_MATCH_ROUND}}</span>
           </div>
-          <div class="match-card-teams">{{NEXT_MATCH_HOME_BADGE}} {{NEXT_MATCH_HOME_TEAM}} <span style="color:var(--muted);font-weight:500">vs</span> {{NEXT_MATCH_AWAY_BADGE}} {{NEXT_MATCH_AWAY_TEAM}}</div>
           <div class="match-card-datetime">{{NEXT_MATCH_DATE}} · {{NEXT_MATCH_TIME}}</div>
-          <div class="match-card-meta">
-            <span class="match-card-meta-item">🏆 <strong>{{NEXT_MATCH_LEAGUE}}</strong></span>
-            <span class="match-card-meta-item">🏙 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
-          </div>
+          <div class="match-card-teams">{{NEXT_MATCH_HOME_BADGE}} {{NEXT_MATCH_HOME_TEAM}} <small>{{NEXT_MATCH_HOME_STANDING}}</small> <span style="color:var(--muted);font-weight:500">vs</span> {{NEXT_MATCH_AWAY_BADGE}} {{NEXT_MATCH_AWAY_TEAM}} <small>{{NEXT_MATCH_AWAY_STANDING}}</small></div>
+          <div class="form-row"><span>{{NEXT_MATCH_HOME_FORM}}</span><span style="color:var(--muted);font-weight:700">vs</span><span>{{NEXT_MATCH_AWAY_FORM}}</span></div>
           {{LIGUE2_STATUS_BANNER}}
           <div class="countdown-wrap" id="countdown"></div>
+          <div class="match-card-meta">
+            <span class="match-card-meta-item">🏟 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
+          </div>
+
         </div>
       </div>
     </div>
   </section>
 
   <main class="page">
-
-    <section class="section">
-      <h2>Classement Ligue 2</h2>
-      <div class="grid-2">
-        <div class="card"><h3>{{FCSM_BADGE}} FCSM</h3><ul><li>Position : <code>{{TEAM_RANK_FCSM}}</code></li><li>Points : <code>{{TEAM_POINTS_FCSM}}</code></li></ul></div>
-        <div class="card"><h3>{{OPP_BADGE}} {{OPP_NAME}}</h3><ul><li>Position : <code>{{TEAM_RANK_OPPONENT}}</code></li><li>Points : <code>{{TEAM_POINTS_OPPONENT}}</code></li></ul></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>5 derniers matchs</h2>
-      <div class="grid-2">
-        <div class="card">
-          <h3>{{FCSM_BADGE}} FCSM &mdash; <span class="form-row">{{LAST_5_FCSM_FORM}}</span></h3>
-          <ul>
-            {{LAST_5_FCSM_1}}
-            {{LAST_5_FCSM_2}}
-            {{LAST_5_FCSM_3}}
-            {{LAST_5_FCSM_4}}
-            {{LAST_5_FCSM_5}}
-          </ul>
-        </div>
-        <div class="card">
-          <h3>{{OPP_BADGE}} {{OPP_NAME}} &mdash; <span class="form-row">{{LAST_5_OPPONENT_FORM}}</span></h3>
-          <ul>
-            {{LAST_5_OPPONENT_1}}
-            {{LAST_5_OPPONENT_2}}
-            {{LAST_5_OPPONENT_3}}
-            {{LAST_5_OPPONENT_4}}
-            {{LAST_5_OPPONENT_5}}
-          </ul>
-        </div>
-      </div>
-    </section>
 
     <section class="section">
       <h2>⚔️ Matchs précédents vs {{OPP_NAME}}</h2>
@@ -398,7 +368,7 @@
         <ol class="howto-steps">
           <li><span class="howto-step-num">1</span><span>Ouvre l'<strong>appareil photo</strong> de ton iPhone et vise le QR code.</span></li>
           <li><span class="howto-step-num">2</span><span>Appuie sur la bannière qui s'affiche puis sur <strong>« S'abonner »</strong>.</span></li>
-          <li><span class="howto-step-num">3</span><span>✅ Les matchs FCSM apparaissent dans ton Calendrier Apple et se mettent à jour automatiquement.</span></li>
+          <li><span class="howto-step-num">3</span><span>✅ Les matchs FC Sochaux apparaissent dans ton Calendrier Apple et se mettent à jour automatiquement.</span></li>
         </ol>
         <div class="howto-note">💡 <strong>Simple :</strong> le lien ouvre directement l'abonnement — pas besoin de copier une URL.</div>
         <div class="howto-cta"><a href="https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics">🍎 Ouvrir sur iPhone</a></div>
@@ -409,7 +379,7 @@
         <p style="text-align:center;font-size:13px;color:var(--muted);margin:0 0 10px">Scanne ce QR code avec Google Lens ou appuie directement sur le bouton ci-dessous.</p>
         <ol class="howto-steps">
           <li><span class="howto-step-num">1</span><span>Appuie sur <strong>« Ouvrir dans Google Calendar »</strong> ci-dessous.</span></li>
-          <li><span class="howto-step-num">2</span><span>Google Calendar s'ouvre et propose d'ajouter l'agenda FCSM.</span></li>
+          <li><span class="howto-step-num">2</span><span>Google Calendar s'ouvre et propose d'ajouter l'agenda FC Sochaux.</span></li>
           <li><span class="howto-step-num">3</span><span>Appuie sur <strong>« Ajouter »</strong>. ✅</span></li>
         </ol>
         <div class="howto-note">💡 <strong>Plus fiable</strong> que l'ancien fichier ICS — l'agenda est hébergé directement sur Google Calendar.</div>
@@ -422,7 +392,7 @@
           <li><span class="howto-step-num">2</span><span>Va dans <strong>Calendrier</strong> → <strong>Ajouter un calendrier</strong>.</span></li>
           <li><span class="howto-step-num">3</span><span>Choisis <strong>« S'abonner depuis le web »</strong>.</span></li>
           <li><span class="howto-step-num">4</span><span>Colle cette URL : <code>https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics</code></span></li>
-          <li><span class="howto-step-num">5</span><span>Valide pour importer le calendrier FCSM. ✅</span></li>
+          <li><span class="howto-step-num">5</span><span>Valide pour importer le calendrier FC Sochaux. ✅</span></li>
         </ol>
         <div class="howto-note">💡 <strong>Astuce :</strong> Outlook desktop : Fichier → Paramètres du compte → Calendriers Internet → Nouveau → colle l'URL.</div>
         <div class="howto-cta"><a href="https://outlook.live.com/calendar/0/addfromweb?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fl0amb9fs19rkodee59rt5q64q4345rfb%2540import.calendar.google.com%2Fpublic%2Fbasic.ics">📧 Ouvrir Outlook Web</a></div>
@@ -563,9 +533,9 @@
       var wa = document.getElementById('shareWA');
       var fb = document.getElementById('shareFB');
       var tw = document.getElementById('shareTW');
-      if (wa) wa.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://wa.me/?text=' + encodeURIComponent('Calendrier FCSM : ' + u), '_blank'); });
+      if (wa) wa.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://wa.me/?text=' + encodeURIComponent('Calendrier FC Sochaux : ' + u), '_blank'); });
       if (fb) fb.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u), '_blank'); });
-      if (tw) tw.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('Calendrier FCSM 🟡🔵 ' + u), '_blank'); });
+      if (tw) tw.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('Calendrier FC Sochaux 🟡🔵 ' + u), '_blank'); });
     })();
 
     /* ── Voir plus / voir moins pour le calendrier complet ── */
@@ -575,11 +545,11 @@
       var hidden = list.querySelectorAll('.upcoming-row--hidden');
       var isOpen = btn.classList.contains('is-open');
       if (!isOpen) {
-        hidden.forEach(function(row) { row.style.display = ''; });
+        hidden.forEach(function(row) { row.classList.remove('upcoming-row--hidden'); row.style.display = ''; });
         btn.classList.add('is-open');
         btn.querySelector('.btn-see-more-label').textContent = 'Voir moins ▴';
       } else {
-        hidden.forEach(function(row) { row.style.display = 'none'; });
+        list.querySelectorAll('.upcoming-row').forEach(function(row) { if (Number(row.dataset.index) >= 5) { row.classList.add('upcoming-row--hidden'); row.style.display = 'none'; } });
         btn.classList.remove('is-open');
         var hiddenCount = total - 5;
         btn.querySelector('.btn-see-more-label').textContent = 'Voir les ' + hiddenCount + ' matchs suivants ▾';
