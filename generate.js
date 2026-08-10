@@ -756,9 +756,10 @@ const ligue2PastFromSchedule = LIGUE2_PAST_HARDCODED
   .filter(ev => ev.dateEvent < today)
   .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
 
-const ligue2PastFromSeason = seasonPast
-  .filter(ev => isLigue2(ev))
-  .sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
+const ligue2PastFromSeason = [
+  ...LIGUE2_PAST_HARDCODED.filter(ev => ev.dateEvent < today),
+  ...seasonPast.filter(ev => isLigue2(ev) && !LIGUE2_PAST_HARDCODED.some(ref => isSameMatch(ev, ref)))
+].sort((a, b) => b.dateEvent.localeCompare(a.dateEvent));
 
 const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
 
@@ -768,6 +769,10 @@ const last5Ligue2Opp = oppLastEvents
   .slice(0, 5);
 
 const formFCSM = calcFormStr(last5Ligue2FCSM, teamName);
+const nextMatchFcsmHome = nextMatch ? canonicalTeamKey(nextMatch.strHomeTeam) === canonicalTeamKey(teamName) : true;
+const compactStanding = (rank, points) => (rank && rank !== '—') ? `(${rank}e, ${Number(points) || 0}pt)` : '';
+const fcsmStanding = compactStanding(teamRow?.intRank, teamRow?.intPoints);
+const oppStanding = compactStanding(oppRow?.intRank, oppRow?.intPoints);
 const formOpp  = calcFormStr(last5Ligue2Opp, oppName);
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
@@ -874,6 +879,8 @@ const vars = {
   NEXT_MATCH_AWAY_TEAM:  displayTeamName(nextMatch?.strAwayTeam) || '—',
   NEXT_MATCH_HOME_BADGE: homeBigBadge,
   NEXT_MATCH_AWAY_BADGE: awayBigBadge,
+  NEXT_MATCH_HOME_STANDING: nextMatchFcsmHome ? fcsmStanding : oppStanding,
+  NEXT_MATCH_AWAY_STANDING: nextMatchFcsmHome ? oppStanding : fcsmStanding,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
   NEXT_MATCH_LEAGUE:     displayLeague(nextMatch?.strLeague),
