@@ -58,6 +58,10 @@ const TEAM_NAME_ALIASES = {
   'red star':          'red star fc',
   'red star 93':       'red star fc',
   'red star paris':    'red star fc',
+  'fc sochaux-montbeliard': 'fc sochaux-montbeliard',
+  'fc sochaux':             'fc sochaux-montbeliard',
+  'sochaux':                'fc sochaux-montbeliard',
+  'fcsm':                   'fc sochaux-montbeliard',
 };
 
 function canonicalTeamKey(name) {
@@ -435,7 +439,7 @@ const FRIENDLY_SCHEDULE = [
 
 const LIGUE2_SCHEDULE = [
   /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
-  /* J2  */ { dateEvent:'2026-08-15', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true },
+  /* J2  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true },
   /* J3  */ { dateEvent:'2026-08-21', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'EN Avant Guingamp',        idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'134244',  strLeague:'French Ligue 2', intRound:'3',  strVenue:'Stade Auguste Bonal',        _hardcoded:true },
   /* J4  */ { dateEvent:'2026-08-28', strTime:'20:45:00', strHomeTeam:'Clermont Foot 63',         strAwayTeam:FCSM,                        idHomeTeam:'134713',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'4',  strVenue:'Stade Gabriel Montpied',     _hardcoded:true },
   /* J5  */ { dateEvent:'2026-09-04', strTime:'20:45:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM,                        idHomeTeam:'138309',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Nouste Camp',                _hardcoded:true },
@@ -490,25 +494,36 @@ const nextApiEvents = nextTeamData?.events || [];
              quand un match passé reste dans la liste "next")
    ══════════════════════════════════════════════════════════════ */
 function icsMatchKey(ev) {
-  const home = normTeam(ev.strHomeTeam);
-  const away = normTeam(ev.strAwayTeam);
+  const home = canonicalTeamKey(ev.strHomeTeam);
+  const away = canonicalTeamKey(ev.strAwayTeam);
   if (ev.intRound && (ev.strLeague || '').toLowerCase().includes('ligue 2')) {
     return `ligue2-J${ev.intRound}-${home}-${away}`;
   }
   return `${ev.dateEvent}-${home}-${away}`;
 }
 
+// TheSportsDB idEvent est prioritaire lorsqu'il est disponible.
+// La clé calendrier reste le fallback pour les lignes LFP hardcodées.
+function eventDedupKey(ev) {
+  const idEvent = String(ev?.idEvent || '').trim();
+  return idEvent ? `thesportsdb:${idEvent}` : icsMatchKey(ev);
+}
+
 function isSameFriendly(a, b) {
   if (a.dateEvent !== b.dateEvent) return false;
-  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
-  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
+  const ah = canonicalTeamKey(a.strHomeTeam), aa = canonicalTeamKey(a.strAwayTeam);
+  const bh = canonicalTeamKey(b.strHomeTeam), ba = canonicalTeamKey(b.strAwayTeam);
   const contains = (x, y) => x.includes(y) || y.includes(x);
   return (ah === bh || contains(ah, bh)) && (aa === ba || contains(aa, ba));
 }
 
 function isSameMatch(a, b) {
-  const ah = normTeam(a.strHomeTeam), aa = normTeam(a.strAwayTeam);
-  const bh = normTeam(b.strHomeTeam), ba = normTeam(b.strAwayTeam);
+  const aId = String(a.idEvent || '').trim();
+  const bId = String(b.idEvent || '').trim();
+  if (aId && bId) return aId === bId;
+
+  const ah = canonicalTeamKey(a.strHomeTeam), aa = canonicalTeamKey(a.strAwayTeam);
+  const bh = canonicalTeamKey(b.strHomeTeam), ba = canonicalTeamKey(b.strAwayTeam);
   const teamsMatch = ah === bh && aa === ba;
   if (!teamsMatch) return false;
   // Si les deux ont un intRound Ligue 2 → comparaison par journée (robuste au changement de date)
@@ -596,7 +611,7 @@ for (const hev of LIGUE2_PAST_HARDCODED) {
   const seen = new Set();
   const deduped = [];
   for (const ev of seasonPast) {
-    const k = icsMatchKey(ev);
+    const k = eventDedupKey(ev);
     if (seen.has(k)) {
       console.log(`⚠️  HTML doublon (past) ignoré : ${k}`);
       continue;
@@ -630,7 +645,7 @@ if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
   const seen = new Set();
   const deduped = [];
   for (const ev of teamAllNext) {
-    const k = icsMatchKey(ev);
+    const k = eventDedupKey(ev);
     if (seen.has(k)) {
       console.log(`⚠️  HTML doublon (upcoming) ignoré : ${k}`);
       continue;
@@ -805,7 +820,7 @@ function buildPastL2Html(pastEvents, teamName, logos) {
   const l2Past = pastEvents
     .filter(ev => {
       if (!isLigue2(ev) || ev.dateEvent >= today) return false;
-      const k = icsMatchKey(ev);
+      const k = eventDedupKey(ev);
       if (seen.has(k)) {
         console.log(`⚠️  HTML doublon (buildPastL2Html) ignoré : ${k}`);
         return false;
@@ -972,12 +987,11 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp) {
 // Un match dont la date est passée peut se retrouver dans seasonPast (avec score API)
 // ET rester dans teamAllNext (hardcodé sans score) → doublon ICS.
 {
-  const pastKeys = new Set(seasonPast.map(ev => icsMatchKey(ev)));
   const before = teamAllNext.length;
   teamAllNext = teamAllNext.filter(ev => {
-    const k = icsMatchKey(ev);
-    if (pastKeys.has(k)) {
-      console.log(`⚠️  ICS doublon (past/next overlap) ignoré dans teamAllNext : ${k}`);
+    const pastMatch = seasonPast.find(past => isSameMatch(past, ev));
+    if (pastMatch) {
+      console.log(`⚠️  ICS doublon (past/next overlap) ignoré dans teamAllNext : ${eventDedupKey(ev)}`);
       return false;
     }
     return true;
@@ -998,7 +1012,7 @@ const icsLines = [
 const seenUids = new Set();
 for (const ev of allEventsForIcs) {
   if (!ev?.dateEvent) continue;
-  const matchKey = icsMatchKey(ev);
+  const matchKey = eventDedupKey(ev);
   if (seenUids.has(matchKey)) {
     console.log(`⚠️  ICS doublon ignoré : ${matchKey}`);
     continue;
