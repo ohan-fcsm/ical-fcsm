@@ -615,6 +615,13 @@ for (const hev of LIGUE2_PAST_HARDCODED) {
   if (!already) {
     seasonPast.push(hev);
     console.log(`📥 Résultat hardcodé injecté : J${hev.intRound} ${hev.dateEvent}`);
+  } else {
+    // Le calendrier/résultat LFP est la référence : il corrige une éventuelle
+    // inversion provenant de l'API tout en conservant son identifiant d'événement.
+    const idEvent = already.idEvent;
+    Object.assign(already, hev);
+    if (idEvent) already.idEvent = idEvent;
+    console.log(`✅ Résultat LFP prioritaire : J${hev.intRound} ${hev.dateEvent}`);
   }
 }
 
