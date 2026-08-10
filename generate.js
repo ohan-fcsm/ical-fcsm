@@ -838,8 +838,9 @@ function formBadgesSummary(events, tName) {
 
 // Les programmations sont habituellement annoncées au moins six semaines avant le match.
 function isDateTimeConfirmed(ev) {
-  if (!ev?._hardcoded) return true;
-  if (!ev.dateEvent) return false;
+  if (!ev?.dateEvent) return false;
+  // Au-delà de six semaines, la programmation LFP n'est pas encore définitive,
+  // même si une source de données fournit déjà une date théorique.
   const matchDay = new Date(ev.dateEvent + 'T12:00:00Z').getTime();
   const todayDay = new Date(today + 'T12:00:00Z').getTime();
   return matchDay - todayDay <= 42 * 86400000;
