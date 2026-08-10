@@ -149,7 +149,7 @@ async function ensureBadgeWithFallbacks(urls, slug) {
 
 const BADGE_OVERRIDES = {
   'fc sochaux-montbeliard': [
-    'https://r2.thesportsdb.com/images/media/team/badge/xzqxpr1678808060.png',
+    'https://r2.thesportsdb.com/images/media/team/badge/ymsdjh1766618296.png',
   ],
   'as saint-etienne': [
     'https://r2.thesportsdb.com/images/media/team/badge/spvrqr1420745995.png',
@@ -235,7 +235,7 @@ ${note ? `<p class="h2h-note">📝 ${note}</p>` : ''}`;
   <span class="h2h-match-comp">${m.competition}</span>
 </li>`;
   }).join('\n');
-  return `${bilanHtml}<ul class="h2h-matches">${matchesHtml}</ul>`;
+  return bilanHtml;
 }
 
 /* ── Date de build (heure Europe/Paris) ── */
@@ -349,6 +349,9 @@ function buildIsoHtml(dateEvent, strTime) {
 function fmtTime(strTime) {
   return strTime ? strTime.slice(0, 5) : '—';
 }
+
+function displayLeague(name) { return String(name || '').toLowerCase().includes('ligue 2') ? 'Ligue 2 BKT' : (name || '—'); }
+function formatPoints(value) { const points = Number(value); return Number.isFinite(points) ? `${points} point${points === 1 ? '' : 's'}` : '—'; }
 
 function fmtDateOnly(dateEvent) {
   if (!dateEvent) return '—';
@@ -536,7 +539,7 @@ function isSameMatch(a, b) {
 
   const ah = canonicalTeamKey(a.strHomeTeam), aa = canonicalTeamKey(a.strAwayTeam);
   const bh = canonicalTeamKey(b.strHomeTeam), ba = canonicalTeamKey(b.strAwayTeam);
-  const teamsMatch = ah === bh && aa === ba;
+  const teamsMatch = (ah === bh && aa === ba) || (ah === ba && aa === bh);
   if (!teamsMatch) return false;
   // Si les deux ont un intRound Ligue 2 → comparaison par journée (robuste au changement de date)
   if (a.intRound && b.intRound &&
@@ -807,7 +810,7 @@ function buildUpcomingRows(events) {
     const oppDisplay = displayTeamName(opp);
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
     const time = fmtTime(ev.strTime);
-    const league = ev.strLeague || '—';
+    const league = displayLeague(ev.strLeague);
     const roundLabel = ev.intRound ? `J${ev.intRound}` : '';
     const homeBadge = teamBadgeImg(ev.strHomeTeam, logos, 22);
     const awayBadge = teamBadgeImg(ev.strAwayTeam, logos, 22);
@@ -873,14 +876,14 @@ const vars = {
   NEXT_MATCH_AWAY_BADGE: awayBigBadge,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
-  NEXT_MATCH_LEAGUE:     nextMatch?.strLeague    || '—',
+  NEXT_MATCH_LEAGUE:     displayLeague(nextMatch?.strLeague),
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
   LIGUE2_STATUS_BANNER:  ligue2Banner,
   TEAM_RANK_FCSM:        String(teamRow?.intRank  || teamRow?.rank  || '—'),
-  TEAM_POINTS_FCSM:      String(teamRow?.intPoints || '—'),
+  TEAM_POINTS_FCSM:      formatPoints(teamRow?.intPoints),
   TEAM_RANK_OPPONENT:    String(oppRow?.intRank   || oppRow?.rank   || '—'),
-  TEAM_POINTS_OPPONENT:  String(oppRow?.intPoints  || '—'),
+  TEAM_POINTS_OPPONENT:  formatPoints(oppRow?.intPoints),
   FCSM_BADGE:            fcsmBigBadge,
   OPP_BADGE:             oppBigBadge,
   OPP_NAME:              oppName,
