@@ -269,7 +269,7 @@ function parseForm(events, teamName) {
   if (!events || !events.length) return [];
   return events.slice(0, 5).map(ev => {
     const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
-    const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
+    const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     if (!Number.isFinite(hs) || !Number.isFinite(as)) return { letter: '?', score: '?-?', opponent: opp, date: ev.dateEvent || '' };
     const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
@@ -289,7 +289,7 @@ function teamBadgeImg(name, logos, size = 20) {
 function eventLineHtml(ev, teamName, logos) {
   if (!ev || !ev.strHomeTeam) return '<li>—</li>';
   const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
-  const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
+  const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(teamName);
   const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
   const self = isHome ? ev.strHomeTeam : ev.strAwayTeam;
   const oppDisplay = displayTeamName(opp);
@@ -569,6 +569,18 @@ const LIGUE2_PAST_HARDCODED = [
   },
 ];
 
+// Résultats confirmés nécessaires à la forme de l'adversaire tant que l'API
+// ne renvoie pas encore sa saison complète.
+const LIGUE2_OPPONENT_PAST_HARDCODED = [
+  {
+    dateEvent:'2026-08-08', strTime:'20:45:00',
+    strHomeTeam:'Red Star FC', strAwayTeam:'FC Nantes',
+    intHomeScore:1, intAwayScore:0,
+    strLeague:'French Ligue 2', intRound:'1',
+    strVenue:'Stade Bauer', idLeague: LEAGUE_ID,
+  },
+];
+
 // ── FIX 0 : déduplique lastEvents contre LIGUE2_PAST_HARDCODED ──────────────
 // Évite qu'un match hardcodé et retourné simultanément par l'API
 // ne se retrouve en double dans seasonPast.
@@ -767,8 +779,16 @@ const ligue2PastFromSeason = [
 
 const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
 
-const last5Ligue2Opp = oppSeasonEvents
-  .filter(ev => isLigue2(ev) && (ev.dateEvent || '') < today)
+const opponentKnownResults = LIGUE2_OPPONENT_PAST_HARDCODED.filter(ev =>
+  ev.dateEvent < today &&
+  (canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(oppName) || canonicalTeamKey(ev.strAwayTeam) === canonicalTeamKey(oppName))
+);
+const last5Ligue2Opp = [
+  ...opponentKnownResults,
+  ...oppSeasonEvents.filter(ev =>
+    isLigue2(ev) && (ev.dateEvent || '') < today && !opponentKnownResults.some(ref => isSameMatch(ev, ref))
+  ),
+]
   .sort((a, b) => (b.dateEvent || '').localeCompare(a.dateEvent || ''))
   .slice(0, 5);
 
@@ -819,7 +839,7 @@ function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
   const VISIBLE = 5;
   const rows = events.map((ev, i) => {
-    const isHome = normTeam(ev.strHomeTeam) === normTeam(teamName);
+    const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const oppDisplay = displayTeamName(opp);
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
