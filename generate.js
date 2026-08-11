@@ -874,7 +874,7 @@ function unconfirmedHourglass(ev) {
 function unconfirmedHourglassHtml(ev) {
   return isDateTimeConfirmed(ev)
     ? ''
-    : '<span title="Date et heure en attente de confirmation officielle" aria-label="Date et heure en attente de confirmation"> ⏳</span>';
+    : '<span class="match-status-icon" title="Date et heure en attente de confirmation officielle" aria-label="Date et heure en attente de confirmation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 3 5 4 9s-4 4-4 9m8-18c0 5-3 5-4 9s4 4 4 9"/><path d="M9.5 16.5h5"/></svg></span>';
 }
 
 function broadcastHtml(ev, { pending = false } = {}) {
