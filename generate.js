@@ -1051,8 +1051,8 @@ const vars = {
   PAST_MATCHES_L2:       pastL2Html,
   HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
-  OG_TITLE:              `Prochain match : ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
-  OG_DESCRIPTION:        `${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}`,
+  OG_TITLE:              `⚽ ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
+  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
   OG_IMAGE_VERSION:      Date.now(),
 };
 
