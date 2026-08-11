@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 let fetch;
 try { fetch = (await import('node-fetch')).default; } catch { fetch = global.fetch; }
@@ -951,6 +952,64 @@ const pastL2Html = buildPastL2Html(seasonPast, teamName, logos);
 /* ── Bloc H2H HTML ── */
 const h2hHtml = buildH2hHtml(oppName, logos);
 
+const escapeXml = value => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&apos;');
+
+function socialPreviewBadgePath(name) {
+  const localUrl = logos[canonicalTeamKey(name)];
+  if (!localUrl?.startsWith('./')) return null;
+  const localPath = path.join(out, localUrl.slice(2));
+  return fs.existsSync(localPath) ? localPath : null;
+}
+
+async function buildSocialPreview(ev) {
+  const width = 1200;
+  const height = 630;
+  const home = displayTeamName(ev?.strHomeTeam || 'FC Sochaux');
+  const away = displayTeamName(ev?.strAwayTeam || 'Adversaire');
+  const date = ev?.dateEvent ? fmtDateOnly(ev.dateEvent) : 'Date à confirmer';
+  const time = ev?.strTime ? fmtTime(ev.strTime) : 'Heure à confirmer';
+  const homeStanding = nextMatchFcsmHome ? fcsmStanding : oppStanding;
+  const awayStanding = nextMatchFcsmHome ? oppStanding : fcsmStanding;
+  const venue = ev?.strVenue || 'Stade à confirmer';
+  const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${height}" fill="#F4F7FB"/>
+  <rect x="38" y="34" width="1124" height="562" rx="34" fill="#FFFFFF"/>
+  <rect x="38" y="34" width="1124" height="106" rx="34" fill="#0D2B5E"/>
+  <rect x="38" y="106" width="1124" height="34" fill="#0D2B5E"/>
+  <text x="600" y="99" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">PROCHAIN MATCH · LIGUE 2 BKT</text>
+  <text x="600" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0D2B5E">${escapeXml(date)} · ${escapeXml(time)}</text>
+  <text x="310" y="414" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0D2B5E">${escapeXml(home)}</text>
+  <text x="310" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#6B7A99">${escapeXml(homeStanding)}</text>
+  <text x="890" y="414" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0D2B5E">${escapeXml(away)}</text>
+  <text x="890" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#6B7A99">${escapeXml(awayStanding)}</text>
+  <text x="600" y="334" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#6B7A99">VS</text>
+  <line x1="92" y1="492" x2="1108" y2="492" stroke="#E5EAF3" stroke-width="2"/>
+  <text x="600" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#0D2B5E">🏟 ${escapeXml(venue)}</text>
+  <text x="600" y="573" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#6B7A99">ohan-fcsm.github.io/ical-fcsm · Retrouvez-nous sur Facebook</text>
+</svg>`;
+
+  const overlays = [{ input: Buffer.from(svg), left: 0, top: 0 }];
+  const badgePositions = [
+    [socialPreviewBadgePath(ev?.strHomeTeam), 245],
+    [socialPreviewBadgePath(ev?.strAwayTeam), 825],
+  ];
+  for (const [badgePath, left] of badgePositions) {
+    if (!badgePath) continue;
+    overlays.push({ input: await sharp(badgePath).resize(130, 130, { fit: 'contain' }).png().toBuffer(), left, top: 215 });
+  }
+  await sharp({ create: { width, height, channels: 4, background: '#F4F7FB' } })
+    .composite(overlays)
+    .png()
+    .toFile(path.join(out, 'next-match.png'));
+}
+
+await buildSocialPreview(nextMatch);
+
 const vars = {
   NEXT_MATCH_DATE:       fmtDateOnly(nextMatch?.dateEvent),
   NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
@@ -992,6 +1051,9 @@ const vars = {
   PAST_MATCHES_L2:       pastL2Html,
   HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
+  OG_TITLE:              `Prochain match : ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
+  OG_DESCRIPTION:        `${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}`,
+  OG_IMAGE_VERSION:      Date.now(),
 };
 
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
