@@ -989,7 +989,7 @@ async function buildSocialPreview(ev) {
   <text x="890" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#6B7A99">${escapeXml(awayStanding)}</text>
   <text x="600" y="334" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#6B7A99">VS</text>
   <line x1="92" y1="492" x2="1108" y2="492" stroke="#E5EAF3" stroke-width="2"/>
-  <text x="600" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#0D2B5E">🏟 ${escapeXml(venue)}</text>
+  <text x="600" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#0D2B5E">STADE · ${escapeXml(venue)}</text>
   <text x="600" y="573" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#6B7A99">ohan-fcsm.github.io/ical-fcsm · Retrouvez-nous sur Facebook</text>
 </svg>`;
 
