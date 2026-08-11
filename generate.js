@@ -412,17 +412,32 @@ const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 
-/* ── Classement : API en priorité, sinon fallback hardcodé ──
-   On utilise le fallback si l'API retourne 0 équipes OU
-   si le classement est incomplet (< 18 équipes), ce qui arrive
-   en début de saison quand TheSportsDB n'a pas encore tout mis à jour.
+/* ── Classement : API prioritaire, fallback J1 à durée de validité limitée ──
+   Le classement hardcodé reflète uniquement la situation après J1.
+   Il ne doit jamais survivre à la fin de J2 si l'API reste incomplète.
 ── */
+const LIGUE2_TABLE_HARDCODED_ROUND = 1;
+const LIGUE2_TABLE_HARDCODED_VALID_UNTIL = '2026-08-14T22:45:00+02:00'; // fin estimée de J2
 const apiTableRows = tableData?.table || tableData?.teams || [];
-const tableRows = apiTableRows.length >= 18 ? apiTableRows : LIGUE2_TABLE_HARDCODED;
-if (apiTableRows.length < 18) {
-  console.log(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) → fallback hardcodé J1 utilisé`);
-} else {
+const apiTableComplete = apiTableRows.length >= 18;
+const hardcodedTableStillValid = Date.now() < Date.parse(LIGUE2_TABLE_HARDCODED_VALID_UNTIL);
+const tableSource = apiTableComplete
+  ? 'api'
+  : hardcodedTableStillValid
+    ? 'hardcoded-J1'
+    : 'unavailable';
+const tableRows = tableSource === 'api'
+  ? apiTableRows
+  : tableSource === 'hardcoded-J1'
+    ? LIGUE2_TABLE_HARDCODED
+    : [];
+
+if (tableSource === 'api') {
   console.log(`📋 Classement API : ${apiTableRows.length} équipes`);
+} else if (tableSource === 'hardcoded-J1') {
+  console.log(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) → fallback hardcodé J1 utilisé jusqu'à la fin de J2`);
+} else {
+  console.warn(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) après J2 → classement momentanément indisponible`);
 }
 
 const calendarTeamsBadges = await Promise.all(
@@ -800,7 +815,7 @@ const last5Ligue2Opp = [
 const formFCSM = calcFormStr(last5Ligue2FCSM, teamName);
 const nextMatchFcsmHome = nextMatch ? canonicalTeamKey(nextMatch.strHomeTeam) === canonicalTeamKey(teamName) : true;
 const compactStanding = (rank, points) => {
-  if (!rank || rank === '—') return '';
+  if (!rank || rank === '—') return '(—, —)';
   const value = Number(points) || 0;
   return `(${rank}e, ${value}${value > 1 ? 'pts' : 'pt'})`;
 };
@@ -976,7 +991,8 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   hardcodedCount: teamAllNext.filter(e=>e._hardcoded).length,
   logosCount: Object.keys(logos).length,
   lastUpdated: LAST_UPDATED,
-  tableSource: apiTableRows.length >= 18 ? 'api' : 'hardcoded-J1',
+  tableSource,
+  tableValidThroughRound: tableSource === 'hardcoded-J1' ? LIGUE2_TABLE_HARDCODED_ROUND : null,
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null })),
