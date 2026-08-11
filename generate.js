@@ -463,8 +463,8 @@ const FRIENDLY_SCHEDULE = [
 ];
 
 const LIGUE2_SCHEDULE = [
-  /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true, _confirmedSource:'LFP' },
-  /* J2  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true, _confirmed:true, _confirmedSource:'LFP' },
+  /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcast:'beIN SPORTS', _broadcastSource:'LFP' },
+  /* J2  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcast:'beIN SPORTS', _broadcastSource:'LFP' },
   /* J3  */ { dateEvent:'2026-08-21', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'EN Avant Guingamp',        idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'134244',  strLeague:'French Ligue 2', intRound:'3',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:false },
   /* J4  */ { dateEvent:'2026-08-28', strTime:'20:45:00', strHomeTeam:'Clermont Foot 63',         strAwayTeam:FCSM,                        idHomeTeam:'134713',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'4',  strVenue:'Stade Gabriel Montpied',     _hardcoded:true, _confirmed:false },
   /* J5  */ { dateEvent:'2026-09-04', strTime:'20:45:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM,                        idHomeTeam:'138309',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Nouste Camp',                _hardcoded:true, _confirmed:false },
@@ -576,6 +576,7 @@ const LIGUE2_PAST_HARDCODED = [
     intHomeScore:0, intAwayScore:3,
     strLeague:'French Ligue 2', intRound:'1',
     strVenue:'Stade Auguste Bonal', idLeague: LEAGUE_ID,
+    _broadcast:'beIN SPORTS', _broadcastSource:'LFP',
   },
 ];
 
@@ -689,6 +690,10 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
     }
     if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
     if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
+    if (hev._broadcast) {
+      apiMatch._broadcast = hev._broadcast;
+      apiMatch._broadcastSource = hev._broadcastSource || 'LFP';
+    }
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
@@ -872,6 +877,11 @@ function unconfirmedHourglassHtml(ev) {
     : '<span title="Date et heure en attente de confirmation officielle" aria-label="Date et heure en attente de confirmation"> ⏳</span>';
 }
 
+function broadcastHtml(ev, { pending = false } = {}) {
+  if (ev?._broadcast) return `<span class="match-broadcast">📺 ${ev._broadcast}</span>`;
+  return pending ? '<span class="match-broadcast">📺 Diffusion à confirmer</span>' : '';
+}
+
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
 function buildUpcomingRows(events) {
   if (!events || events.length === 0) return '<p class="no-matches">Aucun match à venir disponible pour le moment.</p>';
@@ -890,12 +900,13 @@ function buildUpcomingRows(events) {
       ? `${homeBadge} <strong>${TEAM_DISPLAY_NAME}</strong> vs ${awayBadge} ${oppDisplay}`
       : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
     const hourglass = unconfirmedHourglassHtml(ev);
+    const broadcast = broadcastHtml(ev, { pending: !hasScore(ev) });
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
   <div class="upcoming-match"><span class="upcoming-teams">${teamsHtml}</span><span class="upcoming-venue">${ev.strVenue || ''}</span></div>
-  <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}${hourglass}</div>
+  <div class="upcoming-meta"><span class="match-league">🏆 ${league}</span>${roundLabel ? `<span class="match-round">${roundLabel}</span>` : ''}${broadcast}${hourglass}</div>
 </div>`;
   });
   const hiddenCount = events.length - VISIBLE;
@@ -951,6 +962,7 @@ const vars = {
   NEXT_MATCH_AWAY_STANDING: nextMatchFcsmHome ? oppStanding : fcsmStanding,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
+  NEXT_MATCH_BROADCAST:  broadcastHtml(nextMatch, { pending: true }),
   NEXT_MATCH_LEAGUE:     displayLeague(nextMatch?.strLeague),
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
@@ -996,7 +1008,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   tableValidThroughRound: tableSource === 'hardcoded-J1' ? LIGUE2_TABLE_HARDCODED_ROUND : null,
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
-  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null })),
+  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null, broadcast: e._broadcast || null, broadcastSource: e._broadcastSource || null })),
 }, null, 2), 'utf8');
 
 /* ══════════════════════════════════════════════════════════════
@@ -1051,7 +1063,10 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
   const venue     = ev.strVenue   ? `📍 ${ev.strVenue}`    : '';
   const league    = ev.strLeague  ? `🏆 ${ev.strLeague}`   : '';
   const roundStr  = ev.intRound   ? `J${ev.intRound}`      : '';
-  const headerParts = [venue, league, roundStr].filter(Boolean).join(' | ');
+  const broadcast = ev._broadcast
+    ? `📺 Diffusion : ${ev._broadcast}`
+    : !hasScore(ev) ? '📺 Diffusion en attente de programmation officielle' : '';
+  const headerParts = [venue, league, roundStr, broadcast].filter(Boolean).join(' | ');
 
   if (hasScore(ev)) {
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
