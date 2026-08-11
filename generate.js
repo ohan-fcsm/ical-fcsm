@@ -879,7 +879,7 @@ function unconfirmedHourglassHtml(ev) {
 
 function broadcastHtml(ev, { pending = false } = {}) {
   if (ev?._broadcast) return `<span class="match-card-meta-item match-broadcast">📺 <strong>${ev._broadcast}</strong></span>`;
-  return pending ? '<span class="match-card-meta-item match-broadcast" title="Diffusion à confirmer" aria-label="Diffusion à confirmer">📺⏳</span>' : '';
+  return pending ? '<span class="match-card-meta-item match-broadcast match-broadcast--pending" title="Diffusion à confirmer" aria-label="Diffusion à confirmer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M9 21h6M12 18v3M10 8h4m-4 6h4m0-6c0 2-2 2-2 3s2 1 2 3m-4-6c0 2 2 2 2 3s-2 1-2 3"/></svg></span>' : '';
 }
 
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
