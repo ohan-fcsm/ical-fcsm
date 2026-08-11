@@ -877,9 +877,9 @@ function unconfirmedHourglassHtml(ev) {
     : '<span class="match-status-icon" title="Date et heure en attente de confirmation officielle" aria-label="Date et heure en attente de confirmation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 3 5 4 9s-4 4-4 9m8-18c0 5-3 5-4 9s4 4 4 9"/><path d="M9.5 16.5h5"/></svg></span>';
 }
 
-function broadcastHtml(ev, { pending = false } = {}) {
+function broadcastHtml(ev) {
   if (ev?._broadcast) return `<span class="match-card-meta-item match-broadcast">📺 <strong>${ev._broadcast}</strong></span>`;
-  return pending ? '<span class="match-card-meta-item match-broadcast match-broadcast--pending" title="Diffusion à confirmer" aria-label="Diffusion à confirmer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M9 21h6M12 18v3M10 8h4m-4 6h4m0-6c0 2-2 2-2 3s2 1 2 3m-4-6c0 2 2 2 2 3s-2 1-2 3"/></svg></span>' : '';
+  return '';
 }
 
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
@@ -900,7 +900,7 @@ function buildUpcomingRows(events) {
       ? `${homeBadge} <strong>${TEAM_DISPLAY_NAME}</strong> vs ${awayBadge} ${oppDisplay}`
       : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
     const hourglass = unconfirmedHourglassHtml(ev);
-    const broadcast = broadcastHtml(ev, { pending: !hasScore(ev) });
+    const broadcast = broadcastHtml(ev);
     const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
@@ -962,7 +962,7 @@ const vars = {
   NEXT_MATCH_AWAY_STANDING: nextMatchFcsmHome ? oppStanding : fcsmStanding,
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
-  NEXT_MATCH_BROADCAST:  broadcastHtml(nextMatch, { pending: true }),
+  NEXT_MATCH_BROADCAST:  broadcastHtml(nextMatch),
   NEXT_MATCH_LEAGUE:     displayLeague(nextMatch?.strLeague),
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
@@ -1065,7 +1065,7 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
   const roundStr  = ev.intRound   ? `J${ev.intRound}`      : '';
   const broadcast = ev._broadcast
     ? `📺 Diffusion : ${ev._broadcast}`
-    : !hasScore(ev) ? '📺 Diffusion en attente de programmation officielle' : '';
+    : '';
   const headerParts = [venue, league, roundStr, broadcast].filter(Boolean).join(' | ');
 
   if (hasScore(ev)) {
