@@ -99,6 +99,7 @@
     .match-card-meta { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
     .match-card-meta-item { display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--muted); }
     .match-card-meta-item strong { color:var(--text); font-weight:600; }
+    .match-card-share { display:flex; justify-content:center; margin-top:14px; }
 
     .countdown-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .countdown-box { padding:14px 8px 12px; border-radius:14px; background:color-mix(in srgb, var(--bg-hero) 70%, var(--card-bg) 30%); text-align:center; }
@@ -321,6 +322,9 @@
           <div class="countdown-wrap" id="countdown"></div>
           <div class="match-card-meta">
             <span class="match-card-meta-item">🏟 <strong>{{NEXT_MATCH_VENUE}}</strong></span>
+          </div>
+          <div class="match-card-share">
+            <button class="btn-facebook" id="shareNextMatchFB" type="button">Partager ce match sur Facebook</button>
           </div>
 
         </div>
@@ -558,6 +562,23 @@
       if (wa) wa.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://wa.me/?text=' + encodeURIComponent('Calendrier FC Sochaux : ' + u), '_blank'); });
       if (fb) fb.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u), '_blank'); });
       if (tw) tw.addEventListener('click', function () { var u = document.getElementById('shareLink').value; window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('Calendrier FC Sochaux 🟡🔵 ' + u), '_blank'); });
+    })();
+
+    (function () {
+      var button = document.getElementById('shareNextMatchFB');
+      if (!button) return;
+      button.addEventListener('click', function () {
+        var card = document.querySelector('.match-card');
+        var teams = card && card.querySelector('.match-card-teams');
+        var date = card && card.querySelector('.match-card-datetime');
+        var venue = card && card.querySelector('.match-card-meta strong');
+        var quote = ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent]
+          .filter(Boolean)
+          .map(function (part) { return part.replace(/\s+/g, ' ').trim(); })
+          .join(' — ');
+        var pageUrl = window.location.href.split('?')[0].replace(/\/?$/, '/');
+        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl) + '&quote=' + encodeURIComponent(quote), '_blank', 'noopener,noreferrer');
+      });
     })();
 
     /* ── Voir plus / voir moins pour le calendrier complet ── */
