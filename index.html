@@ -392,7 +392,7 @@
           <li><span class="howto-step-num">3</span><span>✅ Les matchs FC Sochaux apparaissent dans ton Calendrier Apple et se mettent à jour automatiquement.</span></li>
         </ol>
         <div class="howto-note">💡 <strong>Simple :</strong> le lien ouvre directement l'abonnement — pas besoin de copier une URL.</div>
-        <div class="howto-cta"><a href="https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics">🍎 Ouvrir sur iPhone</a></div>
+        <div class="howto-cta"><a href="webcal://ohan-fcsm.github.io/ical-fcsm/fcsm.ics">🍎 S'abonner dans Calendrier Apple</a></div>
       </div>
 
       <div class="howto-panel" id="panel-android">
@@ -424,6 +424,7 @@
   <script>
     var GCAL_URL = 'https://calendar.google.com/calendar/render?cid=l0amb9fs19rkodee59rt5q64q4345rfb@import.calendar.google.com';
     var ICS_URL  = 'https://calendar.google.com/calendar/ical/l0amb9fs19rkodee59rt5q64q4345rfb%40import.calendar.google.com/public/basic.ics';
+    var APPLE_CALENDAR_URL = 'webcal://ohan-fcsm.github.io/ical-fcsm/fcsm.ics';
     var OUTLOOK_URL = 'https://outlook.live.com/calendar/0/addfromweb?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fl0amb9fs19rkodee59rt5q64q4345rfb%2540import.calendar.google.com%2Fpublic%2Fbasic.ics';
 
     function detectPlatform() {
@@ -437,10 +438,10 @@
 
     var PLATFORM = detectPlatform();
     var PLATFORM_CONFIG = {
-      ios:     { label: '🍎 Ouvrir dans Calendrier iPhone', href: ICS_URL,   defaultTab: 'iphone',  alts: [{ label: '🤖 Android', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
-      android: { label: '📅 Ouvrir dans Google Calendar',   href: GCAL_URL,  defaultTab: 'android', alts: [{ label: '🍎 iPhone',  href: ICS_URL },  { label: '📧 Outlook', href: OUTLOOK_URL }] },
-      mac:     { label: '🍎 Ouvrir dans Calendrier Mac',     href: ICS_URL,   defaultTab: 'iphone',  alts: [{ label: '🤖 Android / Google', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
-      pc:      { label: '📅 S\'abonner au calendrier',        href: GCAL_URL,  defaultTab: 'android', alts: [{ label: '🍎 iPhone / Mac', href: ICS_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] }
+      ios:     { label: '🍎 S\'abonner dans Calendrier iPhone', href: APPLE_CALENDAR_URL, defaultTab: 'iphone',  alts: [{ label: '🤖 Android', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      android: { label: '📅 Ouvrir dans Google Calendar',      href: GCAL_URL,          defaultTab: 'android', alts: [{ label: '🍎 iPhone',  href: APPLE_CALENDAR_URL },  { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      mac:     { label: '🍎 S\'abonner dans Calendrier Mac',    href: APPLE_CALENDAR_URL, defaultTab: 'iphone',  alts: [{ label: '🤖 Android / Google', href: GCAL_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] },
+      pc:      { label: '📅 S\'abonner au calendrier',          href: GCAL_URL,          defaultTab: 'android', alts: [{ label: '🍎 iPhone / Mac', href: APPLE_CALENDAR_URL }, { label: '📧 Outlook', href: OUTLOOK_URL }] }
     };
 
     var cfg = PLATFORM_CONFIG[PLATFORM];
