@@ -1067,8 +1067,12 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
     return parts.join('\\n');
   }
 
+  const confirmationNote = isDateTimeConfirmed(ev)
+    ? ''
+    : '⏳ Date et heure en attente de confirmation officielle';
+
   // Classements et formes ne concernent que le prochain rendez-vous.
-  if (!isNextMatch) return headerParts;
+  if (!isNextMatch) return [headerParts, confirmationNote].filter(Boolean).join('\\n');
 
   const rankFCSM = tRow?.intRank ? ` (${tRow.intRank}e)` : '';
   const rankOpp  = oRow?.intRank ? ` (${oRow.intRank}e)` : '';
@@ -1076,9 +1080,6 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
   const formeOpp  = `${displayTeamName(opp)}${rankOpp} — Forme : ${fOpp || '—'}`;
   const h2hPart   = buildH2hDescription(opp);
 
-  const confirmationNote = isDateTimeConfirmed(ev)
-    ? ''
-    : '⏳ Date et heure en attente de confirmation officielle';
   const parts = [
     headerParts,
     confirmationNote,
