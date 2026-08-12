@@ -422,7 +422,16 @@ const LIGUE2_TABLE_HARDCODED_ROUND = 1;
 const LIGUE2_TABLE_HARDCODED_VALID_UNTIL = '2026-08-14T22:45:00+02:00'; // fin estimée de J2
 const apiTableRows = tableData?.table || tableData?.teams || [];
 const apiTableComplete = apiTableRows.length >= 18;
-const hardcodedTableStillValid = Date.now() < Date.parse(LIGUE2_TABLE_HARDCODED_VALID_UNTIL);
+const apiCompletedRound = [...(lastData?.results || lastData?.events || []), ...(seasonData?.events || [])]
+  .filter(ev =>
+    Number(ev.intRound) > 0 &&
+    (String(ev.idLeague) === String(LEAGUE_ID) || (ev.strLeague || '').toLowerCase().includes('ligue 2')) &&
+    ev.intHomeScore != null && ev.intHomeScore !== '' && ev.intAwayScore != null && ev.intAwayScore !== ''
+  )
+  .reduce((latest, ev) => Math.max(latest, Number(ev.intRound)), 0);
+const hardcodedTableStillValid =
+  apiCompletedRound <= LIGUE2_TABLE_HARDCODED_ROUND &&
+  Date.now() < Date.parse(LIGUE2_TABLE_HARDCODED_VALID_UNTIL);
 const tableSource = apiTableComplete
   ? 'api'
   : hardcodedTableStillValid
@@ -439,7 +448,7 @@ if (tableSource === 'api') {
 } else if (tableSource === 'hardcoded-J1') {
   console.log(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) → fallback hardcodé J1 utilisé jusqu'à la fin de J2`);
 } else {
-  console.warn(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) après J2 → classement momentanément indisponible`);
+  console.warn(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18), J${apiCompletedRound || 2} détectée ou délai J2 expiré → classement momentanément indisponible`);
 }
 
 const calendarTeamsBadges = await Promise.all(
