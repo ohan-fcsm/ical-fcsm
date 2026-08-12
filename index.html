@@ -71,10 +71,12 @@
     body.dark .btn-howto:hover { background:rgba(255,255,255,.07); }
     .btn-theme { width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(13,43,94,.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--text); }
     body.dark .btn-theme { border-color:rgba(255,255,255,.18); }
-    .btn-facebook { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:999px; background:#1877F2; color:#fff; font-size:13px; font-weight:700; border:none; cursor:pointer; text-decoration:none; transition:background .15s, transform .15s; flex-shrink:0; }
+    .btn-facebook, .btn-x { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:0; border-radius:50%; color:#fff; border:none; cursor:pointer; text-decoration:none; transition:background .15s, transform .15s; flex-shrink:0; }
+    .btn-facebook { background:#1877F2; }
     .btn-facebook:hover { background:#1464d8; transform:translateY(-1px); }
-    .btn-facebook svg { flex-shrink:0; }
-    @media (max-width:540px) { .btn-facebook span { display:none; } .btn-facebook { padding:8px 10px; } }
+    .btn-x { background:#000; }
+    .btn-x:hover { background:#333; transform:translateY(-1px); }
+    .btn-facebook svg, .btn-x svg { flex-shrink:0; width:17px; height:17px; }
 
     .hero { background:var(--bg-hero); padding:64px 32px 72px; transition:background .2s; }
     .hero-inner { max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
@@ -114,7 +116,7 @@
     .match-card-meta-item strong { color:var(--text); font-weight:600; }
     .match-status-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; color:var(--text); }
     .match-status-icon svg { display:block; width:18px; height:18px; }
-    .match-card-share { display:flex; justify-content:center; margin-top:14px; }
+    .match-card-share { display:flex; justify-content:center; gap:8px; margin-top:14px; }
 
     .countdown-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px; }
     .countdown-box { padding:14px 8px 12px; border-radius:14px; background:color-mix(in srgb, var(--bg-hero) 70%, var(--card-bg) 30%); text-align:center; }
@@ -301,7 +303,9 @@
     <div class="nav-right">
       <a class="btn-facebook" href="https://www.facebook.com/share/1H8iE3W9Dh/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" aria-label="Page Facebook du projet">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-        <span>Rejoindre sur Facebook</span>
+      </a>
+      <a class="btn-x" href="https://x.com/CalendrierFCSM" target="_blank" rel="noopener noreferrer" aria-label="Compte X @CalendrierFCSM" title="Suivre @CalendrierFCSM sur X">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.967 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
       </a>
       <button class="btn-theme" id="themeToggle" aria-label="Changer le thème">🌙</button>
     </div>
@@ -343,7 +347,12 @@
             {{NEXT_MATCH_WEATHER}}
           </div>
           <div class="match-card-share">
-            <button class="btn-facebook" id="shareNextMatchFB" type="button">Partager ce match sur Facebook</button>
+            <button class="btn-facebook" id="shareNextMatchFB" type="button" aria-label="Partager ce match sur Facebook" title="Partager sur Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+            </button>
+            <button class="btn-x" id="shareNextMatchX" type="button" aria-label="Partager ce match sur X" title="Partager sur X">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.967 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
+            </button>
           </div>
 
         </div>
@@ -590,19 +599,26 @@
     })();
 
     (function () {
-      var button = document.getElementById('shareNextMatchFB');
-      if (!button) return;
-      button.addEventListener('click', function () {
+      function nextMatchShareText() {
         var card = document.querySelector('.match-card');
         var teams = card && card.querySelector('.match-card-teams');
         var date = card && card.querySelector('.match-card-datetime');
         var venue = card && card.querySelector('.match-card-meta strong');
-        var quote = ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent]
+        return ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent]
           .filter(Boolean)
           .map(function (part) { return part.replace(/\s+/g, ' ').trim(); })
           .join(' — ');
+      }
+      var facebookButton = document.getElementById('shareNextMatchFB');
+      if (facebookButton) facebookButton.addEventListener('click', function () {
+        var quote = nextMatchShareText();
         var pageUrl = window.location.href.split('?')[0].replace(/\/?$/, '/');
         window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl) + '&quote=' + encodeURIComponent(quote), '_blank', 'noopener,noreferrer');
+      });
+      var xButton = document.getElementById('shareNextMatchX');
+      if (xButton) xButton.addEventListener('click', function () {
+        var pageUrl = window.location.href.split('?')[0].replace(/\/?$/, '/');
+        window.open('https://x.com/intent/post?text=' + encodeURIComponent(nextMatchShareText()) + '&url=' + encodeURIComponent(pageUrl), '_blank', 'noopener,noreferrer');
       });
     })();
 
