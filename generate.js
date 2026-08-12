@@ -102,6 +102,17 @@ async function ensureBadge(remoteUrl, slug) {
   }
 }
 
+async function getPublicJson(url) {
+  try {
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) {
+    console.warn(`Public API error: ${e.message}`);
+    return null;
+  }
+}
+
 /* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
   'Red Star FC':             '135467',
@@ -901,11 +912,63 @@ function unconfirmedHourglassHtml(ev) {
 function broadcastHtml(ev) {
   if (!ev?._channel && !ev?._broadcaster) return '';
   const label = ev._channel || ev._broadcaster;
-  const channelPending = ev._channel && !ev._channelExact
-    ? '<small class="match-broadcast-note">Canal précis à confirmer</small>'
-    : '';
-  return `<span class="match-card-meta-item match-broadcast">📺 <strong>${label}</strong>${channelPending}</span>`;
+  return `<span class="match-card-meta-item match-broadcast">📺 <strong>${label}</strong></span>`;
 }
+
+const STADIUM_COORDINATES = {
+  'Stade Auguste Bonal': [47.5072, 6.8024],
+  'Stade Bauer': [48.9058, 2.3430],
+  'Stade Gabriel Montpied': [45.7640, 3.1060],
+  'Nouste Camp': [43.3230, -0.3450],
+  'Stade Francis Le Basser': [48.0770, -0.7660],
+  'Parc des Sports': [45.8990, 6.1150],
+  'Stade Saint-Symphorien': [49.1090, 6.1770],
+  'Stade Auguste Delaune': [49.2470, 4.0240],
+  'Stade Marcel Picot': [48.6950, 6.1840],
+  'Stade Gaston Gérard': [47.3230, 5.0660],
+  'Stade des Alpes': [45.1880, 5.7450],
+  'Stade Geoffroy-Guichard': [45.4600, 4.3900],
+  'Stade Paul Lignon': [44.3510, 2.5760],
+  'Stade Marcel Tribut': [51.0350, 2.3770],
+  'Stade de la Mosson': [43.6220, 3.8120],
+  'Stade du Roudourou': [48.5630, -3.1430],
+};
+
+function weatherLabel(code) {
+  if ([0].includes(code)) return ['☀️', 'Ensoleillé'];
+  if ([1, 2].includes(code)) return ['🌤', 'Éclaircies'];
+  if ([3].includes(code)) return ['☁️', 'Couvert'];
+  if ([45, 48].includes(code)) return ['🌫', 'Brouillard'];
+  if ([51, 53, 55, 56, 57].includes(code)) return ['🌦', 'Bruine'];
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return ['🌧', 'Pluie'];
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return ['❄️', 'Neige'];
+  if ([95, 96, 99].includes(code)) return ['⛈', 'Orage'];
+  return ['🌡', 'Météo'];
+}
+
+async function nextMatchWeatherHtml(ev) {
+  if (!ev || !isDateTimeConfirmed(ev) || !ev.dateEvent || !ev.strTime) return '';
+  const coordinates = STADIUM_COORDINATES[ev.strVenue];
+  if (!coordinates) return '';
+  const matchHour = `${ev.dateEvent}T${ev.strTime.slice(0, 2)}:00`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${coordinates[0]}&longitude=${coordinates[1]}&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&timezone=Europe%2FParis`;
+  const weather = await getPublicJson(url);
+  const index = weather?.hourly?.time?.indexOf(matchHour);
+  if (index == null || index < 0) return '';
+  const { temperature_2m: temperatures, apparent_temperature: feelsLike, precipitation_probability: rainProbability, weather_code: codes, wind_speed_10m: wind } = weather.hourly;
+  const [icon, condition] = weatherLabel(Number(codes?.[index]));
+  const temperature = Math.round(Number(temperatures?.[index]));
+  const apparent = Math.round(Number(feelsLike?.[index]));
+  const rain = Number(rainProbability?.[index]);
+  const windSpeed = Math.round(Number(wind?.[index]));
+  if (!Number.isFinite(temperature)) return '';
+  const feels = Number.isFinite(apparent) && apparent !== temperature ? ` · ressenti ${apparent}°C` : '';
+  const precipitation = Number.isFinite(rain) ? ` · pluie ${rain}%` : '';
+  const windPart = Number.isFinite(windSpeed) ? ` · vent ${windSpeed} km/h` : '';
+  return `<span class="match-card-meta-item match-weather" title="Prévision au coup d’envoi, mise à jour à chaque build">${icon} <strong>${temperature}°C</strong> · ${condition}${feels}${precipitation}${windPart}</span>`;
+}
+
+const nextMatchWeather = await nextMatchWeatherHtml(nextMatch);
 
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
 function buildUpcomingRows(events) {
@@ -1046,6 +1109,7 @@ const vars = {
   NEXT_MATCH_STATUS:     nextMatch?.strStatus || nextMatch?.strProgress || '—',
   NEXT_MATCH_VENUE:      nextMatch?.strVenue     || '—',
   NEXT_MATCH_BROADCAST:  broadcastHtml(nextMatch),
+  NEXT_MATCH_WEATHER:    nextMatchWeather,
   NEXT_MATCH_LEAGUE:     displayLeague(nextMatch?.strLeague),
   NEXT_MATCH_ROUND:      round,
   NEXT_MATCH_ISO:        nextMatchIso,
@@ -1152,10 +1216,7 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
   const broadcast = ev._channel || ev._broadcaster
     ? `📺 Diffusion : ${ev._channel || ev._broadcaster}`
     : '';
-  const channelNote = ev._channel && !ev._channelExact
-    ? 'Canal précis à confirmer'
-    : '';
-  const headerParts = [venue, league, roundStr, broadcast, channelNote].filter(Boolean).join(' | ');
+  const headerParts = [venue, league, roundStr, broadcast].filter(Boolean).join(' | ');
 
   if (hasScore(ev)) {
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
