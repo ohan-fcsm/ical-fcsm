@@ -965,7 +965,7 @@ async function nextMatchWeatherHtml(ev) {
   const feels = Number.isFinite(apparent) && apparent !== temperature ? ` · ressenti ${apparent}°C` : '';
   const precipitation = Number.isFinite(rain) ? ` · pluie ${rain}%` : '';
   const windPart = Number.isFinite(windSpeed) ? ` · vent ${windSpeed} km/h` : '';
-  return `<span class="match-card-meta-item match-weather" title="Prévision au coup d’envoi, mise à jour à chaque build">${icon} <strong>${temperature}°C</strong> · ${condition}${feels}${precipitation}${windPart}</span>`;
+  return `<span class="match-card-meta-item match-weather" title="Prévision au coup d’envoi">${icon} <strong>${temperature}°C</strong> · ${condition}${feels}${precipitation}${windPart}</span>`;
 }
 
 const nextMatchWeather = await nextMatchWeatherHtml(nextMatch);
