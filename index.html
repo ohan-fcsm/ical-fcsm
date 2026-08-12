@@ -123,6 +123,8 @@
     .countdown-value { display:block; font-size:28px; font-weight:800; letter-spacing:-0.03em; color:var(--text); line-height:1; }
     .countdown-unit { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:5px; }
     .countdown-done { text-align:center; font-size:15px; font-weight:700; color:var(--text); padding:10px 0; }
+    .match-live-status { display:inline-flex; align-items:center; justify-content:center; width:100%; padding:10px 0; font-size:15px; font-weight:800; color:var(--text); }
+    .match-live-status--live { color:#B42318; }
 
     .page { max-width:1120px; margin:0 auto; padding:40px 32px 64px; }
     .section { margin-top:28px; padding:24px; background:var(--card-bg); border-radius:var(--radius); box-shadow:0 2px 12px rgba(13,43,94,.06); border:1px solid var(--card-border); }
@@ -523,10 +525,16 @@
       if (!wrap || !isoStr || isoStr.indexOf('{{') !== -1) return;
       var target = new Date(isoStr);
       if (isNaN(target.getTime())) return;
+      var matchDurationMs = 2 * 60 * 60 * 1000;
       function pad(n) { return n < 10 ? '0' + n : String(n); }
       function tick() {
         var diff = target - new Date();
-        if (diff <= 0) { wrap.innerHTML = '<p class="countdown-done">⚽ Match en cours ou terminé</p>'; return; }
+        if (diff <= 0) {
+          wrap.innerHTML = new Date() < new Date(target.getTime() + matchDurationMs)
+            ? '<p class="match-live-status match-live-status--live">⚽ En cours</p>'
+            : '<p class="match-live-status">✓ Terminé</p>';
+          return;
+        }
         var d = Math.floor(diff / 86400000);
         var h = Math.floor((diff % 86400000) / 3600000);
         var m = Math.floor((diff % 3600000) / 60000);
