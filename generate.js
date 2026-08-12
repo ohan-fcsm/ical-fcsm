@@ -464,13 +464,13 @@ const FRIENDLY_SCHEDULE = [
 ];
 
 const LIGUE2_SCHEDULE = [
-  /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcast:'beIN SPORTS', _broadcastSource:'LFP' },
-  /* J2  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcast:'beIN SPORTS', _broadcastSource:'LFP' },
-  /* J3  */ { dateEvent:'2026-08-21', strTime:'20:00:00', strHomeTeam:FCSM,                       strAwayTeam:'EN Avant Guingamp',        idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'134244',  strLeague:'French Ligue 2', intRound:'3',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP' },
+  /* J1  */ { dateEvent:'2026-08-08', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'AS Saint-Étienne',         idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133717',  strLeague:'French Ligue 2', intRound:'1',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS 1', _channelExact:'beIN SPORTS 1' },
+  /* J2  */ { dateEvent:'2026-08-14', strTime:'20:45:00', strHomeTeam:'Red Star FC',              strAwayTeam:FCSM,                        idHomeTeam:'135467',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'2',  strVenue:'Stade Bauer',                _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX', _channelExact:null },
+  /* J3  */ { dateEvent:'2026-08-21', strTime:'20:00:00', strHomeTeam:FCSM,                       strAwayTeam:'EN Avant Guingamp',        idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'134244',  strLeague:'French Ligue 2', intRound:'3',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4 à 8', _channelExact:null },
   /* J4  */ { dateEvent:'2026-08-28', strTime:'20:45:00', strHomeTeam:'Clermont Foot 63',         strAwayTeam:FCSM,                        idHomeTeam:'134713',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'4',  strVenue:'Stade Gabriel Montpied',     _hardcoded:true, _confirmed:false },
-  /* J5  */ { dateEvent:'2026-09-04', strTime:'20:00:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM,                        idHomeTeam:'138309',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Nouste Camp',                _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP' },
-  /* J6  */ { dateEvent:'2026-09-12', strTime:'14:00:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Nantes',                idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133861',  strLeague:'French Ligue 2', intRound:'6',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP' },
-  /* J7  */ { dateEvent:'2026-09-18', strTime:'20:00:00', strHomeTeam:'Stade Lavallois MFC',      strAwayTeam:FCSM,                        idHomeTeam:'134708',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'7',  strVenue:'Stade Francis Le Basser',    _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP' },
+  /* J5  */ { dateEvent:'2026-09-04', strTime:'20:00:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM,                        idHomeTeam:'138309',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Nouste Camp',                _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4 à 8', _channelExact:null },
+  /* J6  */ { dateEvent:'2026-09-12', strTime:'14:00:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Nantes',                idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133861',  strLeague:'French Ligue 2', intRound:'6',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS 1', _channelExact:'beIN SPORTS 1' },
+  /* J7  */ { dateEvent:'2026-09-18', strTime:'20:00:00', strHomeTeam:'Stade Lavallois MFC',      strAwayTeam:FCSM,                        idHomeTeam:'134708',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'7',  strVenue:'Stade Francis Le Basser',    _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4 à 9', _channelExact:null },
   /* J8  */ { dateEvent:'2026-10-09', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'US Boulogne CO',           idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133849',  strLeague:'French Ligue 2', intRound:'8',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:false },
   /* J9  */ { dateEvent:'2026-10-16', strTime:'20:45:00', strHomeTeam:'FC Metz',                  strAwayTeam:FCSM,                        idHomeTeam:'133883',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'9',  strVenue:'Stade Saint-Symphorien',     _hardcoded:true, _confirmed:false },
   /* J10 */ { dateEvent:'2026-10-23', strTime:'20:45:00', strHomeTeam:'FC Annecy',                strAwayTeam:FCSM,                        idHomeTeam:'139928',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'10', strVenue:'Parc des Sports',            _hardcoded:true, _confirmed:false },
@@ -506,6 +506,9 @@ for (const fixture of LIGUE2_SCHEDULE) {
   if (fixture._confirmed !== true) {
     fixture._confirmed = false;
     fixture._confirmedSource = null;
+    fixture._broadcaster = null;
+    fixture._channel = null;
+    fixture._channelExact = null;
   }
 }
 
@@ -700,10 +703,9 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
     }
     if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
     if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
-    if (hev._broadcast) {
-      apiMatch._broadcast = hev._broadcast;
-      apiMatch._broadcastSource = hev._broadcastSource || 'LFP';
-    }
+    apiMatch._broadcaster = hev._broadcaster ?? null;
+    apiMatch._channel = hev._channel ?? null;
+    apiMatch._channelExact = hev._channelExact ?? null;
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
@@ -872,7 +874,7 @@ function formBadgesSummary(events, tName) {
   return badges.join(' ');
 }
 
-// Les programmations sont habituellement annoncées au moins six semaines avant le match.
+// Le statut dépend exclusivement des métadonnées explicites de programmation LFP.
 function isDateTimeConfirmed(ev) {
   return ev?._confirmed === true;
 }
@@ -888,8 +890,12 @@ function unconfirmedHourglassHtml(ev) {
 }
 
 function broadcastHtml(ev) {
-  if (ev?._broadcast) return `<span class="match-card-meta-item match-broadcast">📺 <strong>${ev._broadcast}</strong></span>`;
-  return '';
+  if (!ev?._channel && !ev?._broadcaster) return '';
+  const label = ev._channel || ev._broadcaster;
+  const channelPending = ev._channel && !ev._channelExact
+    ? '<small class="match-broadcast-note">Canal précis à confirmer</small>'
+    : '';
+  return `<span class="match-card-meta-item match-broadcast">📺 <strong>${label}</strong>${channelPending}</span>`;
 }
 
 /* ── Bloc "Calendrier complet" : 5 prochains + bouton Voir plus ── */
@@ -1079,7 +1085,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   tableValidThroughRound: tableSource === 'hardcoded-J1' ? LIGUE2_TABLE_HARDCODED_ROUND : null,
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
-  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null, broadcast: e._broadcast || null, broadcastSource: e._broadcastSource || null })),
+  sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null, broadcaster: e._broadcaster || null, channel: e._channel || null, channelExact: e._channelExact || null })),
 }, null, 2), 'utf8');
 
 /* ══════════════════════════════════════════════════════════════
@@ -1134,10 +1140,13 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
   const venue     = ev.strVenue   ? `📍 ${ev.strVenue}`    : '';
   const league    = ev.strLeague  ? `🏆 ${ev.strLeague}`   : '';
   const roundStr  = ev.intRound   ? `J${ev.intRound}`      : '';
-  const broadcast = ev._broadcast
-    ? `📺 Diffusion : ${ev._broadcast}`
+  const broadcast = ev._channel || ev._broadcaster
+    ? `📺 Diffusion : ${ev._channel || ev._broadcaster}`
     : '';
-  const headerParts = [venue, league, roundStr, broadcast].filter(Boolean).join(' | ');
+  const channelNote = ev._channel && !ev._channelExact
+    ? 'Canal précis à confirmer'
+    : '';
+  const headerParts = [venue, league, roundStr, broadcast, channelNote].filter(Boolean).join(' | ');
 
   if (hasScore(ev)) {
     const { result, fcsmScore, oppScore } = fcsmResult(ev, tName);
@@ -1156,7 +1165,7 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
 
   const confirmationNote = isDateTimeConfirmed(ev)
     ? ''
-    : '⏳ Date et heure en attente de confirmation officielle';
+    : '⏳ Date et heure en attente de confirmation officielle LFP';
 
   // Classements et formes ne concernent que le prochain rendez-vous.
   if (!isNextMatch) return [headerParts, confirmationNote].filter(Boolean).join('\\n');
