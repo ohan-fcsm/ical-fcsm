@@ -2,7 +2,8 @@ name: Monitor LFP API
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "10 2 * * *"  # 02h10 UTC, avant le build nocturne de 02h15 UTC
+    - cron: "55 20 * * *" # 20h55 UTC, avant les mises à jour du soir dès 21h00 UTC
   workflow_dispatch:
 
 permissions:
