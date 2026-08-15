@@ -356,7 +356,10 @@ const today = getTodayParis();
 
 function parseForm(events, teamName) {
   if (!events || !events.length) return [];
-  return events.slice(0, 5).map(ev => {
+  // Les tableaux source sont triés du plus récent au plus ancien pour
+  // sélectionner les cinq derniers. L'affichage de forme est chronologique :
+  // le plus ancien apparaît à gauche, le plus récent à droite.
+  return events.slice(0, 5).reverse().map(ev => {
     const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
     const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
