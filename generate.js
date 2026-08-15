@@ -63,6 +63,12 @@ const TEAM_NAME_ALIASES = {
   'red star':          'red star fc',
   'red star 93':       'red star fc',
   'red star paris':    'red star fc',
+  'en avant guingamp': 'en avant guingamp',
+  'guingamp':          'en avant guingamp',
+  'ea guingamp':       'en avant guingamp',
+  'e a guingamp':      'en avant guingamp',
+  'e.a. guingamp':     'en avant guingamp',
+  'en avant de guingamp': 'en avant guingamp',
   'fc sochaux-montbeliard': 'fc sochaux-montbeliard',
   'fc sochaux':             'fc sochaux-montbeliard',
   'sochaux':                'fc sochaux-montbeliard',
@@ -597,6 +603,24 @@ function isSameMatch(a, b) {
   return Math.abs(da - db) <= 2 * 86400000;
 }
 
+// La programmation LFP est la référence : on préserve l'identifiant et les
+// libellés API, mais les informations de programmation viennent de la LFP.
+function mergeOfficialFixture(apiMatch, officialMatch) {
+  Object.assign(apiMatch, {
+    dateEvent: officialMatch.dateEvent,
+    strTime: officialMatch.strTime,
+    _confirmed: officialMatch._confirmed === true,
+    _confirmedSource: officialMatch._confirmedSource || null,
+    _broadcaster: officialMatch._broadcaster ?? null,
+    _channel: officialMatch._channel ?? null,
+    _channelExact: officialMatch._channelExact ?? null,
+  });
+  if (officialMatch.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = officialMatch.idHomeTeam;
+  if (officialMatch.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = officialMatch.idAwayTeam;
+  console.log(`🔀 Fusion API/LFP J${officialMatch.intRound}: ${apiMatch.strHomeTeam} - ${apiMatch.strAwayTeam} → ${apiMatch.dateEvent} ${apiMatch.strTime}`);
+  return apiMatch;
+}
+
 /* ── LIGUE2_PAST_HARDCODED — déclaré ICI, avant FIX 0 qui en dépend ──────
    IMPORTANT : cette constante DOIT rester avant le bloc FIX 0 ci-dessous.
    La déplacer après provoque une ReferenceError (temporal dead zone)
@@ -709,10 +733,7 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
     // Une programmation officielle LFP confirmée remplace le créneau API.
     // Le calendrier général reste indicatif tant qu'il n'est pas explicitement confirmé.
     if (hev._confirmed === true) {
-      apiMatch.dateEvent = hev.dateEvent;
-      apiMatch.strTime = hev.strTime;
-      apiMatch._confirmed = true;
-      apiMatch._confirmedSource = hev._confirmedSource || 'LFP';
+      mergeOfficialFixture(apiMatch, hev);
       console.log(`✅ Programmation LFP confirmée pour J${hev.intRound} : ${apiMatch.dateEvent} ${apiMatch.strTime}`);
     } else {
       if (!apiMatch.dateEvent) apiMatch.dateEvent = hev.dateEvent;
@@ -721,11 +742,13 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
       delete apiMatch._confirmedSource;
       console.log(`🗓 Créneau indicatif API conservé pour J${hev.intRound} : ${apiMatch.dateEvent} ${apiMatch.strTime || ''}`);
     }
-    if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
-    if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
-    apiMatch._broadcaster = hev._broadcaster ?? null;
-    apiMatch._channel = hev._channel ?? null;
-    apiMatch._channelExact = hev._channelExact ?? null;
+    if (hev._confirmed !== true) {
+      if (hev.idHomeTeam && !apiMatch.idHomeTeam) apiMatch.idHomeTeam = hev.idHomeTeam;
+      if (hev.idAwayTeam && !apiMatch.idAwayTeam) apiMatch.idAwayTeam = hev.idAwayTeam;
+      apiMatch._broadcaster = hev._broadcaster ?? null;
+      apiMatch._channel = hev._channel ?? null;
+      apiMatch._channelExact = hev._channelExact ?? null;
+    }
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
