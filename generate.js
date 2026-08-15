@@ -687,46 +687,50 @@ function lfpDateTimeInParis(isoDate) {
   return { dateEvent: `${year}-${month}-${day}`, strTime: `${hour}:${minute}:00` };
 }
 
-// Ne charge que les journées déjà jouées par le FCSM. Une réponse LFP est
-// acceptée uniquement si le match est "fullTime" et que les deux scores sont
+// Charge les journées déjà jouées par le FCSM. Une réponse LFP est acceptée
+// uniquement si le match est "fullTime" et que les deux scores sont
 // numériques : une indisponibilité de l'API reste donc sans effet sur le site.
-async function getOfficialLfpPastFixtures() {
+async function getOfficialLfpPastResults() {
   const pastFixtures = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent < today);
   const rounds = [...new Set(pastFixtures.map(ev => Number(ev.intRound)).filter(Number.isFinite))];
   const payloads = await Promise.all(rounds.map(async round => ({
     round,
     data: await getLfpJson(`https://ma-api.ligue1.fr/championship-matches/championship/4/game-week/${round}?season=2026`),
   })));
-
-  const officialResults = [];
+  const allOfficialResults = [];
   for (const { round, data } of payloads) {
     if (!Array.isArray(data?.matches)) {
       console.warn(`LFP API : aucune liste de matchs exploitable pour J${round}`);
       continue;
     }
-    const scheduled = pastFixtures.find(ev => Number(ev.intRound) === round);
-    const match = data.matches.find(candidate =>
-      canonicalTeamKey(candidate?.home?.clubIdentity?.name) === canonicalTeamKey(scheduled?.strHomeTeam) &&
-      canonicalTeamKey(candidate?.away?.clubIdentity?.name) === canonicalTeamKey(scheduled?.strAwayTeam)
-    );
-    const homeScore = match?.home?.score;
-    const awayScore = match?.away?.score;
-    const localDateTime = lfpDateTimeInParis(match?.date);
-    if (!match || match.period !== 'fullTime' || !Number.isInteger(homeScore) || !Number.isInteger(awayScore) || !localDateTime) {
-      console.warn(`LFP API : résultat J${round} non final ou incomplet, ignoré`);
-      continue;
+    for (const match of data.matches) {
+      const homeScore = match?.home?.score;
+      const awayScore = match?.away?.score;
+      const localDateTime = lfpDateTimeInParis(match?.date);
+      const homeName = match?.home?.clubIdentity?.name;
+      const awayName = match?.away?.clubIdentity?.name;
+      if (match?.period !== 'fullTime' || !Number.isInteger(homeScore) || !Number.isInteger(awayScore) || !localDateTime || !homeName || !awayName) continue;
+      allOfficialResults.push({
+        ...localDateTime,
+        strHomeTeam: homeName,
+        strAwayTeam: awayName,
+        intHomeScore: homeScore,
+        intAwayScore: awayScore,
+        strLeague: 'French Ligue 2',
+        intRound: String(round),
+        idLeague: LEAGUE_ID,
+        _resultSource: 'LFP',
+      });
     }
-    officialResults.push({
-      ...scheduled,
-      ...localDateTime,
-      intHomeScore: homeScore,
-      intAwayScore: awayScore,
-      idLeague: LEAGUE_ID,
-      _resultSource: 'LFP',
-    });
-    console.log(`✅ Résultat officiel LFP J${round} : ${scheduled.strHomeTeam} ${homeScore}-${awayScore} ${scheduled.strAwayTeam}`);
   }
-  return officialResults;
+  const fcsmResults = allOfficialResults.map(result => {
+    const scheduled = pastFixtures.find(ev => isSameMatch(ev, result));
+    return scheduled ? { ...scheduled, ...result } : null;
+  }).filter(Boolean);
+  for (const result of fcsmResults) {
+    console.log(`✅ Résultat officiel LFP J${result.intRound} : ${result.strHomeTeam} ${result.intHomeScore}-${result.intAwayScore} ${result.strAwayTeam}`);
+  }
+  return { fcsmResults, allOfficialResults };
 }
 
 // La programmation LFP est la référence : on préserve l'identifiant et les
@@ -790,7 +794,9 @@ const LIGUE2_OPPONENT_PAST_HARDCODED = [
   },
 ];
 
-const LIGUE2_PAST_OFFICIAL = await getOfficialLfpPastFixtures();
+const lfpPastResults = await getOfficialLfpPastResults();
+const LIGUE2_PAST_OFFICIAL = lfpPastResults.fcsmResults;
+const LIGUE2_OPPONENT_PAST_OFFICIAL = lfpPastResults.allOfficialResults;
 
 // ── FIX 0 : déduplique lastEvents contre LIGUE2_PAST_HARDCODED ──────────────
 // Évite qu'un match hardcodé et retourné simultanément par l'API
@@ -1046,10 +1052,18 @@ const ligue2PastFromSeason = [
 
 const last5Ligue2FCSM = (ligue2PastFromSeason.length > 0 ? ligue2PastFromSeason : ligue2PastFromSchedule).slice(0, 5);
 
-const opponentKnownResults = LIGUE2_OPPONENT_PAST_HARDCODED.filter(ev =>
-  ev.dateEvent < today &&
-  (canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(oppName) || canonicalTeamKey(ev.strAwayTeam) === canonicalTeamKey(oppName))
-);
+const opponentKnownResults = (() => {
+  const seen = new Set();
+  return [...LIGUE2_OPPONENT_PAST_HARDCODED, ...LIGUE2_OPPONENT_PAST_OFFICIAL].filter(ev => {
+    const isOpponentMatch = ev.dateEvent < today &&
+      (canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(oppName) || canonicalTeamKey(ev.strAwayTeam) === canonicalTeamKey(oppName));
+    if (!isOpponentMatch) return false;
+    const key = icsMatchKey(ev);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+})();
 const last5Ligue2Opp = [
   ...opponentKnownResults,
   ...oppSeasonEvents.filter(ev =>
