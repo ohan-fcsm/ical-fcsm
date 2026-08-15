@@ -54,13 +54,16 @@ function normTeam(s) {
 
 /* ── Alias : ramène toutes les variantes vers une clé canonique ── */
 const TEAM_NAME_ALIASES = {
+  // FC Sochaux-Montbéliard
   'as saint-etienne':  'as saint-etienne',
   'saint-etienne':     'as saint-etienne',
   'st etienne':        'as saint-etienne',
   'st-etienne':        'as saint-etienne',
   'saint etienne':     'as saint-etienne',
   'as saint etienne':  'as saint-etienne',
+  'asse':              'as saint-etienne',
   'red star':          'red star fc',
+  'red star fc':       'red star fc',
   'red star 93':       'red star fc',
   'red star paris':    'red star fc',
   'en avant guingamp': 'en avant guingamp',
@@ -71,8 +74,50 @@ const TEAM_NAME_ALIASES = {
   'en avant de guingamp': 'en avant guingamp',
   'fc sochaux-montbeliard': 'fc sochaux-montbeliard',
   'fc sochaux':             'fc sochaux-montbeliard',
+  'sochaux montbeliard':    'fc sochaux-montbeliard',
+  'sochaux-montbeliard':    'fc sochaux-montbeliard',
   'sochaux':                'fc sochaux-montbeliard',
   'fcsm':                   'fc sochaux-montbeliard',
+  // Variantes régulièrement renvoyées par les fournisseurs de données.
+  'clermont':               'clermont foot 63',
+  'clermont foot':          'clermont foot 63',
+  'clermont foot 63':       'clermont foot 63',
+  'nantes':                 'fc nantes',
+  'fc nantes':              'fc nantes',
+  'annecy':                 'fc annecy',
+  'annecy fc':              'fc annecy',
+  'fc annecy':              'fc annecy',
+  'dijon':                  'dijon fco',
+  'dijon fco':              'dijon fco',
+  'grenoble':               'grenoble foot 38',
+  'gf38':                   'grenoble foot 38',
+  'grenoble foot 38':       'grenoble foot 38',
+  'laval':                  'stade lavallois mfc',
+  'stade lavallois':        'stade lavallois mfc',
+  'stade lavallois mfc':    'stade lavallois mfc',
+  'nancy':                  'as nancy lorraine',
+  'as nancy':               'as nancy lorraine',
+  'as nancy lorraine':      'as nancy lorraine',
+  'metz':                   'fc metz',
+  'fc metz':                'fc metz',
+  'boulogne':               'us boulogne co',
+  'us boulogne':            'us boulogne co',
+  'us boulogne co':         'us boulogne co',
+  'montpellier':            'montpellier herault sc',
+  'montpellier hsc':        'montpellier herault sc',
+  'mhsc':                   'montpellier herault sc',
+  'montpellier herault sc': 'montpellier herault sc',
+  'dunkerque':              'usl dunkerque',
+  'usl dunkerque':          'usl dunkerque',
+  'rodez':                  'rodez aveyron football',
+  'rodez af':               'rodez aveyron football',
+  'rodez aveyron':          'rodez aveyron football',
+  'rodez aveyron football': 'rodez aveyron football',
+  'pau':                    'pau fc',
+  'pau fc':                 'pau fc',
+  'reims':                  'stade de reims',
+  'stade reims':            'stade de reims',
+  'stade de reims':         'stade de reims',
 };
 
 function canonicalTeamKey(name) {
@@ -841,7 +886,8 @@ const oppName = nextMatch
    2. Fallback sur TEAM_NAME_FALLBACK si l'API renvoie un nom différent
 ── */
 const teamRow = tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(teamName))
-  || tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(TEAM_NAME_FALLBACK))
+  || tableRows.find(r => canonicalTeamKey(r.strTeam || r.nameTeam) === canonicalTeamKey(teamName))
+  || tableRows.find(r => canonicalTeamKey(r.strTeam || r.nameTeam) === canonicalTeamKey(TEAM_NAME_FALLBACK))
   || {};
 const oppRow  = tableRows.find(r => canonicalTeamKey(r.strTeam || r.nameTeam) === canonicalTeamKey(oppName))
   || tableRows.find(r => normTeam(r.strTeam || r.nameTeam) === normTeam(oppName))
@@ -855,9 +901,9 @@ let oppBadgeRemote = '';
 if (nextMatch && API_KEY) {
   const isOppAway = normTeam(nextMatch.strAwayTeam) === normTeam(oppName);
   const oppIdFromEvent = isOppAway ? nextMatch.idAwayTeam : nextMatch.idHomeTeam;
-  const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => normTeam(k) === normTeam(oppName))?.[1];
+  const oppIdFromMap = Object.entries(TEAM_IDS).find(([k]) => canonicalTeamKey(k) === canonicalTeamKey(oppName))?.[1];
   const oppId = oppIdFromEvent || oppIdFromMap;
-  const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
+  const knownOpp = calendarTeamsBadges.find(t => canonicalTeamKey(t.name) === canonicalTeamKey(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
   const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
@@ -877,7 +923,7 @@ if (nextMatch && API_KEY) {
     console.warn(`⚠️  Pas d'ID pour: "${oppName}"`);
   }
 } else if (nextMatch && !API_KEY) {
-  const knownOpp = calendarTeamsBadges.find(t => normTeam(t.name) === normTeam(oppName));
+  const knownOpp = calendarTeamsBadges.find(t => canonicalTeamKey(t.name) === canonicalTeamKey(oppName));
   if (knownOpp) oppBadgeRemote = knownOpp.badgeUrl;
   const overrideBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   if (overrideBadgeUrls) oppBadgeRemote = overrideBadgeUrls[0];
@@ -887,7 +933,7 @@ const allBadgesToEnsure = [
   { name: teamName, urls: BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [teamBadgeRemote] },
   ...calendarTeamsBadges.map(t => ({ name: t.name, urls: t.badgeUrls })),
 ];
-if (oppBadgeRemote && !allBadgesToEnsure.find(t => normTeam(t.name) === normTeam(oppName))) {
+if (oppBadgeRemote && !allBadgesToEnsure.find(t => canonicalTeamKey(t.name) === canonicalTeamKey(oppName))) {
   const overrideUrls = BADGE_OVERRIDES[canonicalTeamKey(oppName)];
   allBadgesToEnsure.push({ name: oppName, urls: overrideUrls || [oppBadgeRemote] });
 }
@@ -1012,6 +1058,10 @@ const STADIUM_COORDINATES = {
   'Stade du Roudourou': [48.5630, -3.1430],
 };
 
+function canonicalVenueKey(name) {
+  return normTeam(name).replace(/[\-–—]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function weatherLabel(code) {
   if ([0].includes(code)) return ['☀️', 'Ensoleillé'];
   if ([1, 2].includes(code)) return ['🌤', 'Éclaircies'];
@@ -1026,7 +1076,8 @@ function weatherLabel(code) {
 
 async function nextMatchWeatherHtml(ev) {
   if (!ev || !isDateTimeConfirmed(ev) || !ev.dateEvent || !ev.strTime) return '';
-  const coordinates = STADIUM_COORDINATES[ev.strVenue];
+  const coordinates = Object.entries(STADIUM_COORDINATES)
+    .find(([venue]) => canonicalVenueKey(venue) === canonicalVenueKey(ev.strVenue))?.[1];
   if (!coordinates) return '';
   const matchHour = `${ev.dateEvent}T${ev.strTime.slice(0, 2)}:00`;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${coordinates[0]}&longitude=${coordinates[1]}&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&timezone=Europe%2FParis`;
