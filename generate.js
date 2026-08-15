@@ -25,6 +25,7 @@ if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join
 if (fs.existsSync('logo.jpg'))       fs.copyFileSync('logo.jpg',       path.join(out, 'logo.jpg'));
 if (fs.existsSync('logo-512.png'))   fs.copyFileSync('logo-512.png',   path.join(out, 'logo-512.png'));
 if (fs.existsSync('thesportsdb.html')) fs.copyFileSync('thesportsdb.html', path.join(out, 'thesportsdb.html'));
+if (fs.existsSync('lfp.html')) fs.copyFileSync('lfp.html', path.join(out, 'lfp.html'));
 
 const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
