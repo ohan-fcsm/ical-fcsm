@@ -621,6 +621,21 @@ function mergeOfficialFixture(apiMatch, officialMatch) {
   return apiMatch;
 }
 
+function isMatchFinishedForNext(ev, nowMs = Date.now()) {
+  if (!ev?.dateEvent) return false;
+
+  const status = `${ev.strStatus || ''} ${ev.strProgress || ''}`.trim();
+  if (/match finished|finished|full[ -]?time|\bft\b|after extra time|penalties|abandoned|cancelled|canceled/i.test(status)) {
+    return true;
+  }
+
+  const kickoffMs = Date.parse(buildIsoHtml(ev.dateEvent, ev.strTime));
+  if (!Number.isFinite(kickoffMs)) return false;
+
+  const FALLBACK_MATCH_DURATION_MS = 150 * 60 * 1000;
+  return nowMs >= kickoffMs + FALLBACK_MATCH_DURATION_MS;
+}
+
 /* ── LIGUE2_PAST_HARDCODED — déclaré ICI, avant FIX 0 qui en dépend ──────
    IMPORTANT : cette constante DOIT rester avant le bloc FIX 0 ci-dessous.
    La déplacer après provoque une ReferenceError (temporal dead zone)
@@ -768,6 +783,15 @@ if (seasonSource !== 'hardcoded') seasonSource += '+hardcoded';
     deduped.push(ev);
   }
   teamAllNext = deduped;
+}
+
+// TheSportsDB peut conserver un résultat terminé dans eventsnext.php. Il ne
+// doit jamais devenir le prochain match, même si sa date est encore renvoyée.
+{
+  const before = teamAllNext.length;
+  teamAllNext = teamAllNext.filter(ev => !isMatchFinishedForNext(ev));
+  const removed = before - teamAllNext.length;
+  if (removed) console.log(`⏭ ${removed} match(s) terminé(s) retiré(s) de la liste des prochains matchs`);
 }
 
 const isLigue2 = ev =>
