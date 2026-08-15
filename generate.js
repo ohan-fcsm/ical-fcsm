@@ -491,12 +491,13 @@ const LIGUE2_TABLE_HARDCODED = [
   { strTeam: 'FC Sochaux-Montbéliard',  intRank: 18, intPlayed: 1, intWin: 0, intDraw: 0, intLoss: 1, intGoalsFor: 0, intGoalsAgainst: 3, intGoalDifference: -3, intPoints: 0 },
 ];
 
-const [teamData, lastData, seasonData, nextTeamData, tableData] = await Promise.all([
+const [teamData, lastData, seasonData, nextTeamData, tableData, lfpStandingsData] = await Promise.all([
   getJson(ep(`lookupteam.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventslast.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`eventsseason.php?id=${TEAM_ID_FCSM}&s=${SEASON}`)),
   getJson(ep(`eventsnext.php?id=${TEAM_ID_FCSM}`)),
   getJson(ep(`lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`)),
+  getLfpJson('https://ma-api.ligue1.fr/championship-standings/4/general?season=2026'),
 ]);
 
 const team = teamData?.teams?.[0] || {};
@@ -504,7 +505,7 @@ const teamName = team.strTeam || TEAM_NAME_FALLBACK;
 const teamBadgeUrls = BADGE_OVERRIDES[canonicalTeamKey(teamName)] || [team.strTeamBadge || team.strBadge || ''];
 const teamBadgeRemote = teamBadgeUrls[0] || '';
 
-/* ── Classement : API prioritaire, fallback J1 à durée de validité limitée ──
+/* ── Classement : LFP officielle prioritaire, fallback J1 à durée limitée ──
    Le classement hardcodé reflète uniquement la situation après J1.
    Il ne doit jamais survivre à la fin de J2 si l'API reste incomplète.
 ── */
@@ -512,6 +513,21 @@ const LIGUE2_TABLE_HARDCODED_ROUND = 1;
 const LIGUE2_TABLE_HARDCODED_VALID_UNTIL = '2026-08-14T22:45:00+02:00'; // fin estimée de J2
 const apiTableRows = tableData?.table || tableData?.teams || [];
 const apiTableComplete = apiTableRows.length >= 18;
+const lfpTableRows = Object.values(lfpStandingsData?.standings || {})
+  .map(row => ({
+    strTeam: row?.clubIdentity?.name,
+    intRank: row?.rank,
+    intPlayed: row?.played,
+    intWin: row?.wins,
+    intDraw: row?.draws,
+    intLoss: row?.losses,
+    intGoalsFor: row?.forGoals,
+    intGoalsAgainst: row?.againstGoals,
+    intGoalDifference: row?.goalsDifference,
+    intPoints: row?.points,
+  }))
+  .filter(row => row.strTeam && Number.isInteger(row.intRank) && Number.isInteger(row.intPoints));
+const lfpTableComplete = lfpTableRows.length >= 18;
 const apiCompletedRound = [...(lastData?.results || lastData?.events || []), ...(seasonData?.events || [])]
   .filter(ev =>
     Number(ev.intRound) > 0 &&
@@ -522,18 +538,24 @@ const apiCompletedRound = [...(lastData?.results || lastData?.events || []), ...
 const hardcodedTableStillValid =
   apiCompletedRound <= LIGUE2_TABLE_HARDCODED_ROUND &&
   Date.now() < Date.parse(LIGUE2_TABLE_HARDCODED_VALID_UNTIL);
-const tableSource = apiTableComplete
-  ? 'api'
-  : hardcodedTableStillValid
-    ? 'hardcoded-J1'
-    : 'unavailable';
-const tableRows = tableSource === 'api'
-  ? apiTableRows
+const tableSource = lfpTableComplete
+  ? 'lfp'
+  : apiTableComplete
+    ? 'api'
+    : hardcodedTableStillValid
+      ? 'hardcoded-J1'
+      : 'unavailable';
+const tableRows = tableSource === 'lfp'
+  ? lfpTableRows
+  : tableSource === 'api'
+    ? apiTableRows
   : tableSource === 'hardcoded-J1'
     ? LIGUE2_TABLE_HARDCODED
     : [];
 
-if (tableSource === 'api') {
+if (tableSource === 'lfp') {
+  console.log(`📋 Classement officiel LFP : ${lfpTableRows.length} équipes`);
+} else if (tableSource === 'api') {
   console.log(`📋 Classement API : ${apiTableRows.length} équipes`);
 } else if (tableSource === 'hardcoded-J1') {
   console.log(`📋 Classement API incomplet (${apiTableRows.length} équipes < 18) → fallback hardcodé J1 utilisé jusqu'à la fin de J2`);
