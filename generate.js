@@ -363,9 +363,9 @@ function parseForm(events, teamName) {
     const hs = Number(ev.intHomeScore), as = Number(ev.intAwayScore);
     const isHome = canonicalTeamKey(ev.strHomeTeam) === canonicalTeamKey(teamName);
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
-    if (!Number.isFinite(hs) || !Number.isFinite(as)) return { letter: '?', score: '?-?', opponent: opp, date: ev.dateEvent || '' };
+    if (!Number.isFinite(hs) || !Number.isFinite(as)) return { letter: '?', score: '?-?', opponent: opp, date: ev.dateEvent || '', round: ev.intRound || '', home: ev.strHomeTeam || '', away: ev.strAwayTeam || '' };
     const letter = isHome ? (hs > as ? 'V' : hs === as ? 'N' : 'D') : (as > hs ? 'V' : hs === as ? 'N' : 'D');
-    return { letter, score: `${hs}-${as}`, opponent: opp, date: ev.dateEvent || '' };
+    return { letter, score: `${hs}-${as}`, opponent: opp, date: ev.dateEvent || '', round: ev.intRound || '', home: ev.strHomeTeam || '', away: ev.strAwayTeam || '' };
   });
 }
 
@@ -1114,7 +1114,9 @@ function formBadgesSummary(events, tName) {
   const items = parseForm(events, tName).slice(0, 5);
   const badges = items.map(r => {
     const cls = r.letter === 'V' ? 'win' : r.letter === 'N' ? 'draw' : 'loss';
-    return `<span class="form-badge form-badge--${cls}">${r.letter}</span>`;
+    const info = `${r.round ? `J${r.round} — ` : ''}${r.home} ${r.score} ${r.away}`
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<span class="form-badge form-badge--${cls}" title="${info}" aria-label="${info}">${r.letter}</span>`;
   });
   while (badges.length < 5) badges.push('<span class="form-badge form-badge--unknown">—</span>');
   return badges.join(' ');
