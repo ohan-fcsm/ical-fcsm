@@ -1,0 +1,67 @@
+name: Monitor LFP API
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-lfp-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check official Ligue 2 standings
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers=(
+            -H 'Accept: application/json'
+            -H 'platform: web'
+            -H 'client-version: 4.0.3'
+            -H 'application: ligue1'
+            -H 'timezone: Europe/Paris'
+            -H 'client-language: fr-FR'
+          )
+          curl --fail --show-error --silent --retry 2 --connect-timeout 10 --max-time 30 \
+            "${headers[@]}" \
+            'https://ma-api.ligue1.fr/championship-standings/4/general?season=2026' \
+            -o /tmp/lfp-standings.json
+          jq -e '
+            (.standings | type == "object") and
+            ((.standings | length) >= 18) and
+            (all(.standings[];
+              (.rank | type == "number") and
+              (.points | type == "number") and
+              (.clubIdentity.name | type == "string")
+            ))
+          ' /tmp/lfp-standings.json >/dev/null
+
+      - name: Check official Ligue 2 fixtures response
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers=(
+            -H 'Accept: application/json'
+            -H 'platform: web'
+            -H 'client-version: 4.0.3'
+            -H 'application: ligue1'
+            -H 'timezone: Europe/Paris'
+            -H 'client-language: fr-FR'
+          )
+          curl --fail --show-error --silent --retry 2 --connect-timeout 10 --max-time 30 \
+            "${headers[@]}" \
+            'https://ma-api.ligue1.fr/championship-matches/championship/4/game-week/3?season=2026' \
+            -o /tmp/lfp-fixtures.json
+          jq -e '
+            (.matches | type == "array") and
+            ((.matches | length) >= 9) and
+            (all(.matches[];
+              (.date | type == "string") and
+              (.period | type == "string") and
+              (.home.clubIdentity.name | type == "string") and
+              (.away.clubIdentity.name | type == "string")
+            ))
+          ' /tmp/lfp-fixtures.json >/dev/null
