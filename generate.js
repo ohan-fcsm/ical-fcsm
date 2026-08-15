@@ -801,6 +801,37 @@ const isLigue2 = ev =>
 const teamLigue2Events = teamAllNext.filter(isLigue2);
 const ligue2Ready = teamLigue2Events.length > 0;
 const nextMatch = (ligue2Ready ? teamLigue2Events : teamAllNext)[0] || null;
+
+function assertBuildIntegrity() {
+  const upcomingLigue2Keys = new Set();
+  for (const ev of teamAllNext.filter(isLigue2)) {
+    const key = icsMatchKey(ev);
+    if (upcomingLigue2Keys.has(key)) throw new Error(`Doublon Ligue 2 dans les prochains matchs : ${key}`);
+    upcomingLigue2Keys.add(key);
+  }
+
+  if (nextMatch && isMatchFinishedForNext(nextMatch)) {
+    throw new Error(`Le prochain match est déjà terminé : ${eventDedupKey(nextMatch)}`);
+  }
+
+  const j3 = teamAllNext.find(ev => String(ev.intRound) === '3' && isSameMatch(ev, LIGUE2_SCHEDULE[2]));
+  if (!j3 || j3.strTime !== '20:00:00' || j3._confirmed !== true || j3._confirmedSource !== 'LFP') {
+    throw new Error('J3 FCSM - Guingamp doit être confirmée LFP à 20h00');
+  }
+
+  if (teamAllNext.some(ev => isSameMatch(ev, LIGUE2_SCHEDULE[1]))) {
+    throw new Error('Red Star - Sochaux J2 ne doit pas figurer parmi les prochains matchs');
+  }
+
+  for (const ev of teamAllNext) {
+    if (seasonPast.some(past => isSameMatch(past, ev))) {
+      throw new Error(`Match présent à la fois dans le passé et à venir : ${eventDedupKey(ev)}`);
+    }
+  }
+}
+
+assertBuildIntegrity();
+
 const oppName = nextMatch
   ? (normTeam(nextMatch.strHomeTeam) === normTeam(teamName) ? nextMatch.strAwayTeam : nextMatch.strHomeTeam)
   : 'Adversaire';
@@ -1202,6 +1233,8 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   logosCount: Object.keys(logos).length,
   lastUpdated: LAST_UPDATED,
   tableSource,
+  apiTableRows: apiTableRows.length,
+  apiCompletedRound,
   tableValidThroughRound: tableSource === 'hardcoded-J1' ? LIGUE2_TABLE_HARDCODED_ROUND : null,
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
@@ -1359,4 +1392,13 @@ for (const ev of allEventsForIcs) {
 icsLines.push('END:VCALENDAR');
 fs.writeFileSync(path.join(out, 'fcsm.ics'), icsLines.join('\r\n'), 'utf8');
 
-console.log('✅ Build OK', { seasonSource, upcoming: teamAllNext.length, logos: Object.keys(logos).length, lastUpdated: LAST_UPDATED, apiKey: API_KEY ? '✓' : '✗' });
+console.log('✅ Build OK', {
+  seasonSource,
+  nextMatch: nextMatch ? `${nextMatch.dateEvent} ${nextMatch.strTime} ${nextMatch.strHomeTeam} - ${nextMatch.strAwayTeam}` : null,
+  upcoming: teamAllNext.length,
+  past: seasonPast.length,
+  tableSource,
+  apiCompletedRound,
+  logos: Object.keys(logos).length,
+  lastUpdated: LAST_UPDATED,
+});
