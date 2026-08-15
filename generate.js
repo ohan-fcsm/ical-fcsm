@@ -164,6 +164,31 @@ async function getPublicJson(url) {
   }
 }
 
+// API publique consommée par ligue1.com. Elle complète TheSportsDB pour les
+// résultats officiellement terminés, sans jamais servir à deviner un score.
+async function getLfpJson(url) {
+  try {
+    const r = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'platform': 'web',
+        'client-version': '4.0.3',
+        'application': 'ligue1',
+        'timezone': 'Europe/Paris',
+        'client-language': 'fr-FR',
+      },
+    });
+    if (!r.ok) {
+      console.warn(`LFP API HTTP ${r.status}: ${url}`);
+      return null;
+    }
+    return await r.json();
+  } catch (e) {
+    console.warn(`LFP API error: ${e.message}`);
+    return null;
+  }
+}
+
 /* ── IDs TheSportsDB ── */
 const TEAM_IDS = {
   'Red Star FC':             '135467',
@@ -648,6 +673,62 @@ function isSameMatch(a, b) {
   return Math.abs(da - db) <= 2 * 86400000;
 }
 
+function lfpDateTimeInParis(isoDate) {
+  const date = new Date(isoDate);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date);
+  const value = type => parts.find(part => part.type === type)?.value;
+  const year = value('year'), month = value('month'), day = value('day');
+  const hour = value('hour'), minute = value('minute');
+  if (![year, month, day, hour, minute].every(Boolean)) return null;
+  return { dateEvent: `${year}-${month}-${day}`, strTime: `${hour}:${minute}:00` };
+}
+
+// Ne charge que les journées déjà jouées par le FCSM. Une réponse LFP est
+// acceptée uniquement si le match est "fullTime" et que les deux scores sont
+// numériques : une indisponibilité de l'API reste donc sans effet sur le site.
+async function getOfficialLfpPastFixtures() {
+  const pastFixtures = LIGUE2_SCHEDULE.filter(ev => ev.dateEvent < today);
+  const rounds = [...new Set(pastFixtures.map(ev => Number(ev.intRound)).filter(Number.isFinite))];
+  const payloads = await Promise.all(rounds.map(async round => ({
+    round,
+    data: await getLfpJson(`https://ma-api.ligue1.fr/championship-matches/championship/4/game-week/${round}?season=2026`),
+  })));
+
+  const officialResults = [];
+  for (const { round, data } of payloads) {
+    if (!Array.isArray(data?.matches)) {
+      console.warn(`LFP API : aucune liste de matchs exploitable pour J${round}`);
+      continue;
+    }
+    const scheduled = pastFixtures.find(ev => Number(ev.intRound) === round);
+    const match = data.matches.find(candidate =>
+      canonicalTeamKey(candidate?.home?.clubIdentity?.name) === canonicalTeamKey(scheduled?.strHomeTeam) &&
+      canonicalTeamKey(candidate?.away?.clubIdentity?.name) === canonicalTeamKey(scheduled?.strAwayTeam)
+    );
+    const homeScore = match?.home?.score;
+    const awayScore = match?.away?.score;
+    const localDateTime = lfpDateTimeInParis(match?.date);
+    if (!match || match.period !== 'fullTime' || !Number.isInteger(homeScore) || !Number.isInteger(awayScore) || !localDateTime) {
+      console.warn(`LFP API : résultat J${round} non final ou incomplet, ignoré`);
+      continue;
+    }
+    officialResults.push({
+      ...scheduled,
+      ...localDateTime,
+      intHomeScore: homeScore,
+      intAwayScore: awayScore,
+      idLeague: LEAGUE_ID,
+      _resultSource: 'LFP',
+    });
+    console.log(`✅ Résultat officiel LFP J${round} : ${scheduled.strHomeTeam} ${homeScore}-${awayScore} ${scheduled.strAwayTeam}`);
+  }
+  return officialResults;
+}
+
 // La programmation LFP est la référence : on préserve l'identifiant et les
 // libellés API, mais les informations de programmation viennent de la LFP.
 function mergeOfficialFixture(apiMatch, officialMatch) {
@@ -709,6 +790,8 @@ const LIGUE2_OPPONENT_PAST_HARDCODED = [
   },
 ];
 
+const LIGUE2_PAST_OFFICIAL = await getOfficialLfpPastFixtures();
+
 // ── FIX 0 : déduplique lastEvents contre LIGUE2_PAST_HARDCODED ──────────────
 // Évite qu'un match hardcodé et retourné simultanément par l'API
 // ne se retrouve en double dans seasonPast.
@@ -751,20 +834,22 @@ for (const fev of FRIENDLY_SCHEDULE) {
 }
 seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 
-/* ── Injection des résultats passés hardcodés si absents de l'API ── */
-for (const hev of LIGUE2_PAST_HARDCODED) {
+/* ── Injection des résultats passés officiels si absents de l'API ── */
+// LFP est appliquée après le secours J1 : elle reste donc prioritaire quand
+// son résultat final est disponible.
+for (const hev of [...LIGUE2_PAST_HARDCODED, ...LIGUE2_PAST_OFFICIAL]) {
   if (hev.dateEvent >= today) continue;
   const already = seasonPast.find(ev => isSameMatch(ev, hev));
   if (!already) {
     seasonPast.push(hev);
-    console.log(`📥 Résultat hardcodé injecté : J${hev.intRound} ${hev.dateEvent}`);
+    console.log(`📥 Résultat ${hev._resultSource || 'hardcodé'} injecté : J${hev.intRound} ${hev.dateEvent}`);
   } else {
-    // Le calendrier/résultat LFP est la référence : il corrige une éventuelle
-    // inversion provenant de l'API tout en conservant son identifiant d'événement.
+    // Le résultat LFP est la référence : il corrige une éventuelle inversion
+    // provenant de l'API tout en conservant son identifiant d'événement.
     const idEvent = already.idEvent;
     Object.assign(already, hev);
     if (idEvent) already.idEvent = idEvent;
-    console.log(`✅ Résultat LFP prioritaire : J${hev.intRound} ${hev.dateEvent}`);
+    console.log(`✅ Résultat ${hev._resultSource || 'hardcodé'} prioritaire : J${hev.intRound} ${hev.dateEvent}`);
   }
 }
 
