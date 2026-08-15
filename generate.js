@@ -622,6 +622,43 @@ const LIGUE2_SCHEDULE = [
   /* J34 */ { dateEvent:'2027-05-22', strTime:'20:45:00', strHomeTeam:'EN Avant Guingamp',        strAwayTeam:FCSM,                        idHomeTeam:'134244',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'34', strVenue:'Stade du Roudourou',         _hardcoded:true, _confirmed:false },
 ];
 
+/* ── Corrections manuelles exportées depuis l'éditeur local ──────────────
+   Le fichier est volontairement versionné séparément des données API : une
+   correction humaine reste prioritaire tant qu'elle est présente dans
+   manual-overrides.json. ─────────────────────────────────────────────── */
+const MANUAL_OVERRIDE_FILE = 'manual-overrides.json';
+const MANUAL_FIXTURE_FIELDS = new Set([
+  'dateEvent', 'strTime', 'strHomeTeam', 'strAwayTeam', 'strVenue', 'strLeague', 'intRound',
+  'idHomeTeam', 'idAwayTeam', 'idEvent', 'intHomeScore', 'intAwayScore', 'strStatus', 'strProgress',
+  '_confirmed', '_confirmedSource', '_broadcaster', '_channel', '_channelExact', '_manualNote',
+]);
+const manualFixtureKey = ev => `J${ev?.intRound || '?'}-${canonicalTeamKey(ev?.strHomeTeam)}-${canonicalTeamKey(ev?.strAwayTeam)}`;
+let manualFixtureOverrides = new Map();
+try {
+  if (fs.existsSync(MANUAL_OVERRIDE_FILE)) {
+    const manualData = JSON.parse(fs.readFileSync(MANUAL_OVERRIDE_FILE, 'utf8'));
+    if (Array.isArray(manualData?.fixtures)) {
+      manualFixtureOverrides = new Map(manualData.fixtures
+        .filter(entry => entry && typeof entry.key === 'string' && entry.values && typeof entry.values === 'object')
+        .map(entry => [entry.key, entry.values]));
+      console.log(`✍️  Corrections manuelles chargées : ${manualFixtureOverrides.size}`);
+    }
+  }
+} catch (e) {
+  console.warn(`⚠️  Corrections manuelles ignorées : ${e.message}`);
+}
+function applyManualFixtureOverrides(ev) {
+  const values = ev?._manualOverrideValues || manualFixtureOverrides.get(manualFixtureKey(ev));
+  if (!values) return ev;
+  for (const [field, value] of Object.entries(values)) {
+    if (MANUAL_FIXTURE_FIELDS.has(field)) ev[field] = value;
+  }
+  ev._manualOverrideValues = values;
+  ev._manualOverrideApplied = true;
+  return ev;
+}
+for (const fixture of LIGUE2_SCHEDULE) applyManualFixtureOverrides(fixture);
+
 // Seule une programmation précise publiée par la LFP peut passer à true.
 // Les autres dates du calendrier général restent explicitement indicatives.
 for (const fixture of LIGUE2_SCHEDULE) {
@@ -751,7 +788,7 @@ async function getOfficialLfpPastResults() {
   }
   const fcsmResults = allOfficialResults.map(result => {
     const scheduled = pastFixtures.find(ev => isSameMatch(ev, result));
-    return scheduled ? { ...scheduled, ...result } : null;
+    return scheduled ? applyManualFixtureOverrides({ ...scheduled, ...result }) : null;
   }).filter(Boolean);
   for (const result of fcsmResults) {
     console.log(`✅ Résultat officiel LFP J${result.intRound} : ${result.strHomeTeam} ${result.intHomeScore}-${result.intAwayScore} ${result.strAwayTeam}`);
@@ -905,7 +942,7 @@ seasonPast.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
 for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
   const apiMatch = teamAllNext.find(ev => isSameMatch(ev, hev));
   if (!apiMatch) {
-    teamAllNext.push({ ...hev, _hardcoded: true });
+    teamAllNext.push(applyManualFixtureOverrides({ ...hev, _hardcoded: true }));
   } else {
     // Une programmation officielle LFP confirmée remplace le créneau API.
     // Le calendrier général reste indicatif tant qu'il n'est pas explicitement confirmé.
@@ -926,6 +963,7 @@ for (const hev of LIGUE2_SCHEDULE.filter(ev => ev.dateEvent >= today)) {
       apiMatch._channel = hev._channel ?? null;
       apiMatch._channelExact = hev._channelExact ?? null;
     }
+    applyManualFixtureOverrides(apiMatch);
   }
 }
 teamAllNext.sort((a,b) => a.dateEvent.localeCompare(b.dateEvent));
