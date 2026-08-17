@@ -1442,6 +1442,18 @@ const vars = {
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
 const srcHtml = fs.readFileSync('index.html', 'utf8');
 fs.writeFileSync(path.join(out, 'index.html'), fill(srcHtml, vars), 'utf8');
+const adminFixtureFields = [
+  'dateEvent', 'strTime', 'strHomeTeam', 'strAwayTeam', 'strVenue', 'strLeague', 'intRound',
+  'idHomeTeam', 'idAwayTeam', 'idEvent', 'intHomeScore', 'intAwayScore', 'strStatus', 'strProgress',
+  '_confirmed', '_confirmedSource', '_broadcaster', '_channel', '_channelExact', '_manualNote',
+];
+const adminFixturesByRound = new Map();
+for (const event of [...seasonPast, ...teamAllNext]) {
+  if (event?.intRound) adminFixturesByRound.set(String(event.intRound), event);
+}
+const adminFixtures = [...adminFixturesByRound.values()].map(event =>
+  Object.fromEntries(adminFixtureFields.map(field => [field, event[field] ?? null]))
+);
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   teamName, seasonSource, oppName, nextMatch, nextMatchIso, ligue2Ready,
   formFCSM, formOpp, oppSeasonEventsCount: oppSeasonEvents.length,
@@ -1455,6 +1467,7 @@ fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify({
   tableValidThroughRound: tableSource === 'hardcoded-J1' ? LIGUE2_TABLE_HARDCODED_ROUND : null,
   fcsmRank: teamRow?.intRank || '—',
   fcsmPoints: teamRow?.intPoints || '—',
+  adminFixtures,
   sampleNext: teamAllNext.slice(0, 6).map(e => ({ date: e.dateEvent, time: e.strTime, home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague, confirmed: isDateTimeConfirmed(e), confirmedSource: e._confirmedSource || null, broadcaster: e._broadcaster || null, channel: e._channel || null, channelExact: e._channelExact || null })),
 }, null, 2), 'utf8');
 
