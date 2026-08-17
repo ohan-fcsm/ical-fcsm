@@ -599,28 +599,29 @@
     })();
 
     (function () {
-      function nextMatchShareText() {
+      var nextMatchHashtag = '{{NEXT_MATCH_HASHTAG}}'.replace(/^#/, '');
+      function nextMatchShareText(includeHashtag) {
         var card = document.querySelector('.match-card');
         var teams = card && card.querySelector('.match-card-teams');
         var date = card && card.querySelector('.match-card-datetime');
         var venue = card && card.querySelector('.match-card-meta strong');
-        var shareButton = document.getElementById('shareNextMatchX');
-        var hashtag = shareButton && shareButton.dataset.matchHashtag;
-        return ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent, hashtag]
+        return ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent, includeHashtag && nextMatchHashtag ? '#' + nextMatchHashtag : '']
           .filter(Boolean)
           .map(function (part) { return part.replace(/\s+/g, ' ').trim(); })
           .join(' — ');
       }
       var facebookButton = document.getElementById('shareNextMatchFB');
       if (facebookButton) facebookButton.addEventListener('click', function () {
-        var quote = nextMatchShareText();
+        var quote = nextMatchShareText(true);
         var pageUrl = facebookButton.dataset.shareUrl || window.location.href.split('?')[0].replace(/\/?$/, '/');
         window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl) + '&quote=' + encodeURIComponent(quote), '_blank', 'noopener,noreferrer');
       });
       var xButton = document.getElementById('shareNextMatchX');
       if (xButton) xButton.addEventListener('click', function () {
         var pageUrl = xButton.dataset.shareUrl || window.location.href.split('?')[0].replace(/\/?$/, '/');
-        window.open('https://x.com/intent/post?text=' + encodeURIComponent(nextMatchShareText()) + '&url=' + encodeURIComponent(pageUrl), '_blank', 'noopener,noreferrer');
+        var intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(nextMatchShareText(false)) + '&url=' + encodeURIComponent(pageUrl);
+        if (nextMatchHashtag) intent += '&hashtags=' + encodeURIComponent(nextMatchHashtag);
+        window.open(intent, '_blank', 'noopener,noreferrer');
       });
     })();
 
