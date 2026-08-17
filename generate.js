@@ -1370,6 +1370,21 @@ function matchStanding(name) {
   return compactStanding(row?.intRank, row?.intPoints);
 }
 
+function socialFormSvg(events, team, startX) {
+  const colors = { V: '#16A34A', N: '#9AA4B5', D: '#E3292C', '?': '#71809D' };
+  const form = parseForm(events, team).slice(-5);
+  while (form.length < 5) form.unshift({ letter: '—' });
+  return form.map((item, index) => {
+    const x = startX + index * 46;
+    return `<rect x="${x}" y="372" width="36" height="36" rx="9" fill="${colors[item.letter] || '#71809D'}"/><text x="${x + 18}" y="397" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#FFFFFF">${escapeXml(item.letter)}</text>`;
+  }).join('');
+}
+
+function socialWeatherText(ev) {
+  const sameMatch = ev?.intRound === nextMatch?.intRound && canonicalTeamKey(ev?.strHomeTeam) === canonicalTeamKey(nextMatch?.strHomeTeam);
+  return sameMatch ? nextMatchWeather.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() : '';
+}
+
 async function buildSocialPreview(ev, fileName = 'next-match.png') {
   const width = 1200;
   const height = 630;
@@ -1380,21 +1395,30 @@ async function buildSocialPreview(ev, fileName = 'next-match.png') {
   const homeStanding = matchStanding(ev?.strHomeTeam);
   const awayStanding = matchStanding(ev?.strAwayTeam);
   const venue = ev?.strVenue || 'Stade à confirmer';
+  const roundLabel = ev?.intRound ? `J${ev.intRound}` : '';
+  const isPrimaryMatch = ev?.intRound === nextMatch?.intRound && canonicalTeamKey(ev?.strHomeTeam) === canonicalTeamKey(nextMatch?.strHomeTeam);
+  const homeForm = isPrimaryMatch ? socialFormSvg(homeFormEvents, homeFormTeam, 82) : socialFormSvg([], home, 82);
+  const awayForm = isPrimaryMatch ? socialFormSvg(awayFormEvents, awayFormTeam, 888) : socialFormSvg([], away, 888);
+  const broadcast = ev?._channel || ev?._broadcaster || '';
+  const weather = socialWeatherText(ev);
+  const teamFont = name => name.length > 18 ? 30 : name.length > 13 ? 35 : 40;
   const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${width}" height="${height}" fill="#F4F7FB"/>
-  <rect x="38" y="34" width="1124" height="562" rx="34" fill="#FFFFFF"/>
-  <rect x="38" y="34" width="1124" height="106" rx="34" fill="#0D2B5E"/>
-  <rect x="38" y="106" width="1124" height="34" fill="#0D2B5E"/>
-  <text x="600" y="99" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">PROCHAIN MATCH · LIGUE 2 BKT</text>
-  <text x="600" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0D2B5E">${escapeXml(date)} · ${escapeXml(time)}</text>
-  <text x="310" y="414" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0D2B5E">${escapeXml(home)}</text>
-  <text x="310" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#6B7A99">${escapeXml(homeStanding)}</text>
-  <text x="890" y="414" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#0D2B5E">${escapeXml(away)}</text>
-  <text x="890" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#6B7A99">${escapeXml(awayStanding)}</text>
-  <text x="600" y="334" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#6B7A99">VS</text>
-  <line x1="92" y1="492" x2="1108" y2="492" stroke="#E5EAF3" stroke-width="2"/>
-  <text x="600" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#0D2B5E">STADE · ${escapeXml(venue)}</text>
-  <text x="600" y="573" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#6B7A99">ohan-fcsm.github.io/ical-fcsm · @CalendrierFCSM sur Facebook et X</text>
+  <rect width="${width}" height="${height}" fill="#F8F0BF"/>
+  <rect x="24" y="18" width="1152" height="594" rx="34" fill="#FFFFFF" stroke="#E1E5EC" stroke-width="2"/>
+  <rect x="70" y="60" width="590" height="58" rx="29" fill="#FFD426"/>
+  <text x="365" y="98" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#0D2B5E">PROCHAIN MATCH — LIGUE 2 BKT</text>
+  <text x="1112" y="98" text-anchor="end" font-family="Arial, sans-serif" font-size="27" font-weight="800" fill="#6B7A99">${escapeXml(roundLabel)}</text>
+  <text x="600" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#6B7A99">${escapeXml(date)} · ${escapeXml(time)}</text>
+  <text x="310" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="${teamFont(home)}" font-weight="800" fill="#0D2B5E">${escapeXml(home)}</text>
+  <text x="310" y="336" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#6B7A99">${escapeXml(homeStanding)}</text>
+  <text x="890" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="${teamFont(away)}" font-weight="800" fill="#0D2B5E">${escapeXml(away)}</text>
+  <text x="890" y="336" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#6B7A99">${escapeXml(awayStanding)}</text>
+  <text x="600" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="800" fill="#6B7A99">vs</text>
+  ${homeForm}${awayForm}
+  <line x1="82" y1="442" x2="1118" y2="442" stroke="#E5EAF3" stroke-width="2"/>
+  <text x="600" y="490" text-anchor="middle" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#0D2B5E">🏟 ${escapeXml(venue)}${broadcast ? `   📺 ${escapeXml(broadcast)}` : ''}</text>
+  <text x="600" y="536" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#6B7A99">${escapeXml(weather || `Calendrier FC Sochaux · ${matchHashtag(ev)}`)}</text>
+  <text x="600" y="576" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="600" fill="#6B7A99">ohan-fcsm.github.io/ical-fcsm · @CalendrierFCSM</text>
 </svg>`;
 
   const overlays = [{ input: Buffer.from(svg), left: 0, top: 0 }];
@@ -1404,7 +1428,7 @@ async function buildSocialPreview(ev, fileName = 'next-match.png') {
   ];
   for (const [badgePath, left] of badgePositions) {
     if (!badgePath) continue;
-    overlays.push({ input: await sharp(badgePath).resize(130, 130, { fit: 'contain' }).png().toBuffer(), left, top: 215 });
+    overlays.push({ input: await sharp(badgePath).resize(92, 92, { fit: 'contain' }).png().toBuffer(), left: left === 245 ? 98 : 1010, top: 205 });
   }
   await sharp({ create: { width, height, channels: 4, background: '#F4F7FB' } })
     .composite(overlays)
@@ -1424,7 +1448,7 @@ for (const event of sharePageEvents) {
   const pageUrl = `${SHARE_BASE_URL}/matchs/${slug}.html`;
   await buildSocialPreview(event, path.join('matchs', imageName));
   const title = `⚽ ${displayTeamName(event.strHomeTeam)} – ${displayTeamName(event.strAwayTeam)}`;
-  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} à ${event.strTime ? fmtTime(event.strTime) : 'heure à confirmer'} · ${event.strVenue || 'Stade à confirmer'}.`;
+  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} à ${event.strTime ? fmtTime(event.strTime) : 'heure à confirmer'} · ${event.strVenue || 'Stade à confirmer'}${matchHashtag(event) ? ` · ${matchHashtag(event)}` : ''}.`;
   fs.writeFileSync(path.join(MATCH_SHARE_DIR, `${slug}.html`), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(title)}</title><meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:url" content="${pageUrl}"><meta property="og:title" content="${escapeXml(title)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeXml(title)}"><meta name="twitter:description" content="${escapeXml(description)}"><meta name="twitter:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><style>body{margin:0;font:16px system-ui;background:#f4f7fb;color:#0d2b5e;display:grid;place-items:center;min-height:100vh}.card{background:#fff;padding:32px;border-radius:18px;text-align:center;box-shadow:0 8px 30px #0d2b5e18;max-width:560px}a{display:inline-block;background:#0d2b5e;color:#fff;padding:12px 18px;border-radius:99px;text-decoration:none;font-weight:700}</style></head><body><main class="card"><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><a href="../">Voir le calendrier FC Sochaux</a></main></body></html>`, 'utf8');
 }
 const nextMatchShareUrl = nextMatch ? `${SHARE_BASE_URL}/matchs/${matchShareSlug(nextMatch)}.html` : `${SHARE_BASE_URL}/`;
@@ -1472,7 +1496,7 @@ const vars = {
   HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
   OG_TITLE:              `⚽ ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
-  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
+  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}${matchHashtag(nextMatch) ? ` · ${matchHashtag(nextMatch)}` : ''}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
   OG_IMAGE_VERSION:      Date.now(),
   NEXT_MATCH_SHARE_URL:  nextMatchShareUrl,
   NEXT_MATCH_HASHTAG:    matchHashtag(nextMatch),
