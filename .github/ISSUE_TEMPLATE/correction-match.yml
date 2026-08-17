@@ -1,5 +1,5 @@
 name: Correction manuelle d’un match
-description: Proposer une correction versionnée pour manual-overrides.json
+description: Créer une Pull Request de correction du calendrier FCSM
 title: "Correction : J… — …"
 labels:
   - manual-fixture-correction
@@ -9,30 +9,118 @@ body:
       value: |
         ## Correction du calendrier FCSM
 
-        Cette demande crée une Pull Request : aucune modification n’est publiée directement.
-        Utilisez la clé et les valeurs exportées par l’outil d’administration local.
+        Les champs vides ne modifient rien. Cette demande créera une Pull Request : aucune donnée n’est publiée directement.
+  - type: dropdown
+    id: fixture
+    attributes:
+      label: Match
+      description: Choisissez le match à corriger.
+      options:
+        - J1-fc-sochaux-montbeliard-as-saint-etienne — J1 · FC Sochaux-Montbéliard – AS Saint-Étienne
+        - J2-red-star-fc-fc-sochaux-montbeliard — J2 · Red Star FC – FC Sochaux-Montbéliard
+        - J3-fc-sochaux-montbeliard-en-avant-guingamp — J3 · FC Sochaux-Montbéliard – EN Avant Guingamp
+        - J4-clermont-foot-63-fc-sochaux-montbeliard — J4 · Clermont Foot 63 – FC Sochaux-Montbéliard
+        - J5-pau-fc-fc-sochaux-montbeliard — J5 · Pau FC – FC Sochaux-Montbéliard
+        - J6-fc-sochaux-montbeliard-fc-nantes — J6 · FC Sochaux-Montbéliard – FC Nantes
+        - J7-stade-lavallois-mfc-fc-sochaux-montbeliard — J7 · Stade Lavallois MFC – FC Sochaux-Montbéliard
+        - J8-fc-sochaux-montbeliard-us-boulogne-co — J8 · FC Sochaux-Montbéliard – US Boulogne CO
+        - J9-fc-metz-fc-sochaux-montbeliard — J9 · FC Metz – FC Sochaux-Montbéliard
+        - J10-fc-annecy-fc-sochaux-montbeliard — J10 · FC Annecy – FC Sochaux-Montbéliard
+        - J11-stade-de-reims-fc-sochaux-montbeliard — J11 · Stade de Reims – FC Sochaux-Montbéliard
+        - J12-as-nancy-lorraine-fc-sochaux-montbeliard — J12 · AS Nancy Lorraine – FC Sochaux-Montbéliard
+        - J13-fc-sochaux-montbeliard-usl-dunkerque — J13 · FC Sochaux-Montbéliard – USL Dunkerque
+        - J14-dijon-fco-fc-sochaux-montbeliard — J14 · Dijon FCO – FC Sochaux-Montbéliard
+        - J15-fc-sochaux-montbeliard-montpellier-herault-sc — J15 · FC Sochaux-Montbéliard – Montpellier Hérault SC
+        - J16-grenoble-foot-38-fc-sochaux-montbeliard — J16 · Grenoble Foot 38 – FC Sochaux-Montbéliard
+        - J17-fc-sochaux-montbeliard-rodez-aveyron-football — J17 · FC Sochaux-Montbéliard – Rodez Aveyron Football
+        - J18-fc-sochaux-montbeliard-us-boulogne-co — J18 · FC Sochaux-Montbéliard – US Boulogne CO
+        - J19-fc-sochaux-montbeliard-pau-fc — J19 · FC Sochaux-Montbéliard – Pau FC
+        - J20-fc-sochaux-montbeliard-fc-annecy — J20 · FC Sochaux-Montbéliard – FC Annecy
+        - J21-fc-sochaux-montbeliard-dijon-fco — J21 · FC Sochaux-Montbéliard – Dijon FCO
+        - J22-as-saint-etienne-fc-sochaux-montbeliard — J22 · AS Saint-Étienne – FC Sochaux-Montbéliard
+        - J23-fc-sochaux-montbeliard-stade-de-reims — J23 · FC Sochaux-Montbéliard – Stade de Reims
+        - J24-fc-sochaux-montbeliard-fc-metz — J24 · FC Sochaux-Montbéliard – FC Metz
+        - J25-rodez-aveyron-football-fc-sochaux-montbeliard — J25 · Rodez Aveyron Football – FC Sochaux-Montbéliard
+        - J26-fc-sochaux-montbeliard-as-nancy-lorraine — J26 · FC Sochaux-Montbéliard – AS Nancy Lorraine
+        - J27-fc-sochaux-montbeliard-fc-nantes — J27 · FC Sochaux-Montbéliard – FC Nantes
+        - J28-fc-sochaux-montbeliard-red-star-fc — J28 · FC Sochaux-Montbéliard – Red Star FC
+        - J29-montpellier-herault-sc-fc-sochaux-montbeliard — J29 · Montpellier Hérault SC – FC Sochaux-Montbéliard
+        - J30-fc-sochaux-montbeliard-stade-lavallois-mfc — J30 · FC Sochaux-Montbéliard – Stade Lavallois MFC
+        - J31-usl-dunkerque-fc-sochaux-montbeliard — J31 · USL Dunkerque – FC Sochaux-Montbéliard
+        - J32-fc-sochaux-montbeliard-clermont-foot-63 — J32 · FC Sochaux-Montbéliard – Clermont Foot 63
+        - J33-fc-sochaux-montbeliard-grenoble-foot-38 — J33 · FC Sochaux-Montbéliard – Grenoble Foot 38
+        - J34-en-avant-guingamp-fc-sochaux-montbeliard — J34 · EN Avant Guingamp – FC Sochaux-Montbéliard
+    validations:
+      required: true
   - type: input
-    id: fixture-key
+    id: date
+    attributes: { label: Date, placeholder: "2026-08-28" }
+  - type: input
+    id: time
+    attributes: { label: Heure, placeholder: "20:00:00" }
+  - type: input
+    id: home-team
+    attributes: { label: Équipe domicile }
+  - type: input
+    id: away-team
+    attributes: { label: Équipe extérieure }
+  - type: input
+    id: round
+    attributes: { label: Journée, placeholder: "4" }
+  - type: input
+    id: venue
+    attributes: { label: Stade }
+  - type: input
+    id: league
+    attributes: { label: Compétition, placeholder: "Ligue 2 BKT" }
+  - type: input
+    id: home-score
+    attributes: { label: Score domicile, placeholder: "0" }
+  - type: input
+    id: away-score
+    attributes: { label: Score extérieur, placeholder: "0" }
+  - type: input
+    id: status
+    attributes: { label: Statut du match, placeholder: "preMatch, fullTime…" }
+  - type: input
+    id: progress
+    attributes: { label: Progression, placeholder: "live" }
+  - type: dropdown
+    id: confirmed
     attributes:
-      label: Clé du match
-      description: "Exemple : J4-clermont-foot-63-fc-sochaux-montbeliard"
-      placeholder: J4-clermont-foot-63-fc-sochaux-montbeliard
+      label: Date et heure confirmées par la LFP
+      options: [Ne pas modifier, Oui, Non]
+      default: 0
     validations:
       required: true
+  - type: input
+    id: confirmed-source
+    attributes: { label: Source de confirmation, placeholder: "LFP" }
+  - type: input
+    id: broadcaster
+    attributes: { label: Diffuseur, placeholder: "beIN SPORTS" }
+  - type: input
+    id: channel
+    attributes: { label: Chaîne affichée, placeholder: "beIN SPORTS MAX 5" }
+  - type: input
+    id: channel-exact
+    attributes: { label: Chaîne exacte }
+  - type: input
+    id: home-id
+    attributes: { label: ID TheSportsDB domicile }
+  - type: input
+    id: away-id
+    attributes: { label: ID TheSportsDB extérieur }
+  - type: input
+    id: event-id
+    attributes: { label: ID événement TheSportsDB }
   - type: textarea
-    id: values-json
-    attributes:
-      label: Valeurs à corriger (JSON)
-      description: Objet JSON contenant seulement les champs modifiés. Pour supprimer une correction existante, utilisez null pour ce champ.
-      placeholder: '{"strVenue":"Stade Gabriel-Montpied","_confirmed":true,"_confirmedSource":"LFP"}'
-      render: json
-    validations:
-      required: true
+    id: note
+    attributes: { label: Note interne }
   - type: textarea
     id: source
     attributes:
       label: Source et motif
       description: Lien LFP ou explication de la correction.
-      placeholder: https://ligue1.com/…
     validations:
       required: true

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   create-pr:
-    if: github.event.issue.user.login == github.repository_owner && contains(github.event.issue.body, '### Clé du match')
+    if: github.event.issue.user.login == github.repository_owner && contains(github.event.issue.body, '### Match')
     runs-on: ubuntu-latest
     steps:
       - name: Validate correction and open pull request
@@ -27,8 +27,7 @@ jobs:
               return match?.[1]?.trim() || '';
             };
 
-            const fixtureKey = section('Clé du match');
-            const valuesText = section('Valeurs à corriger (JSON)').replace(/^```json\s*|\s*```$/g, '').trim();
+            const fixtureKey = section('Match').split(' — ')[0].trim();
             const source = section('Source et motif');
             const allowedFields = new Set([
               'dateEvent', 'strTime', 'strHomeTeam', 'strAwayTeam', 'strVenue', 'strLeague', 'intRound',
@@ -40,20 +39,34 @@ jobs:
               core.setFailed('Clé de match invalide. Utilisez la clé exportée par l’outil local.');
               return;
             }
-            let submitted;
-            try { submitted = JSON.parse(valuesText); } catch {
-              core.setFailed('Les valeurs à corriger ne sont pas un JSON valide.');
-              return;
+            const submitted = {};
+            const formFields = [
+              ['Date', 'dateEvent'], ['Heure', 'strTime'], ['Équipe domicile', 'strHomeTeam'],
+              ['Équipe extérieure', 'strAwayTeam'], ['Stade', 'strVenue'], ['Compétition', 'strLeague'],
+              ['Statut du match', 'strStatus'], ['Progression', 'strProgress'],
+              ['Source de confirmation', '_confirmedSource'], ['Diffuseur', '_broadcaster'],
+              ['Chaîne affichée', '_channel'], ['Chaîne exacte', '_channelExact'],
+              ['ID TheSportsDB domicile', 'idHomeTeam'], ['ID TheSportsDB extérieur', 'idAwayTeam'],
+              ['ID événement TheSportsDB', 'idEvent'], ['Note interne', '_manualNote'],
+            ];
+            for (const [label, field] of formFields) {
+              const value = section(label);
+              if (value) submitted[field] = value;
             }
-            if (!submitted || Array.isArray(submitted) || typeof submitted !== 'object') {
-              core.setFailed('Les valeurs à corriger doivent être un objet JSON.');
-              return;
+            for (const [label, field] of [['Journée', 'intRound'], ['Score domicile', 'intHomeScore'], ['Score extérieur', 'intAwayScore']]) {
+              const value = section(label);
+              if (!value) continue;
+              if (!/^\d+$/.test(value)) {
+                core.setFailed(`${label} doit être un nombre entier positif ou nul.`);
+                return;
+              }
+              submitted[field] = Number(value);
             }
+            const confirmation = section('Date et heure confirmées par la LFP');
+            if (confirmation === 'Oui') submitted._confirmed = true;
+            if (confirmation === 'Non') submitted._confirmed = false;
             const invalid = Object.keys(submitted).filter(field => !allowedFields.has(field));
-            if (invalid.length) {
-              core.setFailed(`Champ(s) non autorisé(s) : ${invalid.join(', ')}`);
-              return;
-            }
+            if (invalid.length) { core.setFailed(`Champ(s) non autorisé(s) : ${invalid.join(', ')}`); return; }
             if (!Object.keys(submitted).length) {
               core.setFailed('Ajoutez au moins un champ à corriger.');
               return;
