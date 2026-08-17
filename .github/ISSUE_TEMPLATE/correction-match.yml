@@ -1,0 +1,38 @@
+name: Correction manuelle d’un match
+description: Proposer une correction versionnée pour manual-overrides.json
+title: "Correction : J… — …"
+labels:
+  - manual-fixture-correction
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Correction du calendrier FCSM
+
+        Cette demande crée une Pull Request : aucune modification n’est publiée directement.
+        Utilisez la clé et les valeurs exportées par l’outil d’administration local.
+  - type: input
+    id: fixture-key
+    attributes:
+      label: Clé du match
+      description: "Exemple : J4-clermont-foot-63-fc-sochaux-montbeliard"
+      placeholder: J4-clermont-foot-63-fc-sochaux-montbeliard
+    validations:
+      required: true
+  - type: textarea
+    id: values-json
+    attributes:
+      label: Valeurs à corriger (JSON)
+      description: Objet JSON contenant seulement les champs modifiés. Pour supprimer une correction existante, utilisez null pour ce champ.
+      placeholder: '{"strVenue":"Stade Gabriel-Montpied","_confirmed":true,"_confirmedSource":"LFP"}'
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source et motif
+      description: Lien LFP ou explication de la correction.
+      placeholder: https://ligue1.com/…
+    validations:
+      required: true
