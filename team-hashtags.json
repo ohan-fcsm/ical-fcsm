@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "season": "2026-2027",
+  "description": "Codes de ralliement validés pour construire les hashtags de match : #CODE_DOMICILECODE_EXTERIEUR.",
+  "teams": [
+    { "name": "FC Annecy", "key": "fc annecy", "code": "FCA" },
+    { "name": "US Boulogne CO", "key": "us boulogne co", "code": "USBCO" },
+    { "name": "Clermont Foot 63", "key": "clermont foot 63", "code": "CF63" },
+    { "name": "Dijon FCO", "key": "dijon fco", "code": "DFCO" },
+    { "name": "USL Dunkerque", "key": "usl dunkerque", "code": "USLD" },
+    { "name": "Grenoble Foot 38", "key": "grenoble foot 38", "code": "GF38" },
+    { "name": "EN Avant Guingamp", "key": "en avant guingamp", "code": "EAG" },
+    { "name": "Stade Lavallois MFC", "key": "stade lavallois mfc", "code": "Laval" },
+    { "name": "FC Metz", "key": "fc metz", "code": "FCMetz" },
+    { "name": "Montpellier Hérault SC", "key": "montpellier herault sc", "code": "MHSC" },
+    { "name": "AS Nancy Lorraine", "key": "as nancy lorraine", "code": "ASNL" },
+    { "name": "FC Nantes", "key": "fc nantes", "code": "FCN" },
+    { "name": "Pau FC", "key": "pau fc", "code": "PauFC" },
+    { "name": "Red Star FC", "key": "red star fc", "code": "RedStar" },
+    { "name": "Stade de Reims", "key": "stade de reims", "code": "SDR" },
+    { "name": "Rodez Aveyron Football", "key": "rodez aveyron football", "code": "RAF" },
+    { "name": "AS Saint-Étienne", "key": "as saint etienne", "code": "ASSE" },
+    { "name": "FC Sochaux-Montbéliard", "key": "fc sochaux montbeliard", "code": "FCSM" }
+  ]
+}

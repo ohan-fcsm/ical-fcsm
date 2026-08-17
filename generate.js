@@ -29,6 +29,7 @@ if (fs.existsSync('logo-512.png'))   fs.copyFileSync('logo-512.png',   path.join
 if (fs.existsSync('thesportsdb.html')) fs.copyFileSync('thesportsdb.html', path.join(out, 'thesportsdb.html'));
 if (fs.existsSync('lfp.html')) fs.copyFileSync('lfp.html', path.join(out, 'lfp.html'));
 if (fs.existsSync('admin.html')) fs.copyFileSync('admin.html', path.join(out, 'admin.html'));
+if (fs.existsSync('team-hashtags.json')) fs.copyFileSync('team-hashtags.json', path.join(out, 'team-hashtags.json'));
 
 const ep = p => `https://www.thesportsdb.com/api/v1/json/${API_KEY}/${p}`;
 
@@ -1354,14 +1355,10 @@ function matchShareSlug(ev) {
   return `j${ev?.intRound || 'match'}-${slugify(ev?.strHomeTeam)}-vs-${slugify(ev?.strAwayTeam)}`;
 }
 
-const TEAM_MATCH_HASHTAG_CODES = {
-  'fc sochaux montbeliard': 'FCSM', 'as saint etienne': 'ASSE', 'red star fc': 'RED',
-  'en avant guingamp': 'EAG', 'clermont foot 63': 'CF63', 'pau fc': 'PAU',
-  'fc nantes': 'FCN', 'stade lavallois mfc': 'LAV', 'us boulogne co': 'USBCO',
-  'fc metz': 'FCM', 'fc annecy': 'FCA', 'stade de reims': 'SDR',
-  'as nancy lorraine': 'ASNL', 'usl dunkerque': 'USLD', 'dijon fco': 'DFCO',
-  'montpellier herault sc': 'MHSC', 'grenoble foot 38': 'GF38', 'rodez aveyron football': 'RAF',
-};
+const TEAM_MATCH_HASHTAG_CODES = Object.fromEntries(
+  JSON.parse(fs.readFileSync('team-hashtags.json', 'utf8')).teams
+    .map(team => [team.key, team.code])
+);
 function matchHashtag(ev) {
   const home = TEAM_MATCH_HASHTAG_CODES[canonicalTeamKey(ev?.strHomeTeam)];
   const away = TEAM_MATCH_HASHTAG_CODES[canonicalTeamKey(ev?.strAwayTeam)];
