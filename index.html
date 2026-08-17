@@ -347,10 +347,10 @@
             {{NEXT_MATCH_WEATHER}}
           </div>
           <div class="match-card-share">
-            <button class="btn-facebook" id="shareNextMatchFB" data-share-url="{{NEXT_MATCH_SHARE_URL}}" type="button" aria-label="Partager ce match sur Facebook" title="Partager sur Facebook">
+            <button class="btn-facebook" id="shareNextMatchFB" data-share-url="{{NEXT_MATCH_SHARE_URL}}" data-match-hashtag="{{NEXT_MATCH_HASHTAG}}" type="button" aria-label="Partager ce match sur Facebook" title="Partager sur Facebook">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
             </button>
-            <button class="btn-x" id="shareNextMatchX" data-share-url="{{NEXT_MATCH_SHARE_URL}}" type="button" aria-label="Partager ce match sur X" title="Partager sur X">
+            <button class="btn-x" id="shareNextMatchX" data-share-url="{{NEXT_MATCH_SHARE_URL}}" data-match-hashtag="{{NEXT_MATCH_HASHTAG}}" type="button" aria-label="Partager ce match sur X" title="Partager sur X">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.967 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
             </button>
           </div>
@@ -604,7 +604,9 @@
         var teams = card && card.querySelector('.match-card-teams');
         var date = card && card.querySelector('.match-card-datetime');
         var venue = card && card.querySelector('.match-card-meta strong');
-        return ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent]
+        var shareButton = document.getElementById('shareNextMatchX');
+        var hashtag = shareButton && shareButton.dataset.matchHashtag;
+        return ['Prochain match du FC Sochaux', teams && teams.innerText, date && date.textContent, venue && venue.textContent, hashtag]
           .filter(Boolean)
           .map(function (part) { return part.replace(/\s+/g, ' ').trim(); })
           .join(' — ');

@@ -1354,6 +1354,20 @@ function matchShareSlug(ev) {
   return `j${ev?.intRound || 'match'}-${slugify(ev?.strHomeTeam)}-vs-${slugify(ev?.strAwayTeam)}`;
 }
 
+const TEAM_MATCH_HASHTAG_CODES = {
+  'fc sochaux montbeliard': 'FCSM', 'as saint etienne': 'ASSE', 'red star fc': 'RED',
+  'en avant guingamp': 'EAG', 'clermont foot 63': 'CF63', 'pau fc': 'PAU',
+  'fc nantes': 'FCN', 'stade lavallois mfc': 'LAV', 'us boulogne co': 'USBCO',
+  'fc metz': 'FCM', 'fc annecy': 'FCA', 'stade de reims': 'SDR',
+  'as nancy lorraine': 'ASNL', 'usl dunkerque': 'USLD', 'dijon fco': 'DFCO',
+  'montpellier herault sc': 'MHSC', 'grenoble foot 38': 'GF38', 'rodez aveyron football': 'RAF',
+};
+function matchHashtag(ev) {
+  const home = TEAM_MATCH_HASHTAG_CODES[canonicalTeamKey(ev?.strHomeTeam)];
+  const away = TEAM_MATCH_HASHTAG_CODES[canonicalTeamKey(ev?.strAwayTeam)];
+  return home && away ? `#${home}${away}` : '';
+}
+
 function matchStanding(name) {
   const row = tableRows.find(candidate => canonicalTeamKey(candidate.strTeam) === canonicalTeamKey(name));
   return compactStanding(row?.intRank, row?.intPoints);
@@ -1464,6 +1478,7 @@ const vars = {
   OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
   OG_IMAGE_VERSION:      Date.now(),
   NEXT_MATCH_SHARE_URL:  nextMatchShareUrl,
+  NEXT_MATCH_HASHTAG:    matchHashtag(nextMatch),
 };
 
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
