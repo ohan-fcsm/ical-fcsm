@@ -17,9 +17,11 @@ const FCSM_BADGE_LOCAL = 'https://r2.thesportsdb.com/images/media/league/badge/a
 const out = 'dist';
 const SRC_BADGES = 'badges';
 const DST_BADGES = path.join(out, 'badges');
+const MATCH_SHARE_DIR = path.join(out, 'matchs');
 fs.mkdirSync(out,        { recursive: true });
 fs.mkdirSync(SRC_BADGES, { recursive: true });
 fs.mkdirSync(DST_BADGES, { recursive: true });
+fs.mkdirSync(MATCH_SHARE_DIR, { recursive: true });
 if (fs.existsSync('favicon.svg'))    fs.copyFileSync('favicon.svg',    path.join(out, 'favicon.svg'));
 if (fs.existsSync('favicon-32.svg')) fs.copyFileSync('favicon-32.svg', path.join(out, 'favicon-32.svg'));
 if (fs.existsSync('logo.jpg'))       fs.copyFileSync('logo.jpg',       path.join(out, 'logo.jpg'));
@@ -1348,15 +1350,24 @@ function socialPreviewBadgePath(name) {
   return fs.existsSync(localPath) ? localPath : null;
 }
 
-async function buildSocialPreview(ev) {
+function matchShareSlug(ev) {
+  return `j${ev?.intRound || 'match'}-${slugify(ev?.strHomeTeam)}-vs-${slugify(ev?.strAwayTeam)}`;
+}
+
+function matchStanding(name) {
+  const row = tableRows.find(candidate => canonicalTeamKey(candidate.strTeam) === canonicalTeamKey(name));
+  return compactStanding(row?.intRank, row?.intPoints);
+}
+
+async function buildSocialPreview(ev, fileName = 'next-match.png') {
   const width = 1200;
   const height = 630;
   const home = displayTeamName(ev?.strHomeTeam || 'FC Sochaux');
   const away = displayTeamName(ev?.strAwayTeam || 'Adversaire');
   const date = ev?.dateEvent ? fmtDateOnly(ev.dateEvent) : 'Date à confirmer';
   const time = ev?.strTime ? fmtTime(ev.strTime) : 'Heure à confirmer';
-  const homeStanding = nextMatchFcsmHome ? fcsmStanding : oppStanding;
-  const awayStanding = nextMatchFcsmHome ? oppStanding : fcsmStanding;
+  const homeStanding = matchStanding(ev?.strHomeTeam);
+  const awayStanding = matchStanding(ev?.strAwayTeam);
   const venue = ev?.strVenue || 'Stade à confirmer';
   const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
   <rect width="${width}" height="${height}" fill="#F4F7FB"/>
@@ -1387,10 +1398,25 @@ async function buildSocialPreview(ev) {
   await sharp({ create: { width, height, channels: 4, background: '#F4F7FB' } })
     .composite(overlays)
     .png()
-    .toFile(path.join(out, 'next-match.png'));
+    .toFile(path.join(out, fileName));
 }
 
 await buildSocialPreview(nextMatch);
+
+const SHARE_BASE_URL = 'https://ohan-fcsm.github.io/ical-fcsm';
+const sharePageEvents = [...new Map([...seasonPast, ...teamAllNext]
+  .filter(ev => ev?.dateEvent && ev?.strHomeTeam && ev?.strAwayTeam)
+  .map(ev => [`${ev.intRound || ev.dateEvent}-${ev.strHomeTeam}-${ev.strAwayTeam}`, ev])).values()];
+for (const event of sharePageEvents) {
+  const slug = matchShareSlug(event);
+  const imageName = `${slug}.png`;
+  const pageUrl = `${SHARE_BASE_URL}/matchs/${slug}.html`;
+  await buildSocialPreview(event, path.join('matchs', imageName));
+  const title = `⚽ ${displayTeamName(event.strHomeTeam)} – ${displayTeamName(event.strAwayTeam)}`;
+  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} à ${event.strTime ? fmtTime(event.strTime) : 'heure à confirmer'} · ${event.strVenue || 'Stade à confirmer'}.`;
+  fs.writeFileSync(path.join(MATCH_SHARE_DIR, `${slug}.html`), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(title)}</title><meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:url" content="${pageUrl}"><meta property="og:title" content="${escapeXml(title)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeXml(title)}"><meta name="twitter:description" content="${escapeXml(description)}"><meta name="twitter:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><style>body{margin:0;font:16px system-ui;background:#f4f7fb;color:#0d2b5e;display:grid;place-items:center;min-height:100vh}.card{background:#fff;padding:32px;border-radius:18px;text-align:center;box-shadow:0 8px 30px #0d2b5e18;max-width:560px}a{display:inline-block;background:#0d2b5e;color:#fff;padding:12px 18px;border-radius:99px;text-decoration:none;font-weight:700}</style></head><body><main class="card"><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><a href="../">Voir le calendrier FC Sochaux</a></main></body></html>`, 'utf8');
+}
+const nextMatchShareUrl = nextMatch ? `${SHARE_BASE_URL}/matchs/${matchShareSlug(nextMatch)}.html` : `${SHARE_BASE_URL}/`;
 
 const vars = {
   NEXT_MATCH_DATE:       fmtDateOnly(nextMatch?.dateEvent),
@@ -1437,6 +1463,7 @@ const vars = {
   OG_TITLE:              `⚽ ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
   OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
   OG_IMAGE_VERSION:      Date.now(),
+  NEXT_MATCH_SHARE_URL:  nextMatchShareUrl,
 };
 
 const fill = (template, vs) => Object.entries(vs).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v ?? '—'), template);
