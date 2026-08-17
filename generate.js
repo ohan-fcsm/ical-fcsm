@@ -78,6 +78,7 @@ const TEAM_NAME_ALIASES = {
   'e.a. guingamp':     'en avant guingamp',
   'en avant de guingamp': 'en avant guingamp',
   'fc sochaux-montbeliard': 'fc sochaux-montbeliard',
+  'fc sochaux montbeliard':  'fc sochaux-montbeliard',
   'fc sochaux':             'fc sochaux-montbeliard',
   'sochaux montbeliard':    'fc sochaux-montbeliard',
   'sochaux-montbeliard':    'fc sochaux-montbeliard',
@@ -1357,7 +1358,7 @@ function matchShareSlug(ev) {
 
 const TEAM_MATCH_HASHTAG_CODES = Object.fromEntries(
   JSON.parse(fs.readFileSync('team-hashtags.json', 'utf8')).teams
-    .map(team => [team.key, team.code])
+    .map(team => [canonicalTeamKey(team.key), team.code])
 );
 function matchHashtag(ev) {
   const home = TEAM_MATCH_HASHTAG_CODES[canonicalTeamKey(ev?.strHomeTeam)];
