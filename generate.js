@@ -1019,7 +1019,10 @@ function assertBuildIntegrity() {
     throw new Error(`Le prochain match est déjà terminé : ${eventDedupKey(nextMatch)}`);
   }
 
-  const j3 = teamAllNext.find(ev => String(ev.intRound) === '3' && isSameMatch(ev, LIGUE2_SCHEDULE[2]));
+  // J3 peut être un match à venir ou terminé : le contrôle porte sur la
+  // programmation LFP, pas sur son statut temporel.
+  const j3 = [...teamAllNext, ...seasonPast]
+    .find(ev => String(ev.intRound) === '3' && isSameMatch(ev, LIGUE2_SCHEDULE[2]));
   if (!j3 || j3.strTime !== '20:00:00' || j3._confirmed !== true || j3._confirmedSource !== 'LFP') {
     throw new Error('J3 FCSM - Guingamp doit être confirmée LFP à 20h00');
   }
