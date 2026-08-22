@@ -598,8 +598,8 @@ const LIGUE2_SCHEDULE = [
   /* J5  */ { dateEvent:'2026-09-04', strTime:'20:00:00', strHomeTeam:'Pau FC',                   strAwayTeam:FCSM,                        idHomeTeam:'138309',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'5',  strVenue:'Nouste Camp',                _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4 à 8', _channelExact:null },
   /* J6  */ { dateEvent:'2026-09-12', strTime:'14:00:00', strHomeTeam:FCSM,                       strAwayTeam:'FC Nantes',                idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133861',  strLeague:'French Ligue 2', intRound:'6',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS 1', _channelExact:'beIN SPORTS 1' },
   /* J7  */ { dateEvent:'2026-09-18', strTime:'20:00:00', strHomeTeam:'Stade Lavallois MFC',      strAwayTeam:FCSM,                        idHomeTeam:'134708',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'7',  strVenue:'Stade Francis Le Basser',    _hardcoded:true, _confirmed:true,  _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4 à 9', _channelExact:null },
-  /* J8  */ { dateEvent:'2026-10-09', strTime:'20:45:00', strHomeTeam:FCSM,                       strAwayTeam:'US Boulogne CO',           idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133849',  strLeague:'French Ligue 2', intRound:'8',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:false },
-  /* J9  */ { dateEvent:'2026-10-16', strTime:'20:45:00', strHomeTeam:'FC Metz',                  strAwayTeam:FCSM,                        idHomeTeam:'133883',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'9',  strVenue:'Stade Saint-Symphorien',     _hardcoded:true, _confirmed:false },
+  /* J8  */ { dateEvent:'2026-10-09', strTime:'20:00:00', strHomeTeam:FCSM,                       strAwayTeam:'US Boulogne CO',           idHomeTeam:TEAM_ID_FCSM,  idAwayTeam:'133849',  strLeague:'French Ligue 2', intRound:'8',  strVenue:'Stade Auguste Bonal',        _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS MAX 4', _channelExact:'beIN SPORTS MAX 4' },
+  /* J9  */ { dateEvent:'2026-10-17', strTime:'14:00:00', strHomeTeam:'FC Metz',                  strAwayTeam:FCSM,                        idHomeTeam:'133883',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'9',  strVenue:'Stade Saint-Symphorien',     _hardcoded:true, _confirmed:true, _confirmedSource:'LFP', _broadcaster:'beIN SPORTS', _channel:'beIN SPORTS 3', _channelExact:'beIN SPORTS 3' },
   /* J10 */ { dateEvent:'2026-10-23', strTime:'20:45:00', strHomeTeam:'FC Annecy',                strAwayTeam:FCSM,                        idHomeTeam:'139928',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'10', strVenue:'Parc des Sports',            _hardcoded:true, _confirmed:false },
   /* J11 */ { dateEvent:'2026-10-30', strTime:'20:45:00', strHomeTeam:'Stade de Reims',           strAwayTeam:FCSM,                        idHomeTeam:'133934',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'11', strVenue:'Stade Auguste Delaune',      _hardcoded:true, _confirmed:false },
   /* J12 */ { dateEvent:'2026-11-06', strTime:'20:45:00', strHomeTeam:'AS Nancy Lorraine',        strAwayTeam:FCSM,                        idHomeTeam:'133710',      idAwayTeam:TEAM_ID_FCSM, strLeague:'French Ligue 2', intRound:'12', strVenue:'Stade Marcel Picot',         _hardcoded:true, _confirmed:false },
@@ -674,6 +674,56 @@ for (const fixture of LIGUE2_SCHEDULE) {
     fixture._channel = null;
     fixture._channelExact = null;
   }
+}
+
+// Programmation LFP : la page ligue1.com consomme cette API publique. À chaque
+// build, on relève toutes les journées afin qu'un horaire déplacé ou un diffuseur
+// nouvellement publié soit repris sans intervention manuelle. Une réponse
+// incomplète laisse les données versionnées en place.
+async function getOfficialLfpFixtureProgramming() {
+  const rounds = Array.from({ length: 34 }, (_, index) => index + 1);
+  const payloads = [];
+  // Quatre appels simultanés : assez rapide, sans solliciter l'API LFP en rafale.
+  for (let index = 0; index < rounds.length; index += 4) {
+    const batch = rounds.slice(index, index + 4);
+    payloads.push(...await Promise.all(batch.map(round => getLfpJson(
+      `https://ma-api.ligue1.fr/championship-matches/championship/4/game-week/${round}?season=2026`
+    ))));
+  }
+  return payloads.flatMap(payload => payload?.matches || [])
+    .filter(match => match?.home?.clubIdentity?.shortId === 160 || match?.away?.clubIdentity?.shortId === 160);
+}
+
+const officialLfpFixtures = await getOfficialLfpFixtureProgramming();
+for (const match of officialLfpFixtures) {
+  const scheduled = LIGUE2_SCHEDULE.find(fixture => isSameMatch(fixture, {
+    strHomeTeam: match?.home?.clubIdentity?.name,
+    strAwayTeam: match?.away?.clubIdentity?.name,
+    intRound: String(match?.gameWeekNumber || ''),
+    strLeague: 'French Ligue 2',
+  }));
+  const dateTime = lfpDateTimeInParis(match?.date);
+  if (!scheduled || !dateTime) continue;
+
+  const manualValues = manualFixtureOverrides.get(manualFixtureKey(scheduled)) || {};
+  const channels = (match?.broadcasters?.local || [])
+    .map(channel => channel?.name?.['fr-FR'] || channel?.code)
+    .filter(Boolean);
+  // La présence d'un créneau précis et d'un diffuseur dans la programmation LFP
+  // est notre signal de confirmation. Les créneaux génériques sans diffuseur
+  // restent volontairement « à confirmer ».
+  const confirmed = channels.length > 0;
+  const applyLfp = (field, value) => {
+    if (!(field in manualValues) && value != null) scheduled[field] = value;
+  };
+  applyLfp('dateEvent', dateTime.dateEvent);
+  applyLfp('strTime', dateTime.strTime);
+  applyLfp('_confirmed', confirmed);
+  applyLfp('_confirmedSource', confirmed ? 'LFP' : null);
+  applyLfp('_broadcaster', confirmed ? 'beIN SPORTS' : null);
+  applyLfp('_channel', confirmed ? channels.join(', ') : null);
+  applyLfp('_channelExact', confirmed && channels.length === 1 ? channels[0] : null);
+  if (confirmed) console.log(`📺 Programmation LFP actualisée J${scheduled.intRound} : ${dateTime.dateEvent} ${dateTime.strTime} — ${channels.join(', ')}`);
 }
 
 const seasonEvents = seasonData?.events || [];
