@@ -1260,7 +1260,7 @@ function isDateTimeConfirmed(ev) {
 function displayKickoffTime(ev) {
   return isDateTimeConfirmed(ev) && ev?.strTime && !/^00:00(?::00)?$/.test(ev.strTime)
     ? fmtTime(ev.strTime)
-    : 'Horaire à confirmer';
+    : '';
 }
 
 function unconfirmedHourglass(ev) {
@@ -1358,7 +1358,7 @@ function buildUpcomingRows(events) {
       : `${homeBadge} ${oppDisplay} vs ${awayBadge} <strong>${TEAM_DISPLAY_NAME}</strong>`;
     const hourglass = unconfirmedHourglassHtml(ev);
     const broadcast = broadcastHtml(ev);
-    const timeDisplay = `<span style="color:var(--muted)">${time}</span>`;
+    const timeDisplay = time ? `<span style="color:var(--muted)">${time}</span>` : '';
     const hiddenClass = i >= VISIBLE ? ' upcoming-row--hidden' : '';
     return `<div class="upcoming-row${i === 0 ? ' upcoming-row--next' : ''}${hiddenClass}" data-index="${i}">
   <div class="upcoming-date"><span class="upcoming-date-main">${dateLabel}</span>${timeDisplay}</div>
@@ -1479,7 +1479,7 @@ async function buildSocialPreview(ev, fileName = 'next-match.png') {
   <rect x="70" y="60" width="590" height="58" rx="29" fill="#FFD426"/>
   <text x="365" y="98" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#0D2B5E">PROCHAIN MATCH — LIGUE 2 BKT</text>
   <text x="1112" y="98" text-anchor="end" font-family="Arial, sans-serif" font-size="27" font-weight="800" fill="#6B7A99">${escapeXml(roundLabel)}</text>
-  <text x="600" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#6B7A99">${escapeXml(date)} · ${escapeXml(time)}</text>
+  <text x="600" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#6B7A99">${escapeXml(date)}${time ? ` · ${escapeXml(time)}` : ''}</text>
   <text x="310" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="${teamFont(home)}" font-weight="800" fill="#0D2B5E">${escapeXml(home)}</text>
   <text x="310" y="336" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#6B7A99">${escapeXml(homeStanding)}</text>
   <text x="890" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="${teamFont(away)}" font-weight="800" fill="#0D2B5E">${escapeXml(away)}</text>
@@ -1519,14 +1519,18 @@ for (const event of sharePageEvents) {
   const pageUrl = `${SHARE_BASE_URL}/matchs/${slug}.html`;
   await buildSocialPreview(event, path.join('matchs', imageName));
   const title = `⚽ ${displayTeamName(event.strHomeTeam)} – ${displayTeamName(event.strAwayTeam)}`;
-  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} · ${displayKickoffTime(event)} · ${event.strVenue || 'Stade à confirmer'}${matchHashtag(event) ? ` · ${matchHashtag(event)}` : ''}.`;
+  const eventTime = displayKickoffTime(event);
+  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)}${eventTime ? ` · ${eventTime}` : ''} · ${event.strVenue || 'Stade à confirmer'}${matchHashtag(event) ? ` · ${matchHashtag(event)}` : ''}.`;
   fs.writeFileSync(path.join(MATCH_SHARE_DIR, `${slug}.html`), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(title)}</title><meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:url" content="${pageUrl}"><meta property="og:title" content="${escapeXml(title)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeXml(title)}"><meta name="twitter:description" content="${escapeXml(description)}"><meta name="twitter:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><style>body{margin:0;font:16px system-ui;background:#f4f7fb;color:#0d2b5e;display:grid;place-items:center;min-height:100vh}.card{background:#fff;padding:32px;border-radius:18px;text-align:center;box-shadow:0 8px 30px #0d2b5e18;max-width:560px}a{display:inline-block;background:#0d2b5e;color:#fff;padding:12px 18px;border-radius:99px;text-decoration:none;font-weight:700}</style></head><body><main class="card"><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><a href="../">Voir le calendrier FC Sochaux</a></main></body></html>`, 'utf8');
 }
 const nextMatchShareUrl = nextMatch ? `${SHARE_BASE_URL}/matchs/${matchShareSlug(nextMatch)}.html` : `${SHARE_BASE_URL}/`;
 
 const vars = {
   NEXT_MATCH_DATE:       fmtDateOnly(nextMatch?.dateEvent),
-  NEXT_MATCH_TIME:       displayKickoffTime(nextMatch) + (nextMatchUnconfirmed ? ' ⏳' : ''),
+  NEXT_MATCH_TIME_SUFFIX: (() => {
+    const time = displayKickoffTime(nextMatch);
+    return time ? ` · ${time}` : (nextMatchUnconfirmed ? ' ⏳' : '');
+  })(),
   NEXT_MATCH_HOME_TEAM:  displayTeamName(nextMatch?.strHomeTeam) || '—',
   NEXT_MATCH_AWAY_TEAM:  displayTeamName(nextMatch?.strAwayTeam) || '—',
   NEXT_MATCH_HOME_BADGE: homeBigBadge,
@@ -1567,7 +1571,10 @@ const vars = {
   HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
   OG_TITLE:              `⚽ ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
-  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} · ${displayKickoffTime(nextMatch)} · ${nextMatch?.strVenue || 'Stade à confirmer'}${matchHashtag(nextMatch) ? ` · ${matchHashtag(nextMatch)}` : ''}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
+  OG_DESCRIPTION:        (() => {
+    const time = displayKickoffTime(nextMatch);
+    return `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)}${time ? ` · ${time}` : ''} · ${nextMatch?.strVenue || 'Stade à confirmer'}${matchHashtag(nextMatch) ? ` · ${matchHashtag(nextMatch)}` : ''}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`;
+  })(),
   OG_IMAGE_VERSION:      Date.now(),
   NEXT_MATCH_SHARE_URL:  nextMatchShareUrl,
   NEXT_MATCH_HASHTAG:    matchHashtag(nextMatch),
