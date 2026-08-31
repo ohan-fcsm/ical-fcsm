@@ -428,6 +428,17 @@ function buildIso(dateEvent, strTime) {
   return `${datePart}T${timePart}Z`;
 }
 
+function buildAllDayIcsRange(dateEvent) {
+  const start = new Date(`${dateEvent}T12:00:00Z`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return {
+    start: start.toISOString().slice(0, 10).replace(/-/g, ''),
+    end: end.toISOString().slice(0, 10).replace(/-/g, ''),
+  };
+}
+
 function buildIsoHtml(dateEvent, strTime) {
   if (!dateEvent) return '';
   const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
@@ -1211,8 +1222,8 @@ const homeFormTeam = nextMatchFcsmHome ? teamName : oppName;
 const awayFormTeam = nextMatchFcsmHome ? oppName : teamName;
 const ligue2Banner = ligue2Ready ? '' : '<div class="banner-warning">La Ligue 2 2026-2027 démarre le 8 août — les prochains matchs sont des amicaux</div>';
 const round = nextMatch?.intRound ? `J${nextMatch.intRound}` : '—';
-const nextMatchIso = buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
 const nextMatchUnconfirmed = !isDateTimeConfirmed(nextMatch);
+const nextMatchIso = nextMatchUnconfirmed ? '' : buildIsoHtml(nextMatch?.dateEvent, nextMatch?.strTime);
 
 function badgeTag(name, size = 28) {
   const key = canonicalTeamKey(name);
@@ -1244,6 +1255,12 @@ function formBadgesSummary(events, tName) {
 // Le statut dépend exclusivement des métadonnées explicites de programmation LFP.
 function isDateTimeConfirmed(ev) {
   return ev?._confirmed === true;
+}
+
+function displayKickoffTime(ev) {
+  return isDateTimeConfirmed(ev) && ev?.strTime && !/^00:00(?::00)?$/.test(ev.strTime)
+    ? fmtTime(ev.strTime)
+    : 'Horaire à confirmer';
 }
 
 function unconfirmedHourglass(ev) {
@@ -1331,7 +1348,7 @@ function buildUpcomingRows(events) {
     const opp = isHome ? ev.strAwayTeam : ev.strHomeTeam;
     const oppDisplay = displayTeamName(opp);
     const dateLabel = fmtDate(ev.dateEvent, ev.strTime);
-    const time = fmtTime(ev.strTime);
+    const time = displayKickoffTime(ev);
     const league = displayLeague(ev.strLeague);
     const roundLabel = ev.intRound ? `J${ev.intRound}` : '';
     const homeBadge = teamBadgeImg(ev.strHomeTeam, logos, 22);
@@ -1445,7 +1462,7 @@ async function buildSocialPreview(ev, fileName = 'next-match.png') {
   const home = displayTeamName(ev?.strHomeTeam || 'FC Sochaux');
   const away = displayTeamName(ev?.strAwayTeam || 'Adversaire');
   const date = ev?.dateEvent ? fmtDateOnly(ev.dateEvent) : 'Date à confirmer';
-  const time = ev?.strTime ? fmtTime(ev.strTime) : 'Heure à confirmer';
+  const time = displayKickoffTime(ev);
   const homeStanding = matchStanding(ev?.strHomeTeam);
   const awayStanding = matchStanding(ev?.strAwayTeam);
   const venue = ev?.strVenue || 'Stade à confirmer';
@@ -1502,14 +1519,14 @@ for (const event of sharePageEvents) {
   const pageUrl = `${SHARE_BASE_URL}/matchs/${slug}.html`;
   await buildSocialPreview(event, path.join('matchs', imageName));
   const title = `⚽ ${displayTeamName(event.strHomeTeam)} – ${displayTeamName(event.strAwayTeam)}`;
-  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} à ${event.strTime ? fmtTime(event.strTime) : 'heure à confirmer'} · ${event.strVenue || 'Stade à confirmer'}${matchHashtag(event) ? ` · ${matchHashtag(event)}` : ''}.`;
+  const description = `Ligue 2 BKT · ${fmtDateOnly(event.dateEvent)} · ${displayKickoffTime(event)} · ${event.strVenue || 'Stade à confirmer'}${matchHashtag(event) ? ` · ${matchHashtag(event)}` : ''}.`;
   fs.writeFileSync(path.join(MATCH_SHARE_DIR, `${slug}.html`), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(title)}</title><meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:url" content="${pageUrl}"><meta property="og:title" content="${escapeXml(title)}"><meta property="og:description" content="${escapeXml(description)}"><meta property="og:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeXml(title)}"><meta name="twitter:description" content="${escapeXml(description)}"><meta name="twitter:image" content="${SHARE_BASE_URL}/matchs/${imageName}?v=${Date.now()}"><style>body{margin:0;font:16px system-ui;background:#f4f7fb;color:#0d2b5e;display:grid;place-items:center;min-height:100vh}.card{background:#fff;padding:32px;border-radius:18px;text-align:center;box-shadow:0 8px 30px #0d2b5e18;max-width:560px}a{display:inline-block;background:#0d2b5e;color:#fff;padding:12px 18px;border-radius:99px;text-decoration:none;font-weight:700}</style></head><body><main class="card"><h1>${escapeXml(title)}</h1><p>${escapeXml(description)}</p><a href="../">Voir le calendrier FC Sochaux</a></main></body></html>`, 'utf8');
 }
 const nextMatchShareUrl = nextMatch ? `${SHARE_BASE_URL}/matchs/${matchShareSlug(nextMatch)}.html` : `${SHARE_BASE_URL}/`;
 
 const vars = {
   NEXT_MATCH_DATE:       fmtDateOnly(nextMatch?.dateEvent),
-  NEXT_MATCH_TIME:       (nextMatch?.strTime ? fmtTime(nextMatch.strTime) : '—') + (nextMatchUnconfirmed ? ' ⏳' : ''),
+  NEXT_MATCH_TIME:       displayKickoffTime(nextMatch) + (nextMatchUnconfirmed ? ' ⏳' : ''),
   NEXT_MATCH_HOME_TEAM:  displayTeamName(nextMatch?.strHomeTeam) || '—',
   NEXT_MATCH_AWAY_TEAM:  displayTeamName(nextMatch?.strAwayTeam) || '—',
   NEXT_MATCH_HOME_BADGE: homeBigBadge,
@@ -1550,7 +1567,7 @@ const vars = {
   HEAD2HEAD_MATCHES:     h2hHtml,
   LAST_UPDATED:          LAST_UPDATED,
   OG_TITLE:              `⚽ ${displayTeamName(nextMatch?.strHomeTeam || 'FC Sochaux')} – ${displayTeamName(nextMatch?.strAwayTeam || 'Adversaire')}`,
-  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} à ${nextMatch?.strTime ? fmtTime(nextMatch.strTime) : 'heure à confirmer'} · ${nextMatch?.strVenue || 'Stade à confirmer'}${matchHashtag(nextMatch) ? ` · ${matchHashtag(nextMatch)}` : ''}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
+  OG_DESCRIPTION:        `Rendez-vous ${fmtDateOnly(nextMatch?.dateEvent)} · ${displayKickoffTime(nextMatch)} · ${nextMatch?.strVenue || 'Stade à confirmer'}${matchHashtag(nextMatch) ? ` · ${matchHashtag(nextMatch)}` : ''}. Retrouvez le calendrier et toutes les infos du FC Sochaux.`,
   OG_IMAGE_VERSION:      Date.now(),
   NEXT_MATCH_SHARE_URL:  nextMatchShareUrl,
   NEXT_MATCH_HASHTAG:    matchHashtag(nextMatch),
@@ -1721,7 +1738,9 @@ for (const ev of allEventsForIcs) {
   }
   seenUids.add(matchKey);
 
+  const allDay = !hasScore(ev) && !isDateTimeConfirmed(ev);
   const isoStr = buildIso(ev.dateEvent, ev.strTime);
+  const allDayRange = allDay ? buildAllDayIcsRange(ev.dateEvent) : null;
   const uid = `fcsm-${ev.idEvent || matchKey}@ical-fcsm`;
 
   const isNextIcsEvent = Boolean(nextMatch && isSameMatch(ev, nextMatch));
@@ -1729,7 +1748,10 @@ for (const ev of allEventsForIcs) {
   const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp, isNextIcsEvent);
 
   icsLines.push(
-    'BEGIN:VEVENT', `UID:${uid}`, `DTSTART:${isoStr}`,
+    'BEGIN:VEVENT', `UID:${uid}`,
+    ...(allDayRange
+      ? [`DTSTART;VALUE=DATE:${allDayRange.start}`, `DTEND;VALUE=DATE:${allDayRange.end}`]
+      : [`DTSTART:${isoStr}`]),
     `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
     `LOCATION:${ev.strVenue || ''}`,
   );
