@@ -9,6 +9,7 @@ const API_KEY = process.env.THESPORTSDB_API_KEY || '';
 const TEAM_ID_FCSM = process.env.TEAM_ID_FCSM || '133708';
 const LEAGUE_ID = process.env.LEAGUE_ID || '4401';
 const SEASON = process.env.SEASON || '2026-2027';
+const CURRENT_SEASON_START_DATE = `${SEASON.slice(0, 4)}-08-01`;
 const TEAM_NAME_FALLBACK = 'FC Sochaux-Montbéliard';
 const TEAM_DISPLAY_NAME = 'FC Sochaux';
 // Secours neutre : logo de la compétition, jamais le logo éditorial du site.
@@ -1200,7 +1201,10 @@ const opponentKnownResults = (() => {
 const last5Ligue2Opp = [
   ...opponentKnownResults,
   ...oppSeasonEvents.filter(ev =>
-    isLigue2(ev) && (ev.dateEvent || '') < today && !opponentKnownResults.some(ref => isSameMatch(ev, ref))
+    isLigue2(ev) &&
+    (ev.dateEvent || '') >= CURRENT_SEASON_START_DATE &&
+    (ev.dateEvent || '') < today &&
+    !opponentKnownResults.some(ref => isSameMatch(ev, ref))
   ),
 ]
   .sort((a, b) => (b.dateEvent || '').localeCompare(a.dateEvent || ''))
