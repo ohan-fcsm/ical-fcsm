@@ -104,6 +104,8 @@ const TEAM_NAME_ALIASES = {
   'stade lavallois mfc':    'stade lavallois mfc',
   'nancy':                  'as nancy lorraine',
   'as nancy':               'as nancy lorraine',
+  'nancy lorraine':         'as nancy lorraine',
+  'nancy-lorraine':         'as nancy lorraine',
   'as nancy lorraine':      'as nancy lorraine',
   'metz':                   'fc metz',
   'fc metz':                'fc metz',
