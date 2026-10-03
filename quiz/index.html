@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz FCSM — Les premières journées</title>
+<meta name="description" content="10 questions chrono pour tester tes connaissances sur le début de saison du FCSM.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Quiz FCSM — Les premières journées">
+<meta property="og:description" content="10 questions, 15 secondes par question. À toi de jouer ! 🟡🔵">
+<meta property="og:url" content="https://ohan-fcsm.github.io/ical-fcsm/quiz/">
+<meta property="og:image" content="https://ohan-fcsm.github.io/ical-fcsm/logo-512.png">
+<style>
+:root{--b:#0d2b5e;--y:#ffcf21;--p:#fff8c9;--bg:#f3f6fa;--m:#71809b;--g:#168b55;--r:#d33d3d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--b);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.top{height:68px;background:#fff;border-bottom:1px solid #e5eaf1;display:flex;align-items:center;justify-content:space-between;padding:0 max(18px,calc((100% - 1080px)/2))}
+.brand{display:flex;gap:10px;align-items:center;font-weight:900;font-size:19px}.logo{width:42px;height:42px;border-radius:11px;background:var(--b);color:var(--y);display:grid;place-items:center;font-weight:950}.season{font-size:11px;font-weight:800;color:var(--m);letter-spacing:.08em}
+main{max-width:1080px;margin:auto;padding:25px 18px 55px}.hero{background:linear-gradient(135deg,#fff9ce,#f8ec87);border-radius:30px;padding:45px;display:flex;justify-content:space-between;align-items:center;gap:30px;box-shadow:0 16px 45px #0d2b5e1f}.eyebrow,.kicker{font-size:12px;font-weight:900;letter-spacing:.12em;color:#806700;text-transform:uppercase}h1{font-size:clamp(40px,7vw,68px);line-height:.98;letter-spacing:-.045em;margin:12px 0 20px}.hero p{max-width:620px;font-size:18px;line-height:1.55;color:#5e6677;margin:0}.pills{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}.pill{background:#fff;padding:9px 14px;border-radius:999px;font-size:13px;font-weight:800}.hero-number{min-width:170px;height:170px;border-radius:30px;background:var(--b);color:#fff;display:grid;place-items:center;align-content:center;box-shadow:0 16px 30px #0d2b5e40}.hero-number strong{font-size:72px;line-height:.8;color:var(--y)}.hero-number span{font-size:12px;font-weight:800;margin-top:10px}
+.card{background:#fff;border:1px solid #e4e9f1;border-radius:24px;box-shadow:0 8px 28px #0d2b5e12;margin-top:22px;padding:30px}.progress-head{display:flex;justify-content:space-between;color:var(--m);font-size:13px;font-weight:800;margin-bottom:9px}.progress{height:9px;background:#edf1f6;border-radius:99px;overflow:hidden}.progress span{display:block;height:100%;background:var(--y);transition:.3s}.timer-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-size:13px;font-weight:850}.timer-track{height:7px;background:#edf1f6;border-radius:99px;overflow:hidden;margin-top:7px}.timer-track span{display:block;height:100%;width:100%;background:#e3ad00;transition:width .1s linear}.timer-track span.low{background:var(--r)}.qnum{margin-top:28px;color:#9a7900;font-size:12px;font-weight:900;letter-spacing:.12em}.question{font-size:clamp(26px,4vw,38px);line-height:1.13;letter-spacing:-.025em;margin:9px 0 25px}.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}.answer{min-height:70px;border:2px solid #e0e6ef;background:#fff;border-radius:16px;padding:15px 18px;text-align:left;color:var(--b);font-size:16px;font-weight:750;cursor:pointer}.answer:hover{border-color:#aab8d0}.answer.selected{border-color:var(--b);background:#eef3fc}.answer.correct{border-color:var(--g);background:#eaf8f1}.answer.wrong{border-color:var(--r);background:#fff0f0}.answer:disabled{cursor:default}.actions{display:flex;justify-content:flex-end;margin-top:22px}button{font-family:inherit;border:0;cursor:pointer}.primary,.secondary{padding:14px 24px;border-radius:999px;font-weight:850;font-size:14px}.primary{background:var(--b);color:#fff}.primary:disabled{opacity:.35;cursor:not-allowed}.secondary{background:#edf1f7;color:var(--b)}.result{text-align:center;padding:42px 25px}.score{font-size:100px;font-weight:950;line-height:.9;margin:14px 0}.score small{font-size:30px;color:var(--m)}.result h2{font-size:30px;margin:8px 0}.result p{color:var(--m)}.status{font-size:13px!important;margin:6px 0!important;min-height:18px}.result-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:24px 0}.stats{display:grid;grid-template-columns:1fr 1fr;gap:25px;align-items:center}.stats h2{margin:4px 0;font-size:27px}.stats p{color:var(--m)}.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#f7f9fc;border:1px solid #e5eaf1;border-radius:16px;padding:17px;text-align:center}.stat strong{display:block;font-size:28px}.stat span{font-size:10px;font-weight:850;color:var(--m);text-transform:uppercase}.stat strong span{font-size:28px;color:var(--b);text-transform:none}.hidden{display:none!important}footer{display:flex;justify-content:space-between;color:var(--m);font-size:12px;padding:25px 5px}
+@media(max-width:700px){.hero{padding:30px 23px}.hero-number{display:none}.answers,.stats{grid-template-columns:1fr}.card{padding:22px}.save-row{flex-direction:column}.season{font-size:9px}footer{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="logo">F</div>FCSM</div><div class="season">LIGUE 2 · 2026 / 2027</div></header>
+<main>
+<section class="hero"><div><div class="eyebrow">🟡🔵 Quiz FCSM</div><h1>Les premières<br>journées</h1><p>10 questions pour savoir si tu connais vraiment le début de saison des Jaune et Bleu.</p><div class="pills"><span class="pill">10 questions</span><span class="pill">10 points</span><span class="pill">100 % FCSM</span></div></div><div class="hero-number"><strong>10</strong><span>QUESTIONS</span></div></section>
+
+<section class="card" id="quiz"><div class="progress-head"><span id="progressText"></span><span id="scoreText"></span></div><div class="progress"><span id="progressBar"></span></div><div class="timer-row"><span>Temps restant</span><strong><span id="timerText">15</span> s</strong></div><div class="timer-track"><span id="timerBar"></span></div><div id="questionArea"></div><div class="actions"><button class="primary" id="nextBtn" disabled>Valider</button></div></section>
+
+<section class="card result hidden" id="result"><div class="kicker">TON SCORE</div><div class="score"><span id="finalScore">0</span><small>/10</small></div><h2 id="resultTitle"></h2><p id="resultMessage"></p><p class="status" id="submissionStatus" aria-live="polite"></p><div class="result-actions"><button class="primary" id="shareXBtn">Partager sur X</button><button class="secondary" id="shareFacebookBtn">Partager sur Facebook</button><button class="secondary" id="restartBtn">Rejouer</button></div></section>
+
+<section class="card stats"><div><div class="kicker">LE QUIZ</div><h2>Les scores des supporters</h2><p>Résultats anonymes consolidés entre tous les participants.</p></div><div class="stat-grid"><div class="stat"><strong id="totalPlayers">—</strong><span>Participants</span></div><div class="stat"><strong id="avgScore">—</strong><span>Score moyen</span></div><div class="stat"><strong><span id="bestScore">—</span> · <span id="bestTime">—</span></strong><span>Meilleur score · temps</span></div></div></section>
+<footer><span>Quiz FCSM · Saison 2026/2027</span><span>🟡🔵 Allez Sochaux !</span></footer>
+</main>
+
+<script>
+const QUESTIONS=[
+{q:"Quel a été le premier adversaire du FCSM en Ligue 2 cette saison ?",a:["FC Nantes","AS Saint-Étienne","EA Guingamp","Red Star FC"],c:1},
+{q:"Combien de points le FCSM comptait-il après les 7 premières journées ?",a:["7","8","10","11"],c:2},
+{q:"Quel adversaire le FCSM a-t-il battu 1-0 lors de sa première victoire ?",a:["Nantes","Guingamp","Laval","Pau"],c:1},
+{q:"Quel a été le score du déplacement à Clermont ?",a:["0-0","1-0","1-1","0-1"],c:0},
+{q:"Quel était le bilan du FCSM après 7 journées ?",a:["2 victoires, 4 nuls, 1 défaite","3 victoires, 3 nuls, 1 défaite","2 victoires, 3 nuls, 2 défaites","1 victoire, 5 nuls, 1 défaite"],c:0},
+{q:"Combien de buts le FCSM avait-il marqués après 7 journées ?",a:["3","4","5","6"],c:1},
+{q:"Combien de clean-sheets le FCSM avait-il réalisés après 7 journées ?",a:["2","3","4","5"],c:2},
+{q:"Qui a marqué le but de la victoire 1-0 contre Nantes ?",a:["Kapit Djoco","Benjamin Gomel","Aymen Boutoutaou","Julien Vetro"],c:1},
+{q:"Quelle a été l'affluence la plus élevée à Bonal sur les trois premières réceptions ?",a:["16 063","18 250","19 103","19 415"],c:3},
+{q:"Après la défaite de la J1, combien de matchs consécutifs le FCSM est-il resté invaincu ?",a:["4","5","6","7"],c:2}
+];
+
+const SUPABASE_URL="https://jdniqsmikuhocheyenof.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkbmlxc21pa3Vob2NoZXllbm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzU4OTksImV4cCI6MjEwNjYxMTg5OX0.eHkha0QPgt3JNNcsTGDez-1ZZA_JNWDQstTDCN_U-qI";
+let current=0,score=0,selected=null,answers=[],timerInterval=null,questionEndsAt=0,questionStartedAt=0,quizElapsedMs=0,quizElapsed=0,confirmed=false;
+const $=id=>document.getElementById(id);
+
+function render(){
+ clearInterval(timerInterval);
+ const q=QUESTIONS[current];selected=null;confirmed=false;
+ questionStartedAt=Date.now();
+ $("progressText").textContent=`Question ${current+1} / ${QUESTIONS.length}`;
+ $("scoreText").textContent=`${score} ${score>1?"points":"point"}`;
+ $("progressBar").style.width=`${((current+1)/QUESTIONS.length)*100}%`;
+ $("nextBtn").disabled=true;
+ $("nextBtn").textContent=current===QUESTIONS.length-1?"Voir mon score":"Valider";
+ $("questionArea").innerHTML=`<div class="qnum">QUESTION ${current+1}</div><h2 class="question">${q.q}</h2><div class="answers">${q.a.map((x,i)=>`<button class="answer" data-i="${i}">${String.fromCharCode(65+i)} · ${x}</button>`).join("")}</div>`;
+ document.querySelectorAll(".answer").forEach(b=>b.onclick=()=>select(+b.dataset.i));
+ questionEndsAt=Date.now()+15000;updateTimer();
+ timerInterval=setInterval(()=>{updateTimer();if(Date.now()>=questionEndsAt)validateAnswer()},100);
+}
+function updateTimer(){
+ const ms=Math.max(0,questionEndsAt-Date.now()),seconds=Math.ceil(ms/1000);
+ $("timerText").textContent=seconds;
+ $("timerBar").style.width=`${(ms/15000)*100}%`;
+ $("timerBar").classList.toggle("low",seconds<=5);
+}
+function select(i){
+ if(confirmed)return;
+ selected=i;
+ document.querySelectorAll(".answer").forEach((b,index)=>{
+  b.classList.toggle("selected",index===i);
+ });
+ document.querySelector(`[data-i="${i}"]`).classList.add("selected");
+ $("nextBtn").disabled=false;
+}
+$("nextBtn").onclick=()=>{
+ if(selected===null||confirmed)return;
+ validateAnswer();
+};
+function validateAnswer(){
+ if(confirmed)return;
+ confirmed=true;clearInterval(timerInterval);
+ quizElapsedMs+=Math.min(15000,Date.now()-questionStartedAt);
+ answers[current]=selected===null?-1:selected;
+ const correct=QUESTIONS[current].c;
+ if(selected===correct)score++;
+ document.querySelectorAll(".answer").forEach((b,i)=>{if(i===correct)b.classList.add("correct");if(i===selected&&i!==correct)b.classList.add("wrong")});
+ $("nextBtn").disabled=true;
+ setTimeout(()=>{if(current<QUESTIONS.length-1){current++;render()}else result()},650);
+}
+function result(){
+ quizElapsed=Math.max(1,Math.round(quizElapsedMs/1000));
+ $("quiz").classList.add("hidden");$("result").classList.remove("hidden");$("finalScore").textContent=score;
+ $("resultTitle").textContent=score===10?"PARFAIT ! 🏆":score>=8?"ÉNORME SCORE ! 🔥":score>=6?"SOLIDE ! 🟡🔵":score>=4?"PAS MAL ! 👀":"IL FAUT RÉVISER ! 😄";
+ $("resultMessage").textContent=`Tu as trouvé ${score} bonne${score>1?"s":""} réponse${score>1?"s":""} sur 10 en ${quizElapsed} seconde${quizElapsed>1?"s":""}.`;
+ $("submissionStatus").textContent="Enregistrement de ton résultat…";
+ saveResult();
+ scrollTo({top:0,behavior:"smooth"});
+}
+async function loadStats(){
+ try{
+  const response=await callQuizApi({action:"stats"});
+  if(!response.ok)throw new Error("stats");
+  const stats=await response.json();
+  $("totalPlayers").textContent=Number(stats.participants).toLocaleString("fr-FR");
+  $("avgScore").textContent=`${Number(stats.average_score).toLocaleString("fr-FR")}/10`;
+  $("bestScore").textContent=stats.participants?`${stats.best_score}/10`:"—";
+  $("bestTime").textContent=stats.best_time_seconds?`${stats.best_time_seconds} s`:"—";
+ }catch(e){$("totalPlayers").textContent="—";$("avgScore").textContent="—";$("bestScore").textContent="—";$("bestTime").textContent="—"}
+}
+async function saveResult(){
+ try{
+  const response=await callQuizApi({action:"submit",score,duration_seconds:quizElapsed});
+  if(!response.ok)throw new Error("save");
+  $("submissionStatus").textContent="✅ Résultat enregistré anonymement.";
+  await loadStats();
+ }catch(e){$("submissionStatus").textContent="Impossible d’enregistrer le résultat pour le moment. Réessaie plus tard."}
+}
+function callQuizApi(payload){
+ return fetch(`${SUPABASE_URL}/functions/v1/quiz-api`,{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,"Content-Type":"application/json"},body:JSON.stringify(payload)});
+}
+$("restartBtn").onclick=()=>{current=0;score=0;answers=[];quizElapsedMs=0;quizElapsed=0;$("result").classList.add("hidden");$("quiz").classList.remove("hidden");render()};
+$("shareXBtn").onclick=()=>{
+ if(location.protocol==="file:"){alert("Pour partager le quiz, il faut d'abord le publier sur une adresse HTTPS (par exemple avec GitHub Pages). Cette version est encore ouverte comme fichier local.");return}
+ const text=`J'ai fait ${score}/10 au Quiz FCSM en ${quizElapsed} s 🟡🔵⚽`;
+ window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(location.href),"_blank","noopener,noreferrer");
+};
+$("shareFacebookBtn").onclick=()=>{
+ if(location.protocol==="file:"){alert("Facebook ne peut partager que le lien public HTTPS du quiz. Publie d'abord ce fichier sur GitHub Pages, puis réessaie depuis la page en ligne.");return}
+ const quote=`J'ai fait ${score}/10 au Quiz FCSM en ${quizElapsed} s 🟡🔵⚽`;
+ window.open("https://www.facebook.com/sharer/sharer.php?u="+encodeURIComponent(location.href)+"&quote="+encodeURIComponent(quote),"_blank","noopener,noreferrer");
+};
+render();
+loadStats();
+</script>
+</body>
+</html>
