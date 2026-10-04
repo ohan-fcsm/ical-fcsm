@@ -25,7 +25,7 @@ main{max-width:1080px;margin:auto;padding:25px 18px 55px}.hero{background:linear
 <main>
 <section class="hero"><div><div class="eyebrow">🟡🔵 Quiz FCSM</div><h1>Les premières<br>journées</h1><p>10 questions pour savoir si tu connais vraiment le début de saison des Jaune et Bleu.</p><div class="pills"><span class="pill">10 questions</span><span class="pill">10 points</span><span class="pill">100 % FCSM</span></div></div><div class="hero-number"><strong>10</strong><span>QUESTIONS</span></div></section>
 
-<section class="card" id="quiz"><div class="quiz-intro" id="quizIntro"><div class="kicker">LE QUIZ FCSM</div><h2>Prêt à tester tes connaissances ?</h2><p>10 questions t’attendent. Tu auras 15 secondes pour répondre à chacune. Le chrono démarre seulement quand tu appuies sur le bouton.</p><button class="primary start-btn" id="startBtn">Démarrer le quiz</button></div><div id="quizPlay" class="hidden"><div class="progress-head"><span id="progressText"></span><span id="scoreText"></span></div><div class="progress"><span id="progressBar"></span></div><div class="timer-row"><span>Temps restant</span><strong><span id="timerText">15</span> s</strong></div><div class="timer-track"><span id="timerBar"></span></div><div id="questionArea"></div><div class="actions"><button class="primary" id="nextBtn" disabled>Valider</button></div></div></section>
+<section class="card" id="quiz"><div class="quiz-intro" id="quizIntro"><div class="kicker">LE QUIZ FCSM</div><h2>Prêt à tester tes connaissances ?</h2><p>10 questions t’attendent. Tu auras 15 secondes pour répondre à chacune. Une seule participation est possible depuis ce navigateur.</p><button class="primary start-btn" id="startBtn">Démarrer le quiz</button></div><div id="quizPlay" class="hidden"><div class="progress-head"><span id="progressText"></span><span id="scoreText"></span></div><div class="progress"><span id="progressBar"></span></div><div class="timer-row"><span>Temps restant</span><strong><span id="timerText">15</span> s</strong></div><div class="timer-track"><span id="timerBar"></span></div><div id="questionArea"></div><div class="actions"><button class="primary" id="nextBtn" disabled>Valider</button></div></div></section>
 
 <section class="card result hidden" id="result"><div class="kicker">TON SCORE</div><div class="score"><span id="finalScore">0</span><small>/10</small></div><h2 id="resultTitle"></h2><p id="resultMessage"></p><p class="status" id="submissionStatus" aria-live="polite"></p><div class="result-actions"><button class="primary" id="shareXBtn">Partager sur X</button><button class="secondary" id="shareFacebookBtn">Partager sur Facebook</button><button class="secondary" id="restartBtn">Rejouer</button></div></section>
 
@@ -52,6 +52,15 @@ const SUPABASE_URL="https://jdniqsmikuhocheyenof.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkbmlxc21pa3Vob2NoZXllbm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzU4OTksImV4cCI6MjEwNjYxMTg5OX0.eHkha0QPgt3JNNcsTGDez-1ZZA_JNWDQstTDCN_U-qI";
 let current=0,score=0,selected=null,answers=[],timerInterval=null,questionEndsAt=0,questionStartedAt=0,quizElapsedMs=0,quizElapsed=0,confirmed=false;
 const $=id=>document.getElementById(id);
+const PARTICIPATION_KEY="fcsm-quiz-participated-v1";
+function hasParticipated(){try{return localStorage.getItem(PARTICIPATION_KEY)==="1"}catch(e){return false}}
+function rememberParticipation(){try{localStorage.setItem(PARTICIPATION_KEY,"1")}catch(e){}}
+function showParticipationLock(){
+ if(!hasParticipated())return;
+ $("quizIntro").querySelector("h2").textContent="Tu as déjà participé !";
+ $("quizIntro").querySelector("p").textContent="Une seule partie est autorisée depuis ce navigateur. Merci d’avoir joué !";
+ $("startBtn").classList.add("hidden");
+}
 
 function render(){
  clearInterval(timerInterval);
@@ -98,10 +107,12 @@ function validateAnswer(){
  setTimeout(()=>{if(current<QUESTIONS.length-1){current++;render()}else result()},650);
 }
 function result(){
+ rememberParticipation();
  quizElapsed=Math.max(1,Math.round(quizElapsedMs/1000));
  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");$("finalScore").textContent=score;
  $("resultTitle").textContent=score===10?"PARFAIT ! 🏆":score>=8?"ÉNORME SCORE ! 🔥":score>=6?"SOLIDE ! 🟡🔵":score>=4?"PAS MAL ! 👀":"IL FAUT RÉVISER ! 😄";
  $("resultMessage").textContent=`Tu as trouvé ${score} bonne${score>1?"s":""} réponse${score>1?"s":""} sur 10 en ${quizElapsed} seconde${quizElapsed>1?"s":""}.`;
+ $("restartBtn").classList.add("hidden");
  $("submissionStatus").textContent="Enregistrement de ton résultat…";
  saveResult();
  scrollTo({top:0,behavior:"smooth"});
@@ -128,8 +139,8 @@ async function saveResult(){
 function callQuizApi(payload){
  return fetch(`${SUPABASE_URL}/functions/v1/quiz-api`,{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,"Content-Type":"application/json"},body:JSON.stringify(payload)});
 }
-$("startBtn").onclick=()=>{$("quizIntro").classList.add("hidden");$("quizPlay").classList.remove("hidden");render()};
-$("restartBtn").onclick=()=>{current=0;score=0;answers=[];quizElapsedMs=0;quizElapsed=0;clearInterval(timerInterval);$("result").classList.add("hidden");$("quiz").classList.remove("hidden");$("quizIntro").classList.remove("hidden");$("quizPlay").classList.add("hidden");scrollTo({top:0,behavior:"smooth"})};
+$("startBtn").onclick=()=>{if(hasParticipated())return;$("quizIntro").classList.add("hidden");$("quizPlay").classList.remove("hidden");render()};
+$("restartBtn").onclick=()=>{if(hasParticipated())return;current=0;score=0;answers=[];quizElapsedMs=0;quizElapsed=0;clearInterval(timerInterval);$("result").classList.add("hidden");$("quiz").classList.remove("hidden");$("quizIntro").classList.remove("hidden");$("quizPlay").classList.add("hidden");scrollTo({top:0,behavior:"smooth"})};
 $("shareXBtn").onclick=()=>{
  if(location.protocol==="file:"){alert("Pour partager le quiz, il faut d'abord le publier sur une adresse HTTPS (par exemple avec GitHub Pages). Cette version est encore ouverte comme fichier local.");return}
  const text=`J'ai fait ${score}/10 au Quiz FCSM en ${quizElapsed} s 🟡🔵⚽`;
@@ -140,6 +151,7 @@ $("shareFacebookBtn").onclick=()=>{
  const quote=`J'ai fait ${score}/10 au Quiz FCSM en ${quizElapsed} s 🟡🔵⚽`;
  window.open("https://www.facebook.com/sharer/sharer.php?u="+encodeURIComponent(location.href)+"&quote="+encodeURIComponent(quote),"_blank","noopener,noreferrer");
 };
+showParticipationLock();
 loadStats();
 </script>
 </body>
