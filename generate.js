@@ -443,6 +443,16 @@ function buildAllDayIcsRange(dateEvent) {
   };
 }
 
+function addMinutesToIcsInstant(isoString, minutes) {
+  const match = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(isoString || '');
+  if (!match) return '';
+  const [, year, month, day, hour, minute, second] = match;
+  const end = new Date(Date.UTC(
+    Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute) + minutes, Number(second)
+  ));
+  return `${end.getUTCFullYear()}${String(end.getUTCMonth() + 1).padStart(2, '0')}${String(end.getUTCDate()).padStart(2, '0')}T${String(end.getUTCHours()).padStart(2, '0')}${String(end.getUTCMinutes()).padStart(2, '0')}${String(end.getUTCSeconds()).padStart(2, '0')}Z`;
+}
+
 function buildIsoHtml(dateEvent, strTime) {
   if (!dateEvent) return '';
   const timeLocal = strTime ? strTime.slice(0, 5) : '20:45';
@@ -1754,6 +1764,7 @@ for (const ev of allEventsForIcs) {
 
   const allDay = !hasScore(ev) && !isDateTimeConfirmed(ev);
   const isoStr = buildIso(ev.dateEvent, ev.strTime);
+  const endIsoStr = allDay ? '' : addMinutesToIcsInstant(isoStr, 120);
   const allDayRange = allDay ? buildAllDayIcsRange(ev.dateEvent) : null;
   const uid = `fcsm-${ev.idEvent || matchKey}@ical-fcsm`;
 
@@ -1765,7 +1776,7 @@ for (const ev of allEventsForIcs) {
     'BEGIN:VEVENT', `UID:${uid}`,
     ...(allDayRange
       ? [`DTSTART;VALUE=DATE:${allDayRange.start}`, `DTEND;VALUE=DATE:${allDayRange.end}`]
-      : [`DTSTART:${isoStr}`]),
+      : [`DTSTART:${isoStr}`, `DTEND:${endIsoStr}`]),
     `SUMMARY:${summary}`, `DESCRIPTION:${description}`,
     `LOCATION:${ev.strVenue || ''}`,
   );
