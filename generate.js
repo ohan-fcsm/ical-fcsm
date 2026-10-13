@@ -1745,6 +1745,8 @@ function buildIcsDescription(ev, tName, tRow, oRow, fFCSM, fOpp, isNextMatch) {
 }
 
 const allEventsForIcs = [...seasonPast, ...teamAllNext];
+const icsGeneratedAt = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsSequence = Math.floor(Date.now() / 1000);
 const icsLines = [
   'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FCSM//Calendar//FR',
   'CALSCALE:GREGORIAN','METHOD:PUBLISH',
@@ -1767,13 +1769,15 @@ for (const ev of allEventsForIcs) {
   const endIsoStr = allDay ? '' : addMinutesToIcsInstant(isoStr, 120);
   const allDayRange = allDay ? buildAllDayIcsRange(ev.dateEvent) : null;
   const uid = `fcsm-${ev.idEvent || matchKey}@ical-fcsm`;
+  const icsStatus = hasScore(ev) || isDateTimeConfirmed(ev) ? 'CONFIRMED' : 'TENTATIVE';
 
   const isNextIcsEvent = Boolean(nextMatch && isSameMatch(ev, nextMatch));
   const summary = buildIcsSummary(ev, teamName, teamRow, oppRow, isNextIcsEvent);
   const description = buildIcsDescription(ev, teamName, teamRow, oppRow, formFCSM, formOpp, isNextIcsEvent);
 
   icsLines.push(
-    'BEGIN:VEVENT', `UID:${uid}`,
+    'BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${icsGeneratedAt}`,
+    `LAST-MODIFIED:${icsGeneratedAt}`, `SEQUENCE:${icsSequence}`, `STATUS:${icsStatus}`,
     ...(allDayRange
       ? [`DTSTART;VALUE=DATE:${allDayRange.start}`, `DTEND;VALUE=DATE:${allDayRange.end}`]
       : [`DTSTART:${isoStr}`, `DTEND:${endIsoStr}`]),
